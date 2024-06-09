@@ -1,0 +1,7 @@
+[project]
+name = "lazy-github"
+version = "0.1"
+dependencies = [
+	"textual",
+	"PyGithub"
+]
