@@ -1,13 +1,22 @@
 import httpx
 import time
-from typing import Optional
+from github import Github, Auth
 from dataclasses import dataclass
+from pathlib import Path
 from textual import log
+from typing import Optional
 
 
-# https://docs.github.com/en/apps/creating-github-apps/writing-code-for-a-github-app/building-a-cli-with-a-github-app
 _LAZY_GITHUB_CLIENT_ID = "Iv23limdG8Bl3Cu5FOcT"
 _DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+_AUTHENTICATION_CACHE_LOCATION = Path.home() / ".config/lazy-github/auth.text"
+
+
+_GITHUB_CLIENT: Optional[Github] = None
+
+
+class GithubAuthenticationRequired(Exception):
+    pass
 
 
 @dataclass
@@ -21,9 +30,7 @@ class DeviceCodeResponse:
 
 @dataclass
 class AccessTokenResponse:
-    access_token: Optional[str]
-    scope: Optional[str]
-    token_type: Optional[str]
+    token: Optional[str]
     error: Optional[str]
 
 
@@ -56,11 +63,10 @@ def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
             "device_code": device_code.device_code,
         },
     ).raise_for_status()
-    access_token_data = dict(pair.split("=") for pair in access_token_res.text.split("&"))
+    pairs = access_token_res.text.split("&")
+    access_token_data = dict(pair.split("=") for pair in pairs)
     return AccessTokenResponse(
         access_token_data.get("access_token"),
-        access_token_data.get("scope"),
-        access_token_data.get("token_type"),
         access_token_data.get("error"),
     )
 
@@ -68,8 +74,8 @@ def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
 def _authenticate_on_terminal():
     # First we'll get the device code
     device_code = get_device_code()
-    print(f"Please verify at: {device_code.verification_uri}")
-    print(f"Your verification code is {device_code.user_code}")
+    log(f"Please verify at: {device_code.verification_uri}")
+    log(f"Your verification code is {device_code.user_code}")
 
     # Now we'll poll for an access token
     while True:
@@ -87,8 +93,45 @@ def _authenticate_on_terminal():
                 log("Access denied :(")
             case _:
                 log("Successfully authenticated!")
+                save_access_token(access_token)
                 break
 
 
+def save_access_token(access_token: AccessTokenResponse) -> None:
+    if not access_token.token:
+        raise ValueError("Invalid access token response! Cannot save")
+
+    # Create the parent directories for our cache if it's present
+    _AUTHENTICATION_CACHE_LOCATION.parent.mkdir(parents=True, exist_ok=True)
+    _AUTHENTICATION_CACHE_LOCATION.write_text(access_token.token)
+
+
+def load_access_token(access_token: AccessTokenResponse) -> None:
+    if not access_token.token:
+        raise ValueError("Invalid access token response! Cannot save")
+
+    # Create the parent directories for our cache if it's present
+    _AUTHENTICATION_CACHE_LOCATION.parent.mkdir(parents=True, exist_ok=True)
+    _AUTHENTICATION_CACHE_LOCATION.write_text(access_token.token)
+
+
+def github_client() -> Github:
+    global _GITHUB_CLIENT
+    if _GITHUB_CLIENT is not None:
+        return _GITHUB_CLIENT
+
+    if not _AUTHENTICATION_CACHE_LOCATION.exists():
+        raise GithubAuthenticationRequired()
+    token = _AUTHENTICATION_CACHE_LOCATION.read_text().strip()
+    _GITHUB_CLIENT = Github(auth=Auth.Token(token))
+    return _GITHUB_CLIENT
+
+
 if __name__ == "__main__":
-    _authenticate_on_terminal()
+    client = None
+    while client is None:
+        try:
+            client = github_client()
+        except GithubAuthenticationRequired:
+            _authenticate_on_terminal()
+    print(client.get_user().login)
