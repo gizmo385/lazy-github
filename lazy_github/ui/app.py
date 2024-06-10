@@ -1,48 +1,90 @@
 from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container
-from textual.widgets import Header, Footer, Placeholder
+from textual.widgets import Header, Footer, Placeholder, Static, OptionList
+from textual.widgets.option_list import Option
 
 
-# TODO:
-# 1: Work out how to title the little mini containers
-# 2: Wrap the menus in a scrollpanel incase they get too big
-# 3: Start pulling in Github information (how do we auth?)
-# 3.a: Let's do pull requests first since they're straightforward
+class LazyGithubPlaceholder(Placeholder):
+    DEFAULT_CSS = """
+    LazyGithubPlaceholder {
+        height: 10fr;
+        border: ascii white;
+    }
+    """
 
 
-class LazyGithubMenu(Placeholder):
+class LazyGithubMenu(Container):
     DEFAULT_CSS = """
     LazyGithubMenu {
         height: 10fr;
-        border: solid red;
+        border: ascii white;
+        display: block;
     }
     """
+
+
+class ReposOptionsList(OptionList):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+        self.add_options(
+            [
+                Option("Loading...", id="loading-repos"),
+            ]
+        )
+        self.run_worker(self.update_repos, exclusive=True)
+
+    async def update_repos(self) -> None:
+        self.clear_options()
+        self.add_options(
+            [
+                Option("Loading...", id="loading-repos"),
+            ]
+        )
+        # repos = self.github.get_repos()
+        # self.clear_options()
+        # for repo in repos:
+        # repo_ref = f"{repo.owner}/{repo.name}"
+        # self.add_option(Option(repo_ref, id=repo_ref))
 
 
 class ReposContainer(LazyGithubMenu):
-    pass
+    def compose(self) -> ComposeResult:
+        self.border_title = "[1] Repositories"
+        yield ReposOptionsList()
 
 
 class PullRequestsContainer(LazyGithubMenu):
-    pass
+    def compose(self) -> ComposeResult:
+        self.border_title = "[2] Pull Requests"
+        yield Static("hello")
 
 
 class IssuesContainer(LazyGithubMenu):
-    pass
+    def compose(self) -> ComposeResult:
+        self.border_title = "[3] Issues"
+        yield Static("hello")
 
 
 class ActionsContainer(LazyGithubMenu):
-    pass
+    def compose(self) -> ComposeResult:
+        self.border_title = "[4] Actions"
+        yield Static("hello")
 
 
-class ScratchSpaceContainer(Placeholder):
+class ScratchSpaceContainer(Container):
     DEFAULT_CSS = """
     ScratchSpaceContainer {
-        margin: 1
+        height: 100%;
+        width: 60%;
+        border: ascii white;
+        dock: right;
     }
     """
-    pass
+
+    def compose(self) -> ComposeResult:
+        self.border_title = "Scratch space"
+        yield Static("Hello")
 
 
 class Menus(Container):
@@ -92,7 +134,8 @@ class LazyGithub(App):
 
 
 if __name__ == "__main__":
-    LazyGithub().run()
+    app = LazyGithub()
+    app.run()
 
 # Sketching how the UI should look
 _sketch = """
