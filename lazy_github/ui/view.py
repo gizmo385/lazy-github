@@ -9,7 +9,16 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import Footer, OptionList, Markdown, Log, Pretty
+from textual.widgets import (
+    Footer,
+    OptionList,
+    Markdown,
+    Log,
+    Label,
+    RichLog,
+    TabbedContent,
+    TabPane,
+)
 from textual.widgets.option_list import Option
 
 # Color palletes
@@ -31,12 +40,12 @@ class LazyGithubContainer(Container):
     DEFAULT_CSS = """
     LazyGithubContainer {
         display: block;
-        border: ascii #aab2ff;
+        border: solid #aab2ff;
     }
 
     LazyGithubContainer:focus-within {
         height: 40%;
-        border: ascii #84ffc9;
+        border: solid #84ffc9;
     }
     """
 
@@ -136,7 +145,8 @@ class PullRequestsContainer(LazyGithubContainer):
     @work()
     async def select_pull_request(self, pr: PullRequest) -> str:
         log_event(self.app, f"Selected PR {pr}")
-        self.app.query_one("#scratch_space").update(pr.raw_data)
+        scratch_space = self.app.query_one(ScratchSpaceContainer)
+        scratch_space.show_pr_details(pr)
 
     @on(PullRequestsOptionsList.OptionSelected)
     async def pr_selected(self, option: Option):
@@ -163,19 +173,69 @@ class ActionsContainer(LazyGithubContainer):
         yield ActionsOptionList()
 
 
+class PrOverviewTabPane(TabPane):
+    def __init__(self, pr: PullRequest) -> None:
+        super().__init__("Overview", id="overview")
+        self.pr = pr
+
+    def compose(self) -> ComposeResult:
+        yield Label(f"[b]Title[/b]: {self.pr.title}", id="pr_title")
+
+
+class PrDiffTabPane(TabPane):
+    def __init__(self, pr: PullRequest) -> None:
+        super().__init__("Diff", id="diff_pane")
+        self.pr = pr
+
+    def compose(self) -> ComposeResult:
+        yield RichLog(id="diff_contents")
+
+    @work
+    async def write_diff(self, diff: str) -> None:
+        self.query_one("#diff_contents", RichLog).write(diff)
+
+    @work(thread=True)
+    def fetch_diff(self):
+        diff = g.get_diff(self.pr)
+        self.write_diff(diff)
+
+    def on_mount(self) -> None:
+        self.fetch_diff()
+
+
+class PrConversationTabPane(TabPane):
+    def __init__(self, pr: PullRequest) -> None:
+        super().__init__("Conversation", id="conversation")
+        self.pr = pr
+
+    def compose(self) -> ComposeResult:
+        yield Label("Conversation")
+
+
 class ScratchSpaceContainer(LazyGithubContainer):
     DEFAULT_CSS = """
     ScratchSpaceContainer {
-        height: 100%;
+        height: 90%;
         dock: right;
+    }
+    ScratchSpaceContainer:focus-within {
+        height: 80%;
     }
     """
 
-    # TODO: This should probably be a list view where we add content
-    # depending on the thing that was recently selected (eg pr/issue/action)
     def compose(self) -> ComposeResult:
         self.border_title = "[5] Scratch space"
-        yield Pretty("Hello", id="scratch_space")
+        yield TabbedContent(id="scratch_space_tabs")
+
+    def show_pr_details(self, pr: PullRequest) -> None:
+        # Update the tabs to show the PR details
+        tabbed_content: TabbedContent = self.query_one("#scratch_space_tabs")
+        log(f"raw PR = {pr.raw_data}")
+        tabbed_content.clear_panes()
+        tabbed_content.add_pane(PrOverviewTabPane(pr))
+        tabbed_content.add_pane(PrDiffTabPane(pr))
+        tabbed_content.add_pane(PrConversationTabPane(pr))
+        tabbed_content.focus()
 
 
 class LazyGithubCommandLog(Log):
@@ -185,7 +245,7 @@ class LazyGithubCommandLog(Log):
 class CommandLogSection(LazyGithubContainer):
     DEFAULT_CSS = """
     CommandLogSection {
-        height: 25%;
+        height: 20%;
         dock: bottom;
     }
     """
@@ -223,7 +283,7 @@ class MainViewPane(Container):
         ("2", "focus_section('PullRequestsOptionsList')"),
         ("3", "focus_section('IssuesOptionList')"),
         ("4", "focus_section('ActionsOptionList')"),
-        ("5", "focus_section('#scratch_space')"),
+        ("5", "focus_section('#scratch_space_tabs')"),
         ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
@@ -250,7 +310,7 @@ class LazyGithubHeader(Container):
     LazyGithubHeader {
         height: 10%;
         width: 100%;
-        border: ascii #ECA0FF;
+        border: solid #ECA0FF;
     }
     """
 
