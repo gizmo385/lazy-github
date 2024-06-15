@@ -1,11 +1,12 @@
-import httpx
 import time
-from github import Github, Auth
-from github.PullRequest import PullRequest
 from dataclasses import dataclass
 from pathlib import Path
-from textual import log
 from typing import Optional
+
+import httpx
+from github import Auth, Github
+from github.PullRequest import PullRequest
+from textual import log
 
 # Github constants
 _DIFF_CONTENT_ACCEPT_TYPE = "application/vnd.github.diff"
@@ -39,6 +40,10 @@ class AccessTokenResponse:
 
 
 def get_device_code() -> DeviceCodeResponse:
+    """
+    Authenticates this device with the Github API. This will require the user to go enter the provided device code on
+    the Github UI to authenticate the LazyGithub app.
+    """
     response = (
         httpx.post(
             "https://github.com/login/device/code",
@@ -59,6 +64,7 @@ def get_device_code() -> DeviceCodeResponse:
 
 
 def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
+    """Given a device code, retrieves the oauth access token that can be used to send requests to the GIthub API"""
     access_token_res = httpx.post(
         "https://github.com/login/oauth/access_token",
         data={
@@ -76,6 +82,7 @@ def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
 
 
 def _authenticate_on_terminal():
+    """Helper function for validating authentication flows on the terminal"""
     # First we'll get the device code
     device_code = get_device_code()
     log(f"Please verify at: {device_code.verification_uri}")
@@ -102,15 +109,7 @@ def _authenticate_on_terminal():
 
 
 def save_access_token(access_token: AccessTokenResponse) -> None:
-    if not access_token.token:
-        raise ValueError("Invalid access token response! Cannot save")
-
-    # Create the parent directories for our cache if it's present
-    _AUTHENTICATION_CACHE_LOCATION.parent.mkdir(parents=True, exist_ok=True)
-    _AUTHENTICATION_CACHE_LOCATION.write_text(access_token.token)
-
-
-def load_access_token(access_token: AccessTokenResponse) -> None:
+    """Writes the returned access token to the config location"""
     if not access_token.token:
         raise ValueError("Invalid access token response! Cannot save")
 
@@ -120,6 +119,7 @@ def load_access_token(access_token: AccessTokenResponse) -> None:
 
 
 def github_client() -> Github:
+    """Creates a PyGithub client with the saved auth token"""
     global _GITHUB_CLIENT
     if _GITHUB_CLIENT is not None:
         return _GITHUB_CLIENT
@@ -164,5 +164,8 @@ if __name__ == "__main__":
             _authenticate_on_terminal()
 
     # This PR: https://github.com/gizmo385/lazy-github/pull/1
-    pr = client.get_repo(812868589).get_pulls()[0]
+    LAZY_GITHUB_REPO_ID = 812868589
+    repo = client.get_repo(LAZY_GITHUB_REPO_ID)
+    print(repo.raw_data)
+    pr = repo.get_pulls()[0]
     print(get_diff(pr))

@@ -1,15 +1,19 @@
+import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from textual import log, on, work
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
+from textual.coordinate import Coordinate
+from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
+    DataTable,
     Footer,
     Label,
     Log,
@@ -22,6 +26,11 @@ from textual.widgets import (
 from textual.widgets.option_list import Option
 
 import lazy_github.lib.github as g
+
+IS_FAVORITED = "★"
+IS_NOT_FAVORITED = "☆"
+IS_PRIVATE = "✔"
+IS_PUBLIC = "✘"
 
 # Color palletes
 # https://coolors.co/84ffc9-aab2ff-eca0ff
@@ -59,25 +68,10 @@ class LazyGithubContainer(Container):
     """
 
 
-class LazyGithubOptionList(OptionList):
-    "An option list for LazyGithub that provides some more vim-like bindings"
+class LazyGithubDataTable(DataTable):
+    "An data table for LazyGithub that provides some more vim-like bindings"
 
     BINDINGS = [("j", "cursor_down"), ("k", "cursor_up"), ("space", "select")]
-
-    @work
-    async def start_loading(self):
-        self.clear_options()
-        self.loading = True
-
-    @work
-    async def set_options(self, options: list[Option]):
-        self.clear_options()
-        self.add_options(options)
-        self.loading = False
-
-
-class ReposOptionsList(LazyGithubOptionList):
-    pass
 
 
 class SelectedRepoDisplay(Container):
@@ -87,69 +81,100 @@ class SelectedRepoDisplay(Container):
         yield Markdown(f"Selected repo: **{self.selected_repo.name}**")
 
 
+class RepoSelected(Message):
+    def __init__(self, repo: Repository) -> None:
+        self.repo = repo
+        super().__init__()
+
+
 class ReposContainer(LazyGithubContainer):
     BINDINGS = [
         ("f", "toggle_favorite_repo", "Toggle favorite"),
         ("enter", "select"),
     ]
 
+    favorite_column_index: int = -1
+    owner_column_index: int = 1
+    name_column_index: int = 1
+    private_column_index: int = 1
+
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
-        yield ReposOptionsList()
+        yield LazyGithubDataTable(id="repos_table")
+
+    @property
+    def table(self) -> LazyGithubDataTable:
+        return self.query_one("#repos_table", LazyGithubDataTable)
+
+    async def on_mount(self) -> None:
+        # Setup the table
+        self.table.cursor_type = "row"
+        self.table.add_column(IS_FAVORITED, key="favorite")
+        self.table.add_column("Owner", key="owner")
+        self.table.add_column("Name", key="name")
+        self.table.add_column("Private", key="private")
+
+        self.favorite_column_index = self.table.get_column_index("favorite")
+        self.owner_column_index = self.table.get_column_index("owner")
+        self.name_column_index = self.table.get_column_index("name")
+        self.private_column_index = self.table.get_column_index("private")
+
+        # Let the UI load, then trigger this as a callback
+        self.set_timer(0.1, self.load_repos)
+
+    async def get_selected_repo(self) -> Repository:
+        current_row = self.table.cursor_row
+        owner = self.table.get_cell_at(Coordinate(current_row, self.owner_column_index))
+        repo_name = self.table.get_cell_at(Coordinate(current_row, self.name_column_index))
+        return g.github_client().get_repo(f"{owner}/{repo_name}")
+
+    @work
+    async def add_repos_to_table(self, repos: List[Repository]) -> None:
+        rows = []
+        for repo in repos:
+            rows.append(
+                [
+                    IS_NOT_FAVORITED,
+                    repo.owner.login,
+                    repo.name,
+                    IS_PRIVATE if repo.private else IS_PUBLIC,
+                ]
+            )
+        self.table.add_rows(rows)
 
     @work(thread=True)
-    def select_repo(self, repo_id):
-        # Clear out the data lists below
-        # TODO: These should really be updated to use async events in textual
-        #   https://textual.textualize.io/guide/events/
-        pr_options_list = self.app.query_one(PullRequestsOptionsList)
-        self.app.call_from_thread(pr_options_list.start_loading)
-        issues_options_list = self.app.query_one(IssuesOptionList)
-        self.app.call_from_thread(issues_options_list.start_loading)
-        action_options_list = self.app.query_one(ActionsOptionList)
-        self.app.call_from_thread(action_options_list.start_loading)
-
-        repo = g.github_client().get_repo(repo_id)
-        log_event(f"Switching to repo: {repo.full_name}")
-
-        # Update the selected PR at the top of the UI
-        self.app.query_one(CurrentlySelectedRepo).current_repo = repo
-
-        # Update the list of pull requests
-        prs = repo.get_pulls()
-        new_pr_options = [Option(f"#{pr.number}: {pr.title}", pr) for pr in prs]
-        self.app.call_from_thread(lambda: pr_options_list.set_options(new_pr_options))
-
-        # Update the list of issues
-        issues = repo.get_issues(sort="created")
-        new_issues_options = [Option(f"#{issue.number}: {issue.title}", issue) for issue in issues]
-        self.app.call_from_thread(lambda: issues_options_list.set_options(new_issues_options))
-
-        # Update the list of actions
-        action_runs = repo.get_workflow_runs()
-        new_action_options = [Option(f"#{action.run_number}: {action.name}", action.id) for action in action_runs]
-        self.app.call_from_thread(lambda: action_options_list.set_options(new_action_options))
+    def load_repos(self) -> None:
+        user = g.github_client().get_user()
+        repos = user.get_repos()
+        self.add_repos_to_table(repos)
 
     async def action_toggle_favorite_repo(self):
-        repo_list = self.query_one(ReposOptionsList)
-        if highlighted_option := repo_list.highlighted:
-            selected_repo_id = repo_list.get_option_at_index(highlighted_option).id
-            repo = g.github_client().get_repo(selected_repo_id)
-            log_event(f"Favoriting repo {repo.full_name}")
+        repo = await self.get_selected_repo()
+        log_event(f"Favoriting repo {repo.full_name}")
 
-    @on(ReposOptionsList.OptionSelected)
-    async def repo_selected(self, option: Option):
-        self.select_repo(option.option_id)
-
-
-class PullRequestsOptionsList(LazyGithubOptionList):
-    pass
+    @on(LazyGithubDataTable.RowSelected, "#repos_table")
+    async def repo_selected(self):
+        # Bubble a message up indicating that a repo was selected
+        repo = await self.get_selected_repo()
+        self.post_message(RepoSelected(repo))
+        log_event(f"Selected repo {repo.full_name}")
 
 
 class PullRequestsContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
-        yield PullRequestsOptionsList()
+        yield LazyGithubDataTable(id="pull_requests_table")
+
+    @property
+    def table(self) -> LazyGithubDataTable:
+        return self.query_one("#pull_requests_table", LazyGithubDataTable)
+
+    def on_mount(self):
+        self.table.cursor_type = "row"
+        self.table.add_column(IS_FAVORITED, key="favorite")
+        self.table.add_column("Status", key="status")
+        self.table.add_column("Number", key="number")
+        self.table.add_column("Title", key="title")
 
     @work()
     async def select_pull_request(self, pr: PullRequest) -> str:
@@ -157,29 +182,27 @@ class PullRequestsContainer(LazyGithubContainer):
         scratch_space = self.app.query_one(ScratchSpaceContainer)
         scratch_space.show_pr_details(pr)
 
-    @on(PullRequestsOptionsList.OptionSelected)
-    async def pr_selected(self, option: Option):
-        self.select_pull_request(option.option_id)
+    @work
+    async def get_selected_pr(self) -> PullRequest:
+        pass
 
-
-class IssuesOptionList(LazyGithubOptionList):
-    pass
+    @on(LazyGithubDataTable.RowSelected, "#repos_table")
+    async def pr_selected(self):
+        # Bubble a message up indicating that a repo was selected
+        pr = await self.get_selected_pr()
+        log_event(f"Selected PR {pr.title}")
 
 
 class IssuesContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
-        yield IssuesOptionList()
-
-
-class ActionsOptionList(LazyGithubOptionList):
-    pass
+        yield LazyGithubDataTable(id="pull_requests_table")
 
 
 class ActionsContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[4] Actions"
-        yield ActionsOptionList()
+        yield LazyGithubDataTable(id="actions_table")
 
 
 class PrOverviewTabPane(TabPane):
@@ -237,7 +260,7 @@ class ScratchSpaceContainer(LazyGithubContainer):
     """
 
     def compose(self) -> ComposeResult:
-        self.border_title = "[5] Scratch space"
+        self.border_title = "[5] Details"
         yield TabbedContent(id="scratch_space_tabs")
 
     def show_pr_details(self, pr: PullRequest) -> None:
@@ -279,6 +302,24 @@ class SelectionsPane(Container):
         yield IssuesContainer(id="issues")
         yield ActionsContainer(id="actions")
 
+    @property
+    def pull_requests(self) -> PullRequestsContainer:
+        return self.query_one("#pull_requests", PullRequestsContainer)
+
+    @property
+    def issues(self) -> IssuesContainer:
+        return self.query_one("#issues", IssuesContainer)
+
+    @property
+    def actions(self) -> ActionsContainer:
+        return self.query_one("#actions", ActionsContainer)
+
+    async def on_repo_selected(self, message: RepoSelected) -> None:
+        message.stop()
+        self.pull_requests.post_message(message)
+        self.issues.post_message(message)
+        self.actions.post_message(message)
+
 
 class DetailsPane(Container):
     def compose(self) -> ComposeResult:
@@ -288,12 +329,12 @@ class DetailsPane(Container):
 
 class MainViewPane(Container):
     BINDINGS = [
-        ("1", "focus_section('ReposOptionsList')"),
-        ("2", "focus_section('PullRequestsOptionsList')"),
-        ("3", "focus_section('IssuesOptionList')"),
-        ("4", "focus_section('ActionsOptionList')"),
-        ("5", "focus_section('#scratch_space_tabs')"),
-        ("6", "focus_section('LazyGithubCommandLog')"),
+        # ("1", "focus_section('ReposOptionsList')"),
+        # ("2", "focus_section('PullRequestsOptionsList')"),
+        # ("3", "focus_section('IssuesOptionList')"),
+        # ("4", "focus_section('ActionsOptionList')"),
+        # ("5", "focus_section('#scratch_space_tabs')"),
+        # ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
     def action_focus_section(self, selector: str) -> None:
@@ -339,18 +380,3 @@ class LazyGithubMainScreen(Screen):
             yield LazyGithubHeader()
             yield MainViewPane()
             yield LazyGithubFooter()
-
-    def action_refresh_repos(self):
-        self.update_state()
-
-    @work(thread=True)
-    async def update_state(self):
-        log("Refreshing global repo state")
-        user = g.github_client().get_user()
-        repos = user.get_repos()
-        repo_list = self.query_one(ReposOptionsList)
-        repo_list.clear_options()
-        repo_list.add_options([Option(f"{r.name}", id=r.id) for r in repos])
-
-    async def on_mount(self):
-        self.update_state()
