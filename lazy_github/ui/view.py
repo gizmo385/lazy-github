@@ -1,35 +1,44 @@
-import lazy_github.lib.github as g
 from datetime import datetime
-from github.Repository import Repository
-from github.PullRequest import PullRequest
+from typing import Optional
 
-from textual import log, work, on
-from textual.reactive import reactive
+from github.PullRequest import PullRequest
+from github.Repository import Repository
+from textual import log, on, work
 from textual.app import App, ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal, Vertical
+from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
     Footer,
-    OptionList,
-    Markdown,
-    Log,
     Label,
+    Log,
+    Markdown,
+    OptionList,
     RichLog,
     TabbedContent,
     TabPane,
 )
 from textual.widgets.option_list import Option
 
+import lazy_github.lib.github as g
+
 # Color palletes
 # https://coolors.co/84ffc9-aab2ff-eca0ff
 
 
-def log_event(app: App, message: str) -> None:
+class LazyGithubCommandLog(Log):
+    _instance: Optional[Log] = None
+
+    def on_mount(self) -> None:
+        LazyGithubCommandLog._instance = self
+
+
+def log_event(message: str) -> None:
     "Helper function for writing to the textual log and displayed command log"
     log(message)
     log_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    app.query_one("LazyGithubCommandLog").write_line(f"{log_time}: {message}")
+    LazyGithubCommandLog._instance.write_line(f"{log_time}: {message}")
 
 
 class LazyGithubContainer(Container):
@@ -40,12 +49,12 @@ class LazyGithubContainer(Container):
     DEFAULT_CSS = """
     LazyGithubContainer {
         display: block;
-        border: solid #aab2ff;
+        border: solid $primary-lighten-3;
     }
 
     LazyGithubContainer:focus-within {
         height: 40%;
-        border: solid #84ffc9;
+        border: solid $success;
     }
     """
 
@@ -101,7 +110,7 @@ class ReposContainer(LazyGithubContainer):
         self.app.call_from_thread(action_options_list.start_loading)
 
         repo = g.github_client().get_repo(repo_id)
-        log_event(self.app, f"Switching to repo: {repo.full_name}")
+        log_event(f"Switching to repo: {repo.full_name}")
 
         # Update the selected PR at the top of the UI
         self.app.query_one(CurrentlySelectedRepo).current_repo = repo
@@ -126,7 +135,7 @@ class ReposContainer(LazyGithubContainer):
         if highlighted_option := repo_list.highlighted:
             selected_repo_id = repo_list.get_option_at_index(highlighted_option).id
             repo = g.github_client().get_repo(selected_repo_id)
-            log_event(self.app, f"Favoriting repo {repo.full_name}")
+            log_event(f"Favoriting repo {repo.full_name}")
 
     @on(ReposOptionsList.OptionSelected)
     async def repo_selected(self, option: Option):
@@ -144,7 +153,7 @@ class PullRequestsContainer(LazyGithubContainer):
 
     @work()
     async def select_pull_request(self, pr: PullRequest) -> str:
-        log_event(self.app, f"Selected PR {pr}")
+        log_event(f"Selected PR {pr}")
         scratch_space = self.app.query_one(ScratchSpaceContainer)
         scratch_space.show_pr_details(pr)
 
@@ -179,7 +188,11 @@ class PrOverviewTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield Label(f"[b]Title[/b]: {self.pr.title}", id="pr_title")
+        with Vertical():
+            with Horizontal():
+                yield Label(f"[b]{self.pr.title}[/b]", id="pr_title")
+                yield Label(f"{self.pr.head.ref} --{self.pr.commits}--> {self.pr.base.ref}")
+            yield Label(f"[b]Description[/b]: {self.pr.body}", id="pr_description")
 
 
 class PrDiffTabPane(TabPane):
@@ -188,7 +201,7 @@ class PrDiffTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="diff_contents")
+        yield RichLog(id="diff_contents", highlight=True)
 
     @work
     async def write_diff(self, diff: str) -> None:
@@ -236,10 +249,6 @@ class ScratchSpaceContainer(LazyGithubContainer):
         tabbed_content.add_pane(PrDiffTabPane(pr))
         tabbed_content.add_pane(PrConversationTabPane(pr))
         tabbed_content.focus()
-
-
-class LazyGithubCommandLog(Log):
-    pass
 
 
 class CommandLogSection(LazyGithubContainer):
@@ -310,7 +319,7 @@ class LazyGithubHeader(Container):
     LazyGithubHeader {
         height: 10%;
         width: 100%;
-        border: solid #ECA0FF;
+        border: solid $secondary;
     }
     """
 
