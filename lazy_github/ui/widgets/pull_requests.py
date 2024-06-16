@@ -9,7 +9,7 @@ from textual.widgets import Label, RichLog, TabPane
 
 import lazy_github.lib.github as g
 from lazy_github.lib.constants import IS_FAVORITED
-from lazy_github.lib.messages import RepoSelected
+from lazy_github.lib.messages import PullRequestedSelected, RepoSelected
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -62,6 +62,7 @@ class PullRequestsContainer(LazyGithubContainer):
     async def pr_selected(self):
         pr = await self.get_selected_pr()
         log_event(f"Selected PR: {pr.title}")
+        self.post_message(PullRequestedSelected(pr))
 
 
 class PrOverviewTabPane(TabPane):

@@ -1,3 +1,4 @@
+from github.PullRequest import PullRequest
 from github.Repository import Repository
 from textual.message import Message
 
@@ -12,4 +13,14 @@ class RepoSelected(Message):
 
     def __init__(self, repo: Repository) -> None:
         self.repo = repo
+        super().__init__()
+
+
+class PullRequestedSelected(Message):
+    """
+    A message indicating that the user is looking for additional information on a particular pull request.
+    """
+
+    def __init__(self, pr: PullRequest) -> None:
+        self.pr = pr
         super().__init__()
