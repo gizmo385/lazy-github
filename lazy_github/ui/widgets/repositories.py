@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 from github.Repository import Repository
 from textual import on, work
@@ -18,10 +18,11 @@ class ReposContainer(LazyGithubContainer):
         ("enter", "select"),
     ]
 
-    favorite_column_index: int = -1
-    owner_column_index: int = 1
-    name_column_index: int = 1
-    private_column_index: int = 1
+    repos: Dict[str, Repository] = {}
+    favorite_column_index = -1
+    owner_column_index = 1
+    name_column_index = 1
+    private_column_index = 1
 
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
@@ -51,10 +52,13 @@ class ReposContainer(LazyGithubContainer):
         current_row = self.table.cursor_row
         owner = self.table.get_cell_at(Coordinate(current_row, self.owner_column_index))
         repo_name = self.table.get_cell_at(Coordinate(current_row, self.name_column_index))
-        return g.github_client().get_repo(f"{owner}/{repo_name}")
+        full_name = f"{owner}/{repo_name}"
+        return self.repos[full_name]
 
     @work
     async def add_repos_to_table(self, repos: List[Repository]) -> None:
+        self.repos = {}
+        self.table.clear()
         rows = []
         for repo in repos:
             rows.append(
@@ -65,6 +69,7 @@ class ReposContainer(LazyGithubContainer):
                     IS_PRIVATE if repo.private else IS_PUBLIC,
                 ]
             )
+            self.repos[f"{repo.owner.login}/{repo.name}"] = repo
         self.table.add_rows(rows)
 
     @work(thread=True)
