@@ -1,7 +1,10 @@
+from typing import Dict
+
 from github.PullRequest import PullRequest
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
+from textual.coordinate import Coordinate
 from textual.widgets import Label, RichLog, TabPane
 
 import lazy_github.lib.github as g
@@ -16,6 +19,11 @@ class PullRequestsContainer(LazyGithubContainer):
     This container includes the primary datatable for viewing pull requests on the UI.
     """
 
+    pull_requests: Dict[int, PullRequest] = {}
+    status_column_index = -1
+    number_column_index = -1
+    title_column_index = -1
+
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
         yield LazyGithubDataTable(id="pull_requests_table")
@@ -26,30 +34,34 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def on_mount(self):
         self.table.cursor_type = "row"
-        self.table.add_column(IS_FAVORITED, key="favorite")
         self.table.add_column("Status", key="status")
         self.table.add_column("Number", key="number")
         self.table.add_column("Title", key="title")
 
+        self.status_column_index = self.table.get_column_index("status")
+        self.number_column_index = self.table.get_column_index("number")
+        self.title_column_index = self.table.get_column_index("title")
+
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        # TODO: Load the PRs for the selected repo
         message.stop()
+        self.table.clear()
+        self.pull_requests = {}
+        pull_requests = message.repo.get_pulls(state="all", sort="updated", direction="desc")
+        rows = []
+        for pr in pull_requests:
+            self.pull_requests[pr.number] = pr
+            rows.append((pr.state, pr.number, pr.title))
+        self.table.add_rows(rows)
 
-    @work()
-    async def select_pull_request(self, pr: PullRequest) -> str:
-        log_event(f"Selected PR {pr}")
-        # scratch_space = self.app.query_one(ScratchSpaceContainer)
-        # scratch_space.show_pr_details(pr)
-
-    @work
     async def get_selected_pr(self) -> PullRequest:
-        pass
+        pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
+        number = self.table.get_cell_at(pr_number_coord)
+        return self.pull_requests[number]
 
-    @on(LazyGithubDataTable.RowSelected, "#repos_table")
+    @on(LazyGithubDataTable.RowSelected, "#pull_requests_table")
     async def pr_selected(self):
-        # Bubble a message up indicating that a repo was selected
         pr = await self.get_selected_pr()
-        log_event(f"Selected PR {pr.title}")
+        log_event(f"Selected PR: {pr.title}")
 
 
 class PrOverviewTabPane(TabPane):
