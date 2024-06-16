@@ -4,6 +4,7 @@ version = "0.1"
 dependencies = [
 	"PyGithub",
 	"httpx",
+	"pydantic",
 	"textual",
 	"textual-dev",
 ]
