@@ -1,12 +1,13 @@
 import time
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 import httpx
 from github import Auth, Github
 from github.PullRequest import PullRequest
 from textual import log
+
+from lazy_github.lib.constants import CONFIG_FOLDER
 
 # Github constants
 _DIFF_CONTENT_ACCEPT_TYPE = "application/vnd.github.diff"
@@ -15,7 +16,7 @@ _LAZY_GITHUB_CLIENT_ID = "Iv23limdG8Bl3Cu5FOcT"
 _DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 
 # Auth and client globals
-_AUTHENTICATION_CACHE_LOCATION = Path.home() / ".config/lazy-github/auth.text"
+_AUTHENTICATION_CACHE_LOCATION = CONFIG_FOLDER / "auth.text"
 _GITHUB_CLIENT: Optional[Github] = None
 _AUTH_TOKEN: Optional[str] = None
 
