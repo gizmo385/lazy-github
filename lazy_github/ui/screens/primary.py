@@ -14,7 +14,6 @@ from textual.widget import Widget
 from textual.widgets import (
     Footer,
     Label,
-    Log,
     Markdown,
     RichLog,
     TabbedContent,
@@ -22,23 +21,12 @@ from textual.widgets import (
 )
 
 import lazy_github.lib.github as g
+from lazy_github.lib.constants import IS_FAVORITED, IS_NOT_FAVORITED, IS_PRIVATE, IS_PUBLIC
 from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
-IS_FAVORITED = "★"
-IS_NOT_FAVORITED = "☆"
-IS_PRIVATE = "✔"
-IS_PUBLIC = "✘"
-
 # Color palletes
 # https://coolors.co/84ffc9-aab2ff-eca0ff
-
-
-class SelectedRepoDisplay(Container):
-    selected_repo: reactive[Repository | None] = None
-
-    def compose(self) -> ComposeResult:
-        yield Markdown(f"Selected repo: **{self.selected_repo.name}**")
 
 
 class RepoSelected(Message):
@@ -305,11 +293,11 @@ class MainViewPane(Container):
 
 
 class CurrentlySelectedRepo(Widget):
-    current_repo: reactive[Repository | None] = reactive(None)
+    current_repo_name: reactive[str | None] = reactive(None)
 
     def render(self):
-        if self.current_repo:
-            return f"Current repo: [green]{self.current_repo.full_name}[/green]"
+        if self.current_repo_name:
+            return f"Current repo: [green]{self.current_repo_name}[/green]"
         else:
             return "No repository selected"
 
