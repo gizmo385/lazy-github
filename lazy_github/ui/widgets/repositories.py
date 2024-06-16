@@ -4,18 +4,12 @@ from github.Repository import Repository
 from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
-from textual.message import Message
 
 import lazy_github.lib.github as g
 from lazy_github.lib.constants import IS_FAVORITED, IS_NOT_FAVORITED, IS_PRIVATE, IS_PUBLIC
+from lazy_github.lib.messages import RepoSelected
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
-
-
-class RepoSelected(Message):
-    def __init__(self, repo: Repository) -> None:
-        self.repo = repo
-        super().__init__()
 
 
 class ReposContainer(LazyGithubContainer):
