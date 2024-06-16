@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 from typing import List, Optional
 
@@ -13,19 +12,18 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
-    DataTable,
     Footer,
     Label,
     Log,
     Markdown,
-    OptionList,
     RichLog,
     TabbedContent,
     TabPane,
 )
-from textual.widgets.option_list import Option
 
 import lazy_github.lib.github as g
+from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
+from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
 IS_FAVORITED = "★"
 IS_NOT_FAVORITED = "☆"
@@ -34,44 +32,6 @@ IS_PUBLIC = "✘"
 
 # Color palletes
 # https://coolors.co/84ffc9-aab2ff-eca0ff
-
-
-class LazyGithubCommandLog(Log):
-    _instance: Optional[Log] = None
-
-    def on_mount(self) -> None:
-        LazyGithubCommandLog._instance = self
-
-
-def log_event(message: str) -> None:
-    "Helper function for writing to the textual log and displayed command log"
-    log(message)
-    log_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    LazyGithubCommandLog._instance.write_line(f"{log_time}: {message}")
-
-
-class LazyGithubContainer(Container):
-    """
-    Base container class for focusible containers within the Lazy Github UI
-    """
-
-    DEFAULT_CSS = """
-    LazyGithubContainer {
-        display: block;
-        border: solid $primary-lighten-3;
-    }
-
-    LazyGithubContainer:focus-within {
-        height: 40%;
-        border: solid $success;
-    }
-    """
-
-
-class LazyGithubDataTable(DataTable):
-    "An data table for LazyGithub that provides some more vim-like bindings"
-
-    BINDINGS = [("j", "cursor_down"), ("k", "cursor_up"), ("space", "select")]
 
 
 class SelectedRepoDisplay(Container):
@@ -284,19 +244,6 @@ class ScratchSpaceContainer(LazyGithubContainer):
         tabbed_content.add_pane(PrDiffTabPane(pr))
         tabbed_content.add_pane(PrConversationTabPane(pr))
         tabbed_content.focus()
-
-
-class CommandLogSection(LazyGithubContainer):
-    DEFAULT_CSS = """
-    CommandLogSection {
-        height: 20%;
-        dock: bottom;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        self.border_title = "[6] Command Log"
-        yield LazyGithubCommandLog()
 
 
 class SelectionsPane(Container):
