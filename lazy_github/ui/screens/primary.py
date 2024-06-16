@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from github.PullRequest import PullRequest
 from github.Repository import Repository
@@ -14,7 +13,6 @@ from textual.widget import Widget
 from textual.widgets import (
     Footer,
     Label,
-    Markdown,
     RichLog,
     TabbedContent,
     TabPane,
@@ -27,6 +25,33 @@ from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTab
 
 # Color palletes
 # https://coolors.co/84ffc9-aab2ff-eca0ff
+
+
+class CurrentlySelectedRepo(Widget):
+    current_repo_name: reactive[str | None] = reactive(None)
+
+    def render(self):
+        if self.current_repo_name:
+            return f"Current repo: [green]{self.current_repo_name}[/green]"
+        else:
+            return "No repository selected"
+
+
+class LazyGithubStatusSummary(Container):
+    DEFAULT_CSS = """
+    LazyGithubStatusSummary {
+        height: 10%;
+        width: 100%;
+        border: solid $secondary;
+    }
+    """
+
+    def compose(self):
+        yield CurrentlySelectedRepo()
+
+
+class LazyGithubFooter(Footer):
+    pass
 
 
 class RepoSelected(Message):
@@ -262,7 +287,6 @@ class SelectionsPane(Container):
         return self.query_one("#actions", ActionsContainer)
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        message.stop()
         self.pull_requests.post_message(message)
         self.issues.post_message(message)
         self.actions.post_message(message)
@@ -292,38 +316,11 @@ class MainViewPane(Container):
         yield DetailsPane()
 
 
-class CurrentlySelectedRepo(Widget):
-    current_repo_name: reactive[str | None] = reactive(None)
-
-    def render(self):
-        if self.current_repo_name:
-            return f"Current repo: [green]{self.current_repo_name}[/green]"
-        else:
-            return "No repository selected"
-
-
-class LazyGithubHeader(Container):
-    DEFAULT_CSS = """
-    LazyGithubHeader {
-        height: 10%;
-        width: 100%;
-        border: solid $secondary;
-    }
-    """
-
-    def compose(self):
-        yield CurrentlySelectedRepo()
-
-
-class LazyGithubFooter(Footer):
-    pass
-
-
 class LazyGithubMainScreen(Screen):
     BINDINGS = [("r", "refresh_repos", "Refresh global repo state")]
 
     def compose(self):
         with Container():
-            yield LazyGithubHeader()
+            yield LazyGithubStatusSummary()
             yield MainViewPane()
             yield LazyGithubFooter()

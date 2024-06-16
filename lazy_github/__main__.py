@@ -9,7 +9,7 @@ from textual.widget import Widget
 from textual.widgets import Footer
 
 import lazy_github.lib.github as g
-from lazy_github.ui.view import LazyGithubMainScreen
+from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class UserTokenDisplay(Widget):

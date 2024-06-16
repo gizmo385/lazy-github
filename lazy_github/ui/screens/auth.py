@@ -1,7 +1,5 @@
-import lazy_github.lib.github as g
-from lazy_github.ui.view import LazyGithubMainScreen
-
 from functools import partial
+
 from textual import log, work
 from textual.app import ComposeResult
 from textual.containers import Container
@@ -9,6 +7,9 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Footer
+
+import lazy_github.lib.github as g
+from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class UserTokenDisplay(Widget):
