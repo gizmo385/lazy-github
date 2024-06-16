@@ -1,9 +1,9 @@
-import lazy_github.lib.github as g
-from lazy_github.ui.auth import AuthenticationModal
-from lazy_github.ui.view import LazyGithubMainScreen
-
 from textual import log
 from textual.app import App
+
+import lazy_github.lib.github as g
+from lazy_github.ui.screens.auth import AuthenticationModal
+from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class LazyGithub(App):
@@ -25,4 +25,3 @@ class LazyGithub(App):
 
 
 app = LazyGithub()
-app.run()
