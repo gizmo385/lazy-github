@@ -6,6 +6,7 @@ from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 
 import lazy_github.lib.github as g
+from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, IS_NOT_FAVORITED, IS_PRIVATE, IS_PUBLIC
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.ui.widgets.command_log import log_event
@@ -57,20 +58,19 @@ class ReposContainer(LazyGithubContainer):
 
     @work
     async def add_repos_to_table(self, repos: List[Repository]) -> None:
+        config = Config.load_config()
         self.repos = {}
         self.table.clear()
         rows = []
         for repo in repos:
-            rows.append(
-                [
-                    IS_NOT_FAVORITED,
-                    repo.owner.login,
-                    repo.name,
-                    IS_PRIVATE if repo.private else IS_PUBLIC,
-                ]
-            )
-            self.repos[f"{repo.owner.login}/{repo.name}"] = repo
+            favorited = IS_FAVORITED if repo.full_name in config.repositories.favorites else IS_NOT_FAVORITED
+            private = IS_PRIVATE if repo.private else IS_PUBLIC
+            rows.append([favorited, repo.owner.login, repo.name, private])
+            self.repos[repo.full_name] = repo
         self.table.add_rows(rows)
+
+        if config.repositories.favorites:
+            self.table.sort("favorite")
 
     @work(thread=True)
     def load_repos(self) -> None:
@@ -81,6 +81,11 @@ class ReposContainer(LazyGithubContainer):
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
         log_event(f"Favoriting repo {repo.full_name}")
+        with Config.to_edit() as config:
+            if repo.full_name in config.repositories.favorites:
+                config.repositories.favorites.remove(repo.full_name)
+            else:
+                config.repositories.favorites.append(repo.full_name)
 
     @on(LazyGithubDataTable.RowSelected, "#repos_table")
     async def repo_selected(self):

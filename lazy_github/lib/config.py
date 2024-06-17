@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import List, Self
+from typing import Generator, List, Self
 
 from pydantic import BaseModel, field_validator
 
@@ -22,7 +22,7 @@ class PullRequestSettings(BaseModel):
 
 
 class RepositorySettings(BaseModel):
-    favorite_repositories: List[str] = []
+    favorites: List[str] = []
 
 
 class AppearenceSettings(BaseModel):
@@ -47,7 +47,7 @@ class Config(BaseModel):
 
     @classmethod
     @contextmanager
-    def with_config(cls) -> Self:
+    def to_edit(cls) -> Generator[Self, None, None]:
         current_config = cls.load_config()
         yield current_config
         current_config.save()
