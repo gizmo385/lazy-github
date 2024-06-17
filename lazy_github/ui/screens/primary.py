@@ -51,20 +51,20 @@ class LazyGithubFooter(Footer):
     pass
 
 
-class ScratchSpaceContainer(LazyGithubContainer):
+class SelectionDetailsContainer(LazyGithubContainer):
     DEFAULT_CSS = """
-    ScratchSpaceContainer {
+    SelectionDetailsContainer {
         height: 90%;
         dock: right;
     }
-    ScratchSpaceContainer:focus-within {
+    SelectionDetailsContainer:focus-within {
         height: 80%;
     }
     """
 
     def compose(self) -> ComposeResult:
         self.border_title = "[5] Details"
-        yield TabbedContent(id="scratch_space_tabs")
+        yield TabbedContent(id="selection_detail_tabs")
 
     def show_pr_details(self, pr: PullRequest) -> None:
         # Update the tabs to show the PR details
@@ -110,9 +110,9 @@ class SelectionsPane(Container):
         self.actions.post_message(message)
 
 
-class DetailsPane(Container):
+class SelectionDetailsPane(Container):
     def compose(self) -> ComposeResult:
-        yield ScratchSpaceContainer(id="Scratch")
+        yield SelectionDetailsContainer(id="selection_details")
         yield CommandLogSection()
 
 
@@ -131,7 +131,16 @@ class MainViewPane(Container):
 
     def compose(self) -> ComposeResult:
         yield SelectionsPane()
-        yield DetailsPane()
+        yield SelectionDetailsPane()
+
+    def on_pull_request_selected(self, message: PullRequestSelected) -> None:
+        log(f"raw PR = {message.pr.raw_data}")
+        tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
+        tabbed_content.clear_panes()
+        tabbed_content.add_pane(PrOverviewTabPane(message.pr))
+        tabbed_content.add_pane(PrDiffTabPane(message.pr))
+        tabbed_content.add_pane(PrConversationTabPane(message.pr))
+        tabbed_content.focus()
 
 
 class LazyGithubMainScreen(Screen):
