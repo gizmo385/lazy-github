@@ -7,7 +7,7 @@ from textual.coordinate import Coordinate
 
 import lazy_github.lib.github as g
 from lazy_github.lib.config import Config
-from lazy_github.lib.constants import IS_FAVORITED, IS_NOT_FAVORITED, IS_PRIVATE, IS_PUBLIC
+from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
@@ -63,8 +63,8 @@ class ReposContainer(LazyGithubContainer):
         self.table.clear()
         rows = []
         for repo in repos:
-            favorited = IS_FAVORITED if repo.full_name in config.repositories.favorites else IS_NOT_FAVORITED
-            private = IS_PRIVATE if repo.private else IS_PUBLIC
+            favorited = favorite_string(repo.full_name in config.repositories.favorites)
+            private = private_string(repo.private)
             rows.append([favorited, repo.owner.login, repo.name, private])
             self.repos[repo.full_name] = repo
         self.table.add_rows(rows)
@@ -80,12 +80,19 @@ class ReposContainer(LazyGithubContainer):
 
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
-        log_event(f"Favoriting repo {repo.full_name}")
+        # Update the config to add/remove the favorite
         with Config.to_edit() as config:
-            if repo.full_name in config.repositories.favorites:
+            favorited = repo.full_name in config.repositories.favorites
+            if favorited:
+                log_event(f"Unfavoriting repo {repo.full_name}")
                 config.repositories.favorites.remove(repo.full_name)
             else:
+                log_event(f"Favoriting repo {repo.full_name}")
                 config.repositories.favorites.append(repo.full_name)
+
+        # Flip the state of the favorited column in the UI
+        favorite_coord = Coordinate(self.table.cursor_row, self.favorite_column_index)
+        self.table.update_cell_at(favorite_coord, favorite_string(not favorited))
 
     @on(LazyGithubDataTable.RowSelected, "#repos_table")
     async def repo_selected(self):
