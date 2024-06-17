@@ -118,12 +118,12 @@ class SelectionDetailsPane(Container):
 
 class MainViewPane(Container):
     BINDINGS = [
-        # ("1", "focus_section('ReposOptionsList')"),
-        # ("2", "focus_section('PullRequestsOptionsList')"),
-        # ("3", "focus_section('IssuesOptionList')"),
-        # ("4", "focus_section('ActionsOptionList')"),
+        ("1", "focus_section('#repos_table')"),
+        ("2", "focus_section('#pull_requests_table')"),
+        ("3", "focus_section('#issues_table')"),
+        ("4", "focus_section('#actions_table')"),
         # ("5", "focus_section('#scratch_space_tabs')"),
-        # ("6", "focus_section('LazyGithubCommandLog')"),
+        ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
     def action_focus_section(self, selector: str) -> None:
