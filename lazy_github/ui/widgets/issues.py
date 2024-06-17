@@ -7,7 +7,7 @@ from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTab
 class IssuesContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
-        yield LazyGithubDataTable(id="pull_requests_table")
+        yield LazyGithubDataTable(id="issues_table")
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
         # TODO: Load the issues for the selected repo
