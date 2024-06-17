@@ -10,7 +10,7 @@ from textual.widgets import (
     TabbedContent,
 )
 
-from lazy_github.lib.messages import RepoSelected
+from lazy_github.lib.messages import PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer

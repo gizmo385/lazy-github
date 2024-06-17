@@ -16,7 +16,7 @@ class RepoSelected(Message):
         super().__init__()
 
 
-class PullRequestedSelected(Message):
+class PullRequestSelected(Message):
     """
     A message indicating that the user is looking for additional information on a particular pull request.
     """
