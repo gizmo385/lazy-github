@@ -1,14 +1,11 @@
 from github.PullRequest import PullRequest
 from textual import log
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, ScrollableContainer
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import (
-    Footer,
-    TabbedContent,
-)
+from textual.widgets import Footer, TabbedContent
 
 from lazy_github.lib.messages import PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
@@ -62,19 +59,23 @@ class SelectionDetailsContainer(LazyGithubContainer):
     }
     """
 
+    BINDINGS = [("j", "scroll_tab_down"), ("k", "scroll_tab_up")]
+
     def compose(self) -> ComposeResult:
         self.border_title = "[5] Details"
         yield TabbedContent(id="selection_detail_tabs")
 
-    def show_pr_details(self, pr: PullRequest) -> None:
-        # Update the tabs to show the PR details
-        tabbed_content: TabbedContent = self.query_one("#scratch_space_tabs")
-        log(f"raw PR = {pr.raw_data}")
-        tabbed_content.clear_panes()
-        tabbed_content.add_pane(PrOverviewTabPane(pr))
-        tabbed_content.add_pane(PrDiffTabPane(pr))
-        tabbed_content.add_pane(PrConversationTabPane(pr))
-        tabbed_content.focus()
+    @property
+    def tabs(self) -> TabbedContent:
+        return self.query_one("#selection_detail_tabs", TabbedContent)
+
+    def action_scroll_tab_down(self) -> None:
+        if self.tabs.active_pane:
+            self.tabs.active_pane.scroll_down()
+
+    def action_scroll_tab_up(self) -> None:
+        if self.tabs.active_pane:
+            self.tabs.active_pane.scroll_up()
 
 
 class SelectionsPane(Container):

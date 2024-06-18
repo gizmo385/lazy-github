@@ -1,14 +1,15 @@
 from typing import Dict
 
 from github.PullRequest import PullRequest
-from textual import on, work
+from textual import log, on, work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
-from textual.widgets import Label, RichLog, TabPane
+from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
 
 import lazy_github.lib.github as g
 from lazy_github.lib.messages import PullRequestSelected, RepoSelected
+from lazy_github.lib.string_utils import pluralize
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -61,30 +62,53 @@ class PullRequestsContainer(LazyGithubContainer):
     @on(LazyGithubDataTable.RowSelected, "#pull_requests_table")
     async def pr_selected(self):
         pr = await self.get_selected_pr()
-        log_event(f"Selected PR: {pr.title}")
+        log_event(f"Selected PR: #{pr.number}")
         self.post_message(PullRequestSelected(pr))
 
 
 class PrOverviewTabPane(TabPane):
+    DEFAULT_CSS = """
+    PrOverviewTabPane {
+        overflow-y: auto;
+    }
+    """
+
     def __init__(self, pr: PullRequest) -> None:
         super().__init__("Overview", id="overview")
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        with Vertical():
-            with Horizontal():
-                yield Label(f"[b]{self.pr.title}[/b]", id="pr_title")
-                yield Label(f"{self.pr.head.ref} --{self.pr.commits}--> {self.pr.base.ref}")
-            yield Label(f"[b]Description[/b]: {self.pr.body}", id="pr_description")
+        pr_summary = " • ".join(
+            [
+                pluralize(self.pr.commits, "commit", "commits"),
+                pluralize(self.pr.changed_files, "file changed", "files changed"),
+                f"[green]+{self.pr.additions}[/green]",
+                f"[red]-{self.pr.deletions}[/red]",
+            ]
+        )
+        with ScrollableContainer():
+            yield Label(f"[bold]{self.pr.title}[/bold] [gray](#{self.pr.number})[/gray]")
+            yield Label(pr_summary)
+            yield Rule()
+            yield Markdown(self.pr.body)
 
 
 class PrDiffTabPane(TabPane):
+    BINDINGS = [("j", "scroll_down"), ("k", "scroll_up")]
+
     def __init__(self, pr: PullRequest) -> None:
         super().__init__("Diff", id="diff_pane")
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="diff_contents", highlight=True)
+        with ScrollableContainer():
+            yield RichLog(id="diff_contents", highlight=True)
+
+    def action_scroll_up(self):
+        self.query_one("#diff_contents", RichLog).scroll_up()
+
+    def action_scroll_down(self):
+        self.query_one("#diff_contents", RichLog).scroll_down()
 
     @work
     async def write_diff(self, diff: str) -> None:
