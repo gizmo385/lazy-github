@@ -35,6 +35,7 @@ class PullRequestsContainer(LazyGithubContainer):
         self.table.cursor_type = "row"
         self.table.add_column("Status", key="status")
         self.table.add_column("Number", key="number")
+        self.table.add_column("Author", key="author")
         self.table.add_column("Title", key="title")
 
         self.status_column_index = self.table.get_column_index("status")
@@ -49,7 +50,7 @@ class PullRequestsContainer(LazyGithubContainer):
         rows = []
         for pr in pull_requests:
             self.pull_requests[pr.number] = pr
-            rows.append((pr.state, pr.number, pr.title))
+            rows.append((pr.state, pr.number, pr.user.login, pr.title))
         self.table.add_rows(rows)
 
     async def get_selected_pr(self) -> PullRequest:
