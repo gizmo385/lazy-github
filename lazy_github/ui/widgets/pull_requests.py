@@ -32,7 +32,7 @@ class PullRequestsContainer(LazyGithubContainer):
     def table(self) -> LazyGithubDataTable:
         return self.query_one("#pull_requests_table", LazyGithubDataTable)
 
-    def on_mount(self):
+    def on_mount(self) -> None:
         self.table.cursor_type = "row"
         self.table.add_column("Status", key="status")
         self.table.add_column("Number", key="number")
@@ -74,7 +74,7 @@ class PrOverviewTabPane(TabPane):
     """
 
     def __init__(self, pr: PullRequest) -> None:
-        super().__init__("Overview", id="overview")
+        super().__init__("Overview", id="overview_pane")
         self.pr = pr
 
     def compose(self) -> ComposeResult:
@@ -125,8 +125,35 @@ class PrDiffTabPane(TabPane):
 
 class PrConversationTabPane(TabPane):
     def __init__(self, pr: PullRequest) -> None:
-        super().__init__("Conversation", id="conversation")
+        super().__init__("Conversation", id="conversation_pane")
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield Label("Conversation")
+        yield Markdown(id="conversation")
+
+    @property
+    def conversation(self) -> Markdown:
+        return self.query_one("#conversation", Markdown)
+
+    @work
+    async def render_conversation(self, conversation):
+        log(f"Conversation: {conversation}")
+        self.conversation.update(conversation)
+
+    @work(thread=True)
+    def fetch_conversation(self):
+        # TODO: Okay, so the review API in Github is weird. There are 3 APIs we might need to leverage here.
+        #
+        # 1. The conversation API, which contains comments that happen separately from a review. Unclear if these
+        # actually show up for PRs or if they're only actually present on issues (need to find an example).
+        # 2. The reviews API, which returns distinct reviews and the comments that accompany them. This will be
+        # necessary to setup a list of distinct threads of a review conversation that are happening.
+        # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
+        # actually has the full conversation associated with a review, so might need to query this as well :(
+        conversation = g.get_conversation(self.pr)
+        reviews = g.get_reviews(self.pr)
+        log(f"Reviews: {reviews}")
+        self.render_conversation(conversation)
+
+    def on_mount(self) -> None:
+        self.fetch_conversation()

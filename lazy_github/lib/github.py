@@ -152,8 +152,17 @@ def get(url: str, accept: str = _JSON_CONTENT_ACCEPT_TYPE) -> httpx.Response:
 
 def get_diff(pr: PullRequest) -> str:
     """Given a PR object from github, retrieves the diff for that PR"""
-    print("requesting", pr.raw_data["url"])
     return get(pr.raw_data["url"], accept=_DIFF_CONTENT_ACCEPT_TYPE).raise_for_status().text
+
+
+def get_conversation(pr: PullRequest) -> str:
+    """Given a PR object from github, retrieves the diff for that PR"""
+    return get(pr.raw_data["comments_url"]).raise_for_status().text
+
+
+def get_reviews(pr: PullRequest) -> str:
+    """Given a PR object from github, retrieves the diff for that PR"""
+    return get(pr.raw_data["review_comments_url"]).raise_for_status().text
 
 
 if __name__ == "__main__":
