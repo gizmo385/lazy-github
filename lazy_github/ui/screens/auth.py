@@ -47,7 +47,6 @@ class AuthenticationModal(ModalScreen):
     @work
     async def check_access_token(self, device_code: g.DeviceCodeResponse):
         access_token = g.get_access_token(device_code)
-        log(f"Access token: {access_token}")
         match access_token.error:
             case "authorization_pending":
                 log("Continuing to wait for auth...")
