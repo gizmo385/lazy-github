@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, Iterable
 
 from github.Repository import Repository
 from textual import on, work
@@ -57,7 +57,7 @@ class ReposContainer(LazyGithubContainer):
         return self.repos[full_name]
 
     @work
-    async def add_repos_to_table(self, repos: List[Repository]) -> None:
+    async def add_repos_to_table(self, repos: Iterable[Repository]) -> None:
         config = Config.load_config()
         self.repos = {}
         self.table.clear()

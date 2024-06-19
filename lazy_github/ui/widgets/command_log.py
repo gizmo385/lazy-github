@@ -19,7 +19,8 @@ def log_event(message: str) -> None:
     "Helper function for writing to the textual log and displayed command log"
     log(message)
     log_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    LazyGithubCommandLog._instance.write_line(f"{log_time}: {message}")
+    if LazyGithubCommandLog._instance:
+        LazyGithubCommandLog._instance.write_line(f"{log_time}: {message}")
 
 
 class CommandLogSection(LazyGithubContainer):

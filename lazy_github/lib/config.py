@@ -1,3 +1,4 @@
+import json
 from contextlib import contextmanager
 from typing import Generator, List, Self
 
@@ -41,9 +42,9 @@ class Config(BaseModel):
     @classmethod
     def load_config(cls) -> Self:
         if _CONFIG_FILE_LOCATION.exists():
-            return Config.parse_file(_CONFIG_FILE_LOCATION)
+            return cls(**json.loads(_CONFIG_FILE_LOCATION.read_text()))
         else:
-            return Config()
+            return cls()
 
     def save(self) -> None:
         CONFIG_FOLDER.mkdir(parents=True, exist_ok=True)

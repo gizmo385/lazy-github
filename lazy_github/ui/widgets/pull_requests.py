@@ -128,7 +128,7 @@ class PrConversationTabPane(TabPane):
         return self.query_one("#conversation", Markdown)
 
     @work
-    async def render_conversation(self, conversation):
+    async def render_conversation(self, conversation) -> None:
         log(f"Conversation: {conversation}")
         self.conversation.update(conversation)
 
