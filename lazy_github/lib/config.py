@@ -24,6 +24,10 @@ class PullRequestSettings(BaseModel):
 class RepositorySettings(BaseModel):
     favorites: List[str] = []
 
+    # TODO: We should add some caching here to make top level information retrieval more performant
+    # We should have a configurable TTL for that information as well
+    cache_duration: int = 1
+
 
 class AppearenceSettings(BaseModel):
     dark_mode: bool = True
