@@ -60,6 +60,8 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
+nodeenv==1.9.1
+    # via pyright
 pycparser==2.22
     # via cffi
 pydantic==2.7.4
@@ -74,6 +76,8 @@ pyjwt==2.8.0
     # via pygithub
 pynacl==1.5.0
     # via pygithub
+pyright==1.1.367
+    # via lazy-github (pyproject.toml)
 requests==2.32.3
     # via pygithub
 rich==13.7.1
