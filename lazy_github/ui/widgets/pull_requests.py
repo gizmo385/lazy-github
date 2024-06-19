@@ -94,8 +94,6 @@ class PrOverviewTabPane(TabPane):
 
 
 class PrDiffTabPane(TabPane):
-    BINDINGS = [("j", "scroll_down"), ("k", "scroll_up")]
-
     def __init__(self, pr: PullRequest) -> None:
         super().__init__("Diff", id="diff_pane")
         self.pr = pr
@@ -103,12 +101,6 @@ class PrDiffTabPane(TabPane):
     def compose(self) -> ComposeResult:
         with ScrollableContainer():
             yield RichLog(id="diff_contents", highlight=True)
-
-    def action_scroll_up(self):
-        self.query_one("#diff_contents", RichLog).scroll_up()
-
-    def action_scroll_down(self):
-        self.query_one("#diff_contents", RichLog).scroll_down()
 
     @work
     async def write_diff(self, diff: str) -> None:
