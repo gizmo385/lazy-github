@@ -11,9 +11,14 @@ dependencies = [
 	"PyGithub",
 	"httpx",
 	"pydantic",
-	"pyright",
 	"textual",
 	"textual-dev",
+]
+
+[project.optional-dependencies]
+checks = [
+	"pyright",
+	"ruff",
 ]
 
 [project.scripts]

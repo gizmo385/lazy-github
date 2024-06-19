@@ -1,7 +1,6 @@
-from github.PullRequest import PullRequest
 from textual import log
 from textual.app import ComposeResult
-from textual.containers import Container, ScrollableContainer
+from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
