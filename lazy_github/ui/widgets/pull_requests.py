@@ -9,7 +9,7 @@ from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
 
 import lazy_github.lib.github as g
 from lazy_github.lib.messages import PullRequestSelected, RepoSelected
-from lazy_github.lib.string_utils import pluralize
+from lazy_github.lib.string_utils import bold, link, pluralize
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -78,17 +78,29 @@ class PrOverviewTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        pr_summary = " • ".join(
+        pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
+        user_link = link(self.pr.user.login, self.pr.user.html_url)
+        merge_from = bold(f"{self.pr.head.user.login}:{self.pr.head.ref}")
+        merge_to = bold(f"{self.pr.base.user.login}:{self.pr.base.ref}")
+
+        change_summary = " • ".join(
             [
                 pluralize(self.pr.commits, "commit", "commits"),
                 pluralize(self.pr.changed_files, "file changed", "files changed"),
                 f"[green]+{self.pr.additions}[/green]",
                 f"[red]-{self.pr.deletions}[/red]",
+                f"{merge_from} :right_arrow:  {merge_to}",
             ]
         )
+
         with ScrollableContainer():
-            yield Label(f"[bold]{self.pr.title}[/bold] [gray](#{self.pr.number})[/gray]")
-            yield Label(pr_summary)
+            yield Label(f"[b]{self.pr.title}[b] {pr_link} by {user_link}")
+            yield Label(change_summary)
+
+            if self.pr.merged_at:
+                date = self.pr.merged_at.strftime("%x at %X")
+                yield Label(f"\nMerged on {date}")
+
             yield Rule()
             yield Markdown(self.pr.body)
 
