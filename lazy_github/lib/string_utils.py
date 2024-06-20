@@ -4,3 +4,13 @@ def pluralize(count: int, singular: str, plural: str):
     across the UI code.
     """
     return f"{count} {singular}" if count == 1 else f"{count} {plural}"
+
+
+def bold(s: str) -> str:
+    """Wraps the given text in Rich bold tags"""
+    return f"[bold]{s}[/bold]"
+
+
+def link(link_text: str, url: str) -> str:
+    """Formats a link in Rich-style markup"""
+    return f"[link={url}]{link_text}[/link]"
