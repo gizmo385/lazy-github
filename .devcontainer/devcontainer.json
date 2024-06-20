@@ -1,0 +1,14 @@
+{
+  "image": "ghcr.io/gizmo385/dotfiles:main",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.11.0": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscodevim.vim",
+        "bbenoist.Nix"
+      ]
+    }
+  }
+}
