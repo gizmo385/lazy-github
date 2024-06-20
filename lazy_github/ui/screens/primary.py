@@ -33,7 +33,7 @@ class CurrentlySelectedRepo(Widget):
 class LazyGithubStatusSummary(Container):
     DEFAULT_CSS = """
     LazyGithubStatusSummary {
-        height: 10%;
+        max-height: 3;
         width: 100%;
         border: solid $secondary;
     }
