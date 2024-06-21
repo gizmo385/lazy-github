@@ -1,11 +1,14 @@
-from typing import Dict
+from typing import Dict, Iterable
 
+from github.IssueComment import IssueComment
 from github.PullRequest import PullRequest
-from textual import log, on, work
+from github.PullRequestComment import PullRequestComment
+from github.PullRequestReview import PullRequestReview
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
-from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 import lazy_github.lib.github as g
 from lazy_github.lib.messages import PullRequestSelected, RepoSelected
@@ -140,16 +143,26 @@ class PrConversationTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield Markdown(id="conversation")
+        yield ListView(id="conversation_elements")
 
     @property
-    def conversation(self) -> Markdown:
-        return self.query_one("#conversation", Markdown)
+    def conversation_elements(self) -> ListView:
+        return self.query_one("#conversation_elements", ListView)
 
     @work
-    async def render_conversation(self, conversation) -> None:
-        log(f"Conversation: {conversation}")
-        self.conversation.update(conversation)
+    async def render_conversation(
+        self,
+        pr_comments: Iterable[IssueComment],
+        reviews: Iterable[PullRequestReview],
+        review_comments: Iterable[PullRequestComment],
+    ) -> None:
+        conversation_elements = self.conversation_elements
+        # reviews_by_id = {r.id: r for r in reviews}
+        # review_comments_by_id = {rc.id: rc for rc in review_comments}
+        # pr_comments_by_id = {prc.id: prc for prc in pr_comments}
+
+        for review in review_comments:
+            conversation_elements.append(ListItem(Label(f"{review.user.login}\n{review.body}")))
 
     @work(thread=True)
     def fetch_conversation(self):
@@ -161,10 +174,10 @@ class PrConversationTabPane(TabPane):
         # necessary to setup a list of distinct threads of a review conversation that are happening.
         # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
         # actually has the full conversation associated with a review, so might need to query this as well :(
-        conversation = g.get_conversation(self.pr)
-        reviews = g.get_reviews(self.pr)
-        log(f"Reviews: {reviews}")
-        self.render_conversation(conversation)
+        comments = self.pr.get_issue_comments()
+        reviews = self.pr.get_reviews()
+        review_comments = self.pr.get_review_comments()
+        self.render_conversation(comments, reviews, review_comments)
 
     def on_mount(self) -> None:
         self.fetch_conversation()
