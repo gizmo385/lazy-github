@@ -93,8 +93,15 @@ class PrOverviewTabPane(TabPane):
             ]
         )
 
+        if self.pr.merged_at:
+            merge_status = "[frame purple]Merged[/frame purple]"
+        elif self.pr.closed_at:
+            merge_status = "[frame red]closed[/frame red]"
+        else:
+            merge_status = "[frame green]Open[/frame green]"
+
         with ScrollableContainer():
-            yield Label(f"[b]{self.pr.title}[b] {pr_link} by {user_link}")
+            yield Label(f"{merge_status} [b]{self.pr.title}[b] {pr_link} by {user_link}")
             yield Label(change_summary)
 
             if self.pr.merged_at:
