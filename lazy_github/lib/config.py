@@ -1,25 +1,22 @@
 import json
 from contextlib import contextmanager
-from typing import Generator, List, Self
+from typing import Generator, List, Literal, Self
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from lazy_github.lib.constants import CONFIG_FOLDER
 
 _CONFIG_FILE_LOCATION = CONFIG_FOLDER / "config.json"
-_VALID_PR_STATE_FILTERS = ["all", "open", "closed"]
+
+PR_STATE_FILTER = Literal["all"] | Literal["open"] | Literal["closed"]
+
+
+class ApiConfig(BaseModel):
+    base_url: str = "https://api.github.com"
 
 
 class PullRequestSettings(BaseModel):
-    state_filter: str = "all"
-
-    @field_validator("state_filter")
-    @classmethod
-    def _validate_pr_state_filter(cls, v: str) -> str:
-        v = v.strip().lower()
-        if v not in _VALID_PR_STATE_FILTERS:
-            raise ValueError(f"Valid PR states: {_VALID_PR_STATE_FILTERS}")
-        return v
+    state_filter: PR_STATE_FILTER = "all"
 
 
 class RepositorySettings(BaseModel):
@@ -38,6 +35,7 @@ class Config(BaseModel):
     appearence: AppearenceSettings = AppearenceSettings()
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
+    api: ApiConfig = ApiConfig()
 
     @classmethod
     def load_config(cls) -> Self:

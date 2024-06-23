@@ -1,26 +1,15 @@
 import time
 from dataclasses import dataclass
+from typing import Optional
 
 import httpx
-from github import Auth, Github
-from github.PullRequest import PullRequest
 
 from lazy_github.lib.constants import CONFIG_FOLDER
-
-# Github constants
-_DIFF_CONTENT_ACCEPT_TYPE = "application/vnd.github.diff"
-_JSON_CONTENT_ACCEPT_TYPE = "application/vnd.github+json"
-_LAZY_GITHUB_CLIENT_ID = "Iv23limdG8Bl3Cu5FOcT"
-_DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+from lazy_github.lib.github_v2.constants import DEVICE_CODE_GRANT_TYPE, LAZY_GITHUB_CLIENT_ID
 
 # Auth and client globals
 _AUTHENTICATION_CACHE_LOCATION = CONFIG_FOLDER / "auth.text"
-_GITHUB_CLIENT: Github | None = None
-_AUTH_TOKEN: str | None = None
-
-
-class GithubAuthenticationRequired(Exception):
-    pass
+_AUTH_TOKEN: Optional[str] = None
 
 
 @dataclass
@@ -34,8 +23,12 @@ class DeviceCodeResponse:
 
 @dataclass
 class AccessTokenResponse:
-    token: str | None
-    error: str | None
+    token: Optional[str]
+    error: Optional[str]
+
+
+class GithubAuthenticationRequired(Exception):
+    pass
 
 
 def get_device_code() -> DeviceCodeResponse:
@@ -46,7 +39,7 @@ def get_device_code() -> DeviceCodeResponse:
     response = (
         httpx.post(
             "https://github.com/login/device/code",
-            data={"client_id": _LAZY_GITHUB_CLIENT_ID},
+            data={"client_id": LAZY_GITHUB_CLIENT_ID},
             headers={"Accept": "application/json"},
         )
         .raise_for_status()
@@ -67,8 +60,8 @@ def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
     access_token_res = httpx.post(
         "https://github.com/login/oauth/access_token",
         data={
-            "client_id": _LAZY_GITHUB_CLIENT_ID,
-            "grant_type": _DEVICE_CODE_GRANT_TYPE,
+            "client_id": LAZY_GITHUB_CLIENT_ID,
+            "grant_type": DEVICE_CODE_GRANT_TYPE,
             "device_code": device_code.device_code,
         },
     ).raise_for_status()
@@ -90,20 +83,11 @@ def save_access_token(access_token: AccessTokenResponse) -> None:
     _AUTHENTICATION_CACHE_LOCATION.write_text(access_token.token)
 
 
-def github_client() -> Github:
-    """Creates a PyGithub client with the saved auth token"""
-    global _GITHUB_CLIENT
-    if _GITHUB_CLIENT is not None:
-        return _GITHUB_CLIENT
-
-    if not _AUTHENTICATION_CACHE_LOCATION.exists():
-        raise GithubAuthenticationRequired()
-    token = _AUTHENTICATION_CACHE_LOCATION.read_text().strip()
-    _GITHUB_CLIENT = Github(auth=Auth.Token(token))
-    return _GITHUB_CLIENT
-
-
 def token() -> str:
+    """
+    Helper function which loads the token from the file on disk. If the file does not exist, it raises a
+    GithubAuthenticationRequired exception that the caller should handle by triggering the auth flow
+    """
     global _AUTH_TOKEN
     if _AUTH_TOKEN is not None:
         return _AUTH_TOKEN
@@ -112,36 +96,3 @@ def token() -> str:
         raise GithubAuthenticationRequired()
     _AUTH_TOKEN = _AUTHENTICATION_CACHE_LOCATION.read_text().strip()
     return _AUTH_TOKEN
-
-
-def get(url: str, accept: str = _JSON_CONTENT_ACCEPT_TYPE) -> httpx.Response:
-    """Wrapper function around sending a GET request to Github with the appropriate token"""
-    github_token = token()
-    headers = {"Accept": accept, "Authorization": f"Bearer {github_token}"}
-    return httpx.get(url, headers=headers).raise_for_status()
-
-
-def get_diff(pr: PullRequest) -> str:
-    """Given a PR object from github, retrieves the diff for that PR"""
-    return get(pr.raw_data["url"], accept=_DIFF_CONTENT_ACCEPT_TYPE).raise_for_status().text
-
-
-def get_conversation(pr: PullRequest) -> str:
-    """Given a PR object from github, retrieves the diff for that PR"""
-    return get(pr.raw_data["comments_url"]).raise_for_status().text
-
-
-def get_reviews(pr: PullRequest) -> str:
-    """Given a PR object from github, retrieves the diff for that PR"""
-    return get(pr.raw_data["review_comments_url"]).raise_for_status().text
-
-
-if __name__ == "__main__":
-    client = github_client()
-
-    # This PR: https://github.com/gizmo385/lazy-github/pull/1
-    LAZY_GITHUB_REPO_ID = 812868589
-    repo = client.get_repo(LAZY_GITHUB_REPO_ID)
-    print(repo.raw_data)
-    pr = repo.get_pulls()[0]
-    print(get_diff(pr))
