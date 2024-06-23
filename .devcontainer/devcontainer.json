@@ -1,7 +1,10 @@
 {
   "image": "ghcr.io/gizmo385/dotfiles:main",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.11.0": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2.11.0": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+        "version": "latest"
+    }
   },
   "customizations": {
     "vscode": {
