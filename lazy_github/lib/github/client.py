@@ -1,7 +1,7 @@
 import httpx
 
 from lazy_github.lib.config import Config
-from lazy_github.lib.github_v2.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.github.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.models.core import User
 
 

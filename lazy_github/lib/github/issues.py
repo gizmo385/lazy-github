@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Literal
 
-from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.core import Issue, PullRequest, Repository, User
 
 IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     import asyncio
 
     from lazy_github.lib.config import Config
-    from lazy_github.lib.github_v2.auth import token
+    from lazy_github.lib.github.auth import token
 
     client = GithubClient(Config.load_config(), token())
     repo = Repository(

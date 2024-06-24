@@ -6,8 +6,8 @@ from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
 from textual.widgets import Label, ListView, Markdown, RichLog, Rule, TabPane
 
-import lazy_github.lib.github_v2.pull_requests as pr_api
-from lazy_github.lib.github_v2.client import GithubClient
+import lazy_github.lib.github.pull_requests as pr_api
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
 from lazy_github.models.core import PullRequest

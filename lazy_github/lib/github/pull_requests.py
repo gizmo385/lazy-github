@@ -1,5 +1,5 @@
-from lazy_github.lib.github_v2.client import GithubClient
-from lazy_github.lib.github_v2.issues import list_all_issues
+from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.models.core import PullRequest, Repository
 
 

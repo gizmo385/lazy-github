@@ -3,8 +3,8 @@ from textual.app import App
 
 import lazy_github.lib.github as g
 from lazy_github.lib.config import Config
-from lazy_github.lib.github_v2.auth import token
-from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github.auth import token
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.ui.screens.auth import AuthenticationModal
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 

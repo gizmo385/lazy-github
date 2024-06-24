@@ -8,9 +8,9 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Footer
 
-import lazy_github.lib.github_v2.auth as auth
+import lazy_github.lib.github.auth as auth
 from lazy_github.lib.config import Config
-from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 

@@ -6,8 +6,8 @@ from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
-from lazy_github.lib.github_v2.client import GithubClient
-from lazy_github.lib.github_v2.issues import list_all_issues
+from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection

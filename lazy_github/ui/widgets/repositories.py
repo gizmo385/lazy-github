@@ -4,10 +4,10 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 
-import lazy_github.lib.github_v2.repositories as repos_api
+import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
-from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.core import Repository
 from lazy_github.ui.widgets.command_log import log_event

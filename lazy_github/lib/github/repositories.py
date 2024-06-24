@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Literal
 
-from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.core import Repository
 
 RepoTypeFilter = Literal["all"] | Literal["owner"] | Literal["member"]
