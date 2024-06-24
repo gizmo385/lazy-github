@@ -15,14 +15,12 @@ async def _list(
     sort: RepositorySortKey = "full_name",
     direction: SortDirection = "asc",
     page: int = 1,
-    per_page: int = 30,
+    per_page: int = 50,
 ) -> list[Repository]:
     """Retrieves Github repos matching the specified criteria"""
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
-    user = await client.user()
-    response = await client.get(
-        f"/users/{user.login}/repos", headers=client.headers_with_auth_accept(), params=query_params
-    )
+    response = await client.get("/user/repos", headers=client.headers_with_auth_accept(), params=query_params)
+    response.raise_for_status()
     return [Repository(**r) for r in response.json()]
 
 
