@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.models.core import Repository
+from lazy_github.models.github import Repository
 
 RepoTypeFilter = Literal["all"] | Literal["owner"] | Literal["member"]
 SortDirection = Literal["asc"] | Literal["desc"]

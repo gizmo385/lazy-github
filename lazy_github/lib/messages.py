@@ -2,7 +2,7 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.models.core import Issue, PullRequest, Repository
+from lazy_github.models.github import Issue, PullRequest, Repository
 
 
 class RepoSelected(Message):

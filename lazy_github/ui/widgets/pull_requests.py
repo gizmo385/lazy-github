@@ -10,7 +10,7 @@ import lazy_github.lib.github.pull_requests as pr_api
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.core import PullRequest
+from lazy_github.models.github import PullRequest
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 

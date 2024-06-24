@@ -3,7 +3,7 @@ from typing import Dict
 from textual.app import ComposeResult
 
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched
-from lazy_github.models.core import Issue
+from lazy_github.models.github import Issue
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
 

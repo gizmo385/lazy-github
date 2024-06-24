@@ -9,7 +9,7 @@ from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import RepoSelected
-from lazy_github.models.core import Repository
+from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 

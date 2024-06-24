@@ -1,6 +1,6 @@
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import list_all_issues
-from lazy_github.models.core import PullRequest, Repository
+from lazy_github.models.github import PullRequest, Repository
 
 
 async def list_for_repo(client: GithubClient, repo: Repository) -> list[PullRequest]:
