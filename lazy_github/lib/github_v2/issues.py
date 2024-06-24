@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github_v2.client import GithubClient
@@ -8,7 +9,7 @@ IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
 
 async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter) -> list[Issue]:
     query_params = {"state": state}
-    user = await client.user
+    user = await client.user()
     response = await client.get(
         f"/repos/{user.login}/{repo.name}/issues", headers=client.headers_with_auth_accept(), params=query_params
     )
@@ -19,6 +20,11 @@ async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter)
         else:
             result.append(Issue(**issue))
     return result
+
+
+list_open_issues = partial(_list, state="open")
+list_closed_issues = partial(_list, state="closed")
+list_all_issues = partial(_list, state="all")
 
 
 if __name__ == "__main__":

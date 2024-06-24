@@ -1,9 +1,9 @@
 from typing import Dict
 
-from github.Issue import Issue
 from textual.app import ComposeResult
 
-from lazy_github.lib.messages import RepoSelected
+from lazy_github.lib.messages import IssuesAndPullRequestsFetched
+from lazy_github.models.core import Issue
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
 
@@ -32,16 +32,13 @@ class IssuesContainer(LazyGithubContainer):
         self.number_column_index = self.table.get_column_index("number")
         self.title_column_index = self.table.get_column_index("title")
 
-    async def on_repo_selected(self, message: RepoSelected) -> None:
+    async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
         self.table.clear()
         self.issues = {}
-        issues = message.repo.get_issues(state="all", sort="updated", direction="desc")
+
         rows = []
-        for issue in issues:
-            # TODO: Currently, this also includes PRs because the Github API classifies all PRs as issues. The PyGithub
-            # library makes this even more problematic because there seemingly isn't a way to distinguish between an
-            # issue and a PR without making an additional API request. This is quite slow >:(
+        for issue in message.issues:
             self.issues[issue.number] = issue
             rows.append((issue.state, issue.number, issue.user.login, issue.title))
         self.table.add_rows(rows)

@@ -6,7 +6,9 @@ from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
-from lazy_github.lib.messages import PullRequestSelected, RepoSelected
+from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github_v2.issues import list_all_issues
+from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
@@ -86,9 +88,13 @@ class SelectionsPane(Container):
     }
     """
 
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
+
     def compose(self) -> ComposeResult:
-        yield ReposContainer(id="repos")
-        yield PullRequestsContainer(id="pull_requests")
+        yield ReposContainer(self.client, id="repos")
+        yield PullRequestsContainer(self.client, id="pull_requests")
         yield IssuesContainer(id="issues")
         yield ActionsContainer(id="actions")
 
@@ -105,12 +111,18 @@ class SelectionsPane(Container):
         return self.query_one("#actions", ActionsContainer)
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        self.pull_requests.post_message(message)
-        self.issues.post_message(message)
-        self.actions.post_message(message)
+        # self.actions.post_message(message)
+        issues_and_pull_requests = await list_all_issues(self.client, message.repo)
+        issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)
+        self.pull_requests.post_message(issue_and_pr_message)
+        self.issues.post_message(issue_and_pr_message)
 
 
 class SelectionDetailsPane(Container):
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
+
     def compose(self) -> ComposeResult:
         yield SelectionDetailsContainer(id="selection_details")
         yield CommandLogSection()
@@ -126,15 +138,19 @@ class MainViewPane(Container):
         ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
+
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
 
     def compose(self) -> ComposeResult:
-        yield SelectionsPane()
-        yield SelectionDetailsPane()
+        yield SelectionsPane(self.client)
+        yield SelectionDetailsPane(self.client)
 
     def on_pull_request_selected(self, message: PullRequestSelected) -> None:
-        log(f"raw PR = {message.pr.raw_data}")
+        log(f"PR = {message.pr}")
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         tabbed_content.clear_panes()
         tabbed_content.add_pane(PrOverviewTabPane(message.pr))
@@ -146,8 +162,12 @@ class MainViewPane(Container):
 class LazyGithubMainScreen(Screen):
     BINDINGS = [("r", "refresh_repos", "Refresh global repo state")]
 
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
+
     def compose(self):
         with Container():
             yield LazyGithubStatusSummary()
-            yield MainViewPane()
+            yield MainViewPane(self.client)
             yield LazyGithubFooter()

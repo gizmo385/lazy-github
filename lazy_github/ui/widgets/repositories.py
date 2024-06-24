@@ -1,14 +1,15 @@
 from typing import Dict, Iterable
 
-from github.Repository import Repository
 from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 
-import lazy_github.lib.github as g
+import lazy_github.lib.github_v2.repositories as repos_api
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
+from lazy_github.lib.github_v2.client import GithubClient
 from lazy_github.lib.messages import RepoSelected
+from lazy_github.models.core import Repository
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -19,11 +20,14 @@ class ReposContainer(LazyGithubContainer):
         ("enter", "select"),
     ]
 
-    repos: Dict[str, Repository] = {}
-    favorite_column_index = -1
-    owner_column_index = 1
-    name_column_index = 1
-    private_column_index = 1
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
+        self.repos: Dict[str, Repository] = {}
+        self.favorite_column_index = -1
+        self.owner_column_index = 1
+        self.name_column_index = 1
+        self.private_column_index = 1
 
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
@@ -72,10 +76,9 @@ class ReposContainer(LazyGithubContainer):
         if config.repositories.favorites:
             self.table.sort("favorite")
 
-    @work(thread=True)
-    def load_repos(self) -> None:
-        user = g.github_client().get_user()
-        repos = user.get_repos()
+    @work
+    async def load_repos(self) -> None:
+        repos = await repos_api.list_all(self.client)
         self.add_repos_to_table(repos)
 
     async def action_toggle_favorite_repo(self):

@@ -31,40 +31,43 @@ class GithubAuthenticationRequired(Exception):
     pass
 
 
-def get_device_code() -> DeviceCodeResponse:
+async def get_device_code() -> DeviceCodeResponse:
     """
     Authenticates this device with the Github API. This will require the user to go enter the provided device code on
     the Github UI to authenticate the LazyGithub app.
     """
-    response = (
-        httpx.post(
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
             "https://github.com/login/device/code",
             data={"client_id": LAZY_GITHUB_CLIENT_ID},
             headers={"Accept": "application/json"},
         )
-        .raise_for_status()
-        .json()
-    )
-    expires_at = time.time() + response["expires_in"]
+
+    response.raise_for_status()
+    body = response.json()
+    expires_at = time.time() + body["expires_in"]
     return DeviceCodeResponse(
-        response["device_code"],
-        response["verification_uri"],
-        response["user_code"],
-        response["interval"],
+        body["device_code"],
+        body["verification_uri"],
+        body["user_code"],
+        body["interval"],
         expires_at,
     )
 
 
-def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
+async def get_access_token(device_code: DeviceCodeResponse) -> AccessTokenResponse:
     """Given a device code, retrieves the oauth access token that can be used to send requests to the GIthub API"""
-    access_token_res = httpx.post(
-        "https://github.com/login/oauth/access_token",
-        data={
-            "client_id": LAZY_GITHUB_CLIENT_ID,
-            "grant_type": DEVICE_CODE_GRANT_TYPE,
-            "device_code": device_code.device_code,
-        },
-    ).raise_for_status()
+    async with httpx.AsyncClient() as client:
+        # TODO: This should specify an accept
+        access_token_res = await client.post(
+            "https://github.com/login/oauth/access_token",
+            data={
+                "client_id": LAZY_GITHUB_CLIENT_ID,
+                "grant_type": DEVICE_CODE_GRANT_TYPE,
+                "device_code": device_code.device_code,
+            },
+        )
+    access_token_res.raise_for_status()
     pairs = access_token_res.text.split("&")
     access_token_data = dict(pair.split("=") for pair in pairs)
     return AccessTokenResponse(

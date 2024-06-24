@@ -19,7 +19,7 @@ async def _list(
 ) -> list[Repository]:
     """Retrieves Github repos matching the specified criteria"""
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
-    user = await client.user
+    user = await client.user()
     response = await client.get(
         f"/users/{user.login}/repos", headers=client.headers_with_auth_accept(), params=query_params
     )

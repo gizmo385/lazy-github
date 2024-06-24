@@ -1,5 +1,3 @@
-from functools import cached_property
-
 import httpx
 
 from lazy_github.lib.config import Config
@@ -18,7 +16,6 @@ class GithubClient(httpx.AsyncClient):
         """Helper function to build a request with specific headers"""
         return {"Accept": accept, "Authorization": f"Bearer {self.access_token}"}
 
-    @cached_property
     async def user(self) -> User:
         """Returns the authed user for this client"""
         if self._user is None:

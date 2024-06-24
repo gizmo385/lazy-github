@@ -1,13 +1,8 @@
-from typing import Self
-
 from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.github_v2.issues import list_all_issues
+from lazy_github.models.core import PullRequest, Repository
 
 
-class PullRequest:
-    def __init__(self, client: GithubClient, raw_data) -> None:
-        self.client = client
-        self._raw_data = raw_data
-
-    @classmethod
-    async def list_for_repo(cls, client: GithubClient, repo: str) -> list[Self]:
-        return [cls(client, {})]
+async def list_for_repo(client: GithubClient, repo: Repository) -> list[PullRequest]:
+    issues = await list_all_issues(client, repo)
+    return [i for i in issues if isinstance(i, PullRequest)]

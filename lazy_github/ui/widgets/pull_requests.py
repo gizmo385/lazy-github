@@ -1,18 +1,16 @@
-from typing import Dict, Iterable
+from typing import Dict
 
-from github.IssueComment import IssueComment
-from github.PullRequest import PullRequest
-from github.PullRequestComment import PullRequestComment
-from github.PullRequestReview import PullRequestReview
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
-from textual.widgets import Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Label, ListView, Markdown, RichLog, Rule, TabPane
 
-import lazy_github.lib.github as g
-from lazy_github.lib.messages import PullRequestSelected, RepoSelected
+import lazy_github.lib.github_v2.pull_requests as pr_api
+from lazy_github.lib.github_v2.client import GithubClient
+from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
+from lazy_github.models.core import PullRequest
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -22,10 +20,13 @@ class PullRequestsContainer(LazyGithubContainer):
     This container includes the primary datatable for viewing pull requests on the UI.
     """
 
-    pull_requests: Dict[int, PullRequest] = {}
-    status_column_index = -1
-    number_column_index = -1
-    title_column_index = -1
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        self.client = client
+        self.pull_requests: Dict[int, PullRequest] = {}
+        self.status_column_index = -1
+        self.number_column_index = -1
+        self.title_column_index = -1
+        super().__init__(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
@@ -46,13 +47,13 @@ class PullRequestsContainer(LazyGithubContainer):
         self.number_column_index = self.table.get_column_index("number")
         self.title_column_index = self.table.get_column_index("title")
 
-    async def on_repo_selected(self, message: RepoSelected) -> None:
+    async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
         self.table.clear()
         self.pull_requests = {}
-        pull_requests = message.repo.get_pulls(state="all", sort="updated", direction="desc")
+
         rows = []
-        for pr in pull_requests:
+        for pr in message.pull_requests:
             self.pull_requests[pr.number] = pr
             rows.append((pr.state, pr.number, pr.user.login, pr.title))
         self.table.add_rows(rows)
@@ -80,7 +81,7 @@ class PrOverviewTabPane(TabPane):
         super().__init__("Overview", id="overview_pane")
         self.pr = pr
 
-    def compose(self) -> ComposeResult:
+    def _old_compose(self) -> ComposeResult:
         pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
         user_link = link(self.pr.user.login, self.pr.user.html_url)
         merge_from = bold(f"{self.pr.head.user.login}:{self.pr.head.ref}")
@@ -120,7 +121,7 @@ class PrDiffTabPane(TabPane):
         super().__init__("Diff", id="diff_pane")
         self.pr = pr
 
-    def compose(self) -> ComposeResult:
+    def _old_compose(self) -> ComposeResult:
         with ScrollableContainer():
             yield RichLog(id="diff_contents", highlight=True)
 
@@ -128,10 +129,11 @@ class PrDiffTabPane(TabPane):
     async def write_diff(self, diff: str) -> None:
         self.query_one("#diff_contents", RichLog).write(diff)
 
-    @work(thread=True)
-    def fetch_diff(self):
-        diff = g.get_diff(self.pr)
-        self.write_diff(diff)
+    @work
+    async def fetch_diff(self):
+        pass
+        # diff = g.get_diff(self.pr)
+        # self.write_diff(diff)
 
     def on_mount(self) -> None:
         self.fetch_diff()
@@ -152,20 +154,21 @@ class PrConversationTabPane(TabPane):
     @work
     async def render_conversation(
         self,
-        pr_comments: Iterable[IssueComment],
-        reviews: Iterable[PullRequestReview],
-        review_comments: Iterable[PullRequestComment],
+        # pr_comments: Iterable[IssueComment],
+        # reviews: Iterable[PullRequestReview],
+        # review_comments: Iterable[PullRequestComment],
     ) -> None:
-        conversation_elements = self.conversation_elements
+        pass
+        # conversation_elements = self.conversation_elements
         # reviews_by_id = {r.id: r for r in reviews}
         # review_comments_by_id = {rc.id: rc for rc in review_comments}
         # pr_comments_by_id = {prc.id: prc for prc in pr_comments}
 
-        for review in review_comments:
-            conversation_elements.append(ListItem(Label(f"{review.user.login}\n{review.body}")))
+        # for review in review_comments:
+        # conversation_elements.append(ListItem(Label(f"{review.user.login}\n{review.body}")))
 
-    @work(thread=True)
-    def fetch_conversation(self):
+    @work
+    async def fetch_conversation(self):
         # TODO: Okay, so the review API in Github is weird. There are 3 APIs we might need to leverage here.
         #
         # 1. The conversation API, which contains comments that happen separately from a review. Unclear if these
@@ -174,10 +177,12 @@ class PrConversationTabPane(TabPane):
         # necessary to setup a list of distinct threads of a review conversation that are happening.
         # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
         # actually has the full conversation associated with a review, so might need to query this as well :(
-        comments = self.pr.get_issue_comments()
-        reviews = self.pr.get_reviews()
-        review_comments = self.pr.get_review_comments()
-        self.render_conversation(comments, reviews, review_comments)
+        pass
+        # comments = self.pr.get_issue_comments()
+        # reviews = self.pr.get_reviews()
+        # review_comments = self.pr.get_review_comments()
+        # self.render_conversation(comments, reviews, review_comments)
 
     def on_mount(self) -> None:
-        self.fetch_conversation()
+        pass
+        # self.fetch_conversation()

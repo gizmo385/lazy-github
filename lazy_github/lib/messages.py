@@ -1,6 +1,8 @@
-from github.PullRequest import PullRequest
-from github.Repository import Repository
+from functools import cached_property
+
 from textual.message import Message
+
+from lazy_github.models.core import Issue, PullRequest, Repository
 
 
 class RepoSelected(Message):
@@ -24,3 +26,26 @@ class PullRequestSelected(Message):
     def __init__(self, pr: PullRequest) -> None:
         self.pr = pr
         super().__init__()
+
+
+class IssuesAndPullRequestsFetched(Message):
+    """
+    Since issues and pull requests are both represented on the Github API as issues, we want to pull issues once and
+    then send that message to both sections of the UI.
+    """
+
+    def __init__(self, issues_and_pull_requests: list[Issue]) -> None:
+        self.issues_and_pull_requests = issues_and_pull_requests
+        super().__init__()
+
+    @cached_property
+    def pull_requests(self) -> list[PullRequest]:
+        return [pr for pr in self.issues_and_pull_requests if isinstance(pr, PullRequest)]
+
+    @cached_property
+    def issues(self) -> list[Issue]:
+        return [
+            issue
+            for issue in self.issues_and_pull_requests
+            if isinstance(issue, Issue) and not isinstance(issue, PullRequest)
+        ]

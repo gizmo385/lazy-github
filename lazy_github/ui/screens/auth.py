@@ -8,7 +8,9 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Footer
 
-import lazy_github.lib.github as g
+import lazy_github.lib.github_v2.auth as auth
+from lazy_github.lib.config import Config
+from lazy_github.lib.github_v2.client import GithubClient
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
@@ -45,8 +47,8 @@ class AuthenticationModal(ModalScreen):
             yield Footer()
 
     @work
-    async def check_access_token(self, device_code: g.DeviceCodeResponse):
-        access_token = g.get_access_token(device_code)
+    async def check_access_token(self, device_code: auth.DeviceCodeResponse):
+        access_token = await auth.get_access_token(device_code)
         match access_token.error:
             case "authorization_pending":
                 log("Continuing to wait for auth...")
@@ -67,14 +69,14 @@ class AuthenticationModal(ModalScreen):
                 self.access_token_timer.stop()
             case _:
                 log("Successfully authenticated!")
-                g.save_access_token(access_token)
+                auth.save_access_token(access_token)
                 self.access_token_timer.stop()
-                self.app.switch_screen(LazyGithubMainScreen())
+                self.app.switch_screen(LazyGithubMainScreen(GithubClient(Config.load_config(), auth.token())))
 
     @work
     async def get_device_token(self):
         log("Attempting to get device code...")
-        device_code = g.get_device_code()
+        device_code = await auth.get_device_code()
         log(f"Device code: {device_code}")
         self.query_one(UserTokenDisplay).user_code = device_code.user_code
 
