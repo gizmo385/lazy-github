@@ -1,9 +1,8 @@
 from textual import log
 from textual.app import App
 
-import lazy_github.lib.github as g
 from lazy_github.lib.config import Config
-from lazy_github.lib.github.auth import token
+from lazy_github.lib.github.auth import GithubAuthenticationRequired, token
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.ui.screens.auth import AuthenticationModal
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
@@ -21,7 +20,7 @@ class LazyGithub(App):
             access_token = token()
             client = GithubClient(config, access_token)
             self.push_screen(LazyGithubMainScreen(client))
-        except g.GithubAuthenticationRequired:
+        except GithubAuthenticationRequired:
             log("Triggering auth with github")
             self.push_screen(AuthenticationModal(id="auth-modal"))
 
