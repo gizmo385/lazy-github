@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.models.github import Issue, PullRequest, Repository, User
+from lazy_github.models.github import Issue, PartialPullRequest, Repository, User
 
 IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
 
@@ -16,9 +16,9 @@ async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter)
     result: list[Issue] = []
     for issue in response.json():
         if "draft" in issue:
-            result.append(PullRequest(**issue))
+            result.append(PartialPullRequest(**issue, repo=repo))
         else:
-            result.append(Issue(**issue))
+            result.append(Issue(**issue, repo=repo))
     return result
 
 
@@ -29,6 +29,11 @@ list_all_issues = partial(_list, state="all")
 
 if __name__ == "__main__":
     import asyncio
+    import logging
+
+    logging.basicConfig(
+        format="%(levelname)s [%(asctime)s] %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG
+    )
 
     from lazy_github.lib.config import Config
     from lazy_github.lib.github.auth import token
@@ -40,11 +45,11 @@ if __name__ == "__main__":
         default_branch="main",
         private=False,
         archived=False,
-        owner=User(login="gizmo385", id=1),
+        owner=User(login="gizmo385", id=1, html_url="wat"),
     )
     issues = asyncio.run(_list(client, repo, "all"))
     for issue in issues:
-        if isinstance(issue, PullRequest):
+        if isinstance(issue, PartialPullRequest):
             print(f"Pull Request #{issue.number}: '{issue.title}' by {issue.user.login}")
         else:
             print(f"Issue #{issue.number}: {issue.title}")

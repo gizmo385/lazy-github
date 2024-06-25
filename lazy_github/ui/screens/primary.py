@@ -8,6 +8,7 @@ from textual.widgets import Footer, TabbedContent
 
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import list_all_issues
+from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
@@ -149,13 +150,15 @@ class MainViewPane(Container):
         yield SelectionsPane(self.client)
         yield SelectionDetailsPane(self.client)
 
-    def on_pull_request_selected(self, message: PullRequestSelected) -> None:
+    async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
         log(f"PR = {message.pr}")
+        full_pr = await get_full_pull_request(self.client, message.pr)
+        log(f"Full PR = {full_pr}")
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         tabbed_content.clear_panes()
-        tabbed_content.add_pane(PrOverviewTabPane(message.pr))
-        tabbed_content.add_pane(PrDiffTabPane(message.pr))
-        tabbed_content.add_pane(PrConversationTabPane(message.pr))
+        tabbed_content.add_pane(PrOverviewTabPane(full_pr))
+        tabbed_content.add_pane(PrDiffTabPane(full_pr))
+        tabbed_content.add_pane(PrConversationTabPane(full_pr))
         tabbed_content.focus()
 
 

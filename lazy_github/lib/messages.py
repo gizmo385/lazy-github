@@ -2,7 +2,7 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.models.github import Issue, PullRequest, Repository
+from lazy_github.models.github import Issue, PartialPullRequest, Repository
 
 
 class RepoSelected(Message):
@@ -23,7 +23,7 @@ class PullRequestSelected(Message):
     A message indicating that the user is looking for additional information on a particular pull request.
     """
 
-    def __init__(self, pr: PullRequest) -> None:
+    def __init__(self, pr: PartialPullRequest) -> None:
         self.pr = pr
         super().__init__()
 
@@ -39,13 +39,13 @@ class IssuesAndPullRequestsFetched(Message):
         super().__init__()
 
     @cached_property
-    def pull_requests(self) -> list[PullRequest]:
-        return [pr for pr in self.issues_and_pull_requests if isinstance(pr, PullRequest)]
+    def pull_requests(self) -> list[PartialPullRequest]:
+        return [pr for pr in self.issues_and_pull_requests if isinstance(pr, PartialPullRequest)]
 
     @cached_property
     def issues(self) -> list[Issue]:
         return [
             issue
             for issue in self.issues_and_pull_requests
-            if isinstance(issue, Issue) and not isinstance(issue, PullRequest)
+            if isinstance(issue, Issue) and not isinstance(issue, PartialPullRequest)
         ]

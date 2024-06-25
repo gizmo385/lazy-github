@@ -6,11 +6,10 @@ from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
 from textual.widgets import Label, ListView, Markdown, RichLog, Rule, TabPane
 
-import lazy_github.lib.github.pull_requests as pr_api
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import PullRequest
+from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -22,7 +21,7 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def __init__(self, client: GithubClient, *args, **kwargs) -> None:
         self.client = client
-        self.pull_requests: Dict[int, PullRequest] = {}
+        self.pull_requests: Dict[int, PartialPullRequest] = {}
         self.status_column_index = -1
         self.number_column_index = -1
         self.title_column_index = -1
@@ -58,9 +57,10 @@ class PullRequestsContainer(LazyGithubContainer):
             rows.append((pr.state, pr.number, pr.user.login, pr.title))
         self.table.add_rows(rows)
 
-    async def get_selected_pr(self) -> PullRequest:
+    async def get_selected_pr(self) -> PartialPullRequest:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
         number = self.table.get_cell_at(pr_number_coord)
+        # full_pr = pr_api.get_pull_request(self.client, number)
         return self.pull_requests[number]
 
     @on(LazyGithubDataTable.RowSelected, "#pull_requests_table")
@@ -77,15 +77,19 @@ class PrOverviewTabPane(TabPane):
     }
     """
 
-    def __init__(self, pr: PullRequest) -> None:
+    def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Overview", id="overview_pane")
         self.pr = pr
 
-    def _old_compose(self) -> ComposeResult:
+    def compose(self) -> ComposeResult:
         pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
         user_link = link(self.pr.user.login, self.pr.user.html_url)
-        merge_from = bold(f"{self.pr.head.user.login}:{self.pr.head.ref}")
-        merge_to = bold(f"{self.pr.base.user.login}:{self.pr.base.ref}")
+        merge_from = None
+        if self.pr.head:
+            merge_from = bold(f"{self.pr.head.user.login}:{self.pr.head.ref}")
+        merge_to = None
+        if self.pr.base:
+            merge_to = bold(f"{self.pr.base.user.login}:{self.pr.base.ref}")
 
         change_summary = " • ".join(
             [
@@ -117,11 +121,11 @@ class PrOverviewTabPane(TabPane):
 
 
 class PrDiffTabPane(TabPane):
-    def __init__(self, pr: PullRequest) -> None:
+    def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Diff", id="diff_pane")
         self.pr = pr
 
-    def _old_compose(self) -> ComposeResult:
+    def compose(self) -> ComposeResult:
         with ScrollableContainer():
             yield RichLog(id="diff_contents", highlight=True)
 
@@ -140,7 +144,7 @@ class PrDiffTabPane(TabPane):
 
 
 class PrConversationTabPane(TabPane):
-    def __init__(self, pr: PullRequest) -> None:
+    def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Conversation", id="conversation_pane")
         self.pr = pr
 
