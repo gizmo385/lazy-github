@@ -157,7 +157,7 @@ class MainViewPane(Container):
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         tabbed_content.clear_panes()
         tabbed_content.add_pane(PrOverviewTabPane(full_pr))
-        tabbed_content.add_pane(PrDiffTabPane(full_pr))
+        tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
         tabbed_content.add_pane(PrConversationTabPane(full_pr))
         tabbed_content.focus()
 

@@ -7,6 +7,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import Label, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.pull_requests import get_diff
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
@@ -121,8 +122,9 @@ class PrOverviewTabPane(TabPane):
 
 
 class PrDiffTabPane(TabPane):
-    def __init__(self, pr: FullPullRequest) -> None:
+    def __init__(self, client: GithubClient, pr: FullPullRequest) -> None:
         super().__init__("Diff", id="diff_pane")
+        self.client = client
         self.pr = pr
 
     def compose(self) -> ComposeResult:
@@ -130,14 +132,9 @@ class PrDiffTabPane(TabPane):
             yield RichLog(id="diff_contents", highlight=True)
 
     @work
-    async def write_diff(self, diff: str) -> None:
-        self.query_one("#diff_contents", RichLog).write(diff)
-
-    @work
     async def fetch_diff(self):
-        pass
-        # diff = g.get_diff(self.pr)
-        # self.write_diff(diff)
+        diff = await get_diff(self.client, self.pr)
+        self.query_one("#diff_contents", RichLog).write(diff)
 
     def on_mount(self) -> None:
         self.fetch_diff()
