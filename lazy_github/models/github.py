@@ -52,6 +52,9 @@ class Issue(BaseModel):
     closed_by: User | None = None
     assignee: User | None = None
     assignees: list[User] | None
+
+    # This field isn't actually returned from the API, but we will pass it in manually. It's useful for follow-up
+    # requests that require access to the original repo
     repo: Repository
 
 
@@ -77,5 +80,6 @@ class FullPullRequest(PartialPullRequest):
     commits: int
     head: Ref
     base: Ref
-    html_url: str
     merged_at: datetime | None
+    html_url: str
+    diff_url: str
