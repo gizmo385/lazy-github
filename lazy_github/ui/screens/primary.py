@@ -158,7 +158,7 @@ class MainViewPane(Container):
         tabbed_content.clear_panes()
         tabbed_content.add_pane(PrOverviewTabPane(full_pr))
         tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
-        tabbed_content.add_pane(PrConversationTabPane(full_pr))
+        tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
         tabbed_content.focus()
 
 

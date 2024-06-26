@@ -2,15 +2,15 @@ from typing import Dict
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
+from textual.containers import Container, ScrollableContainer
 from textual.coordinate import Coordinate
-from textual.widgets import Label, ListView, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.lib.github.pull_requests import get_diff
+from lazy_github.lib.github.pull_requests import get_diff, get_reviews
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest
+from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewState
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -140,9 +140,28 @@ class PrDiffTabPane(TabPane):
         self.fetch_diff()
 
 
+class PrReview(Container):
+    def __init__(self, review: Review) -> None:
+        super().__init__()
+        self.review = review
+
+    def compose(self) -> ComposeResult:
+        # TODO: Color the review text baesd on the state
+        if self.review.state == ReviewState.APPROVED:
+            pass
+        yield Label(f"Review from {self.review.user.login} ({self.review.state.title()}")
+        yield Markdown(self.review.body)
+        for comment in self.review.comments:
+            if comment.user:
+                created_at = comment.created_at.strftime("%x at %X")
+                yield Label(f"Comment from {comment.user.login} at {created_at}")
+                yield Markdown(comment.body)
+
+
 class PrConversationTabPane(TabPane):
-    def __init__(self, pr: FullPullRequest) -> None:
+    def __init__(self, client: GithubClient, pr: FullPullRequest) -> None:
         super().__init__("Conversation", id="conversation_pane")
+        self.client = client
         self.pr = pr
 
     def compose(self) -> ComposeResult:
@@ -151,22 +170,6 @@ class PrConversationTabPane(TabPane):
     @property
     def conversation_elements(self) -> ListView:
         return self.query_one("#conversation_elements", ListView)
-
-    @work
-    async def render_conversation(
-        self,
-        # pr_comments: Iterable[IssueComment],
-        # reviews: Iterable[PullRequestReview],
-        # review_comments: Iterable[PullRequestComment],
-    ) -> None:
-        pass
-        # conversation_elements = self.conversation_elements
-        # reviews_by_id = {r.id: r for r in reviews}
-        # review_comments_by_id = {rc.id: rc for rc in review_comments}
-        # pr_comments_by_id = {prc.id: prc for prc in pr_comments}
-
-        # for review in review_comments:
-        # conversation_elements.append(ListItem(Label(f"{review.user.login}\n{review.body}")))
 
     @work
     async def fetch_conversation(self):
@@ -178,12 +181,14 @@ class PrConversationTabPane(TabPane):
         # necessary to setup a list of distinct threads of a review conversation that are happening.
         # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
         # actually has the full conversation associated with a review, so might need to query this as well :(
-        pass
+        reviews = await get_reviews(self.client, self.pr)
+        for review in reviews:
+            log_event(f"Adding  review to the view with {len(review.comments)} comments")
+            self.conversation_elements.append(ListItem(PrReview(review)))
         # comments = self.pr.get_issue_comments()
         # reviews = self.pr.get_reviews()
         # review_comments = self.pr.get_review_comments()
         # self.render_conversation(comments, reviews, review_comments)
 
     def on_mount(self) -> None:
-        pass
-        # self.fetch_conversation()
+        self.fetch_conversation()
