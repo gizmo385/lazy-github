@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.models.github import Issue, PartialPullRequest, Repository, User
+from lazy_github.models.github import Issue, PartialPullRequest, Repository
 
 IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
 
