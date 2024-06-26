@@ -1,5 +1,6 @@
 import json
 from contextlib import contextmanager
+from datetime import timedelta
 from typing import Generator, List, Literal, Self
 
 from pydantic import BaseModel
@@ -22,9 +23,9 @@ class PullRequestSettings(BaseModel):
 class RepositorySettings(BaseModel):
     favorites: List[str] = []
 
-    # TODO: We should add some caching here to make top level information retrieval more performant
-    # We should have a configurable TTL for that information as well
-    cache_duration: int = 1
+
+class CacheSettings(BaseModel):
+    repo_cache_duration: int = int(timedelta(days=1).total_seconds())
 
 
 class AppearenceSettings(BaseModel):
@@ -35,6 +36,7 @@ class Config(BaseModel):
     appearence: AppearenceSettings = AppearenceSettings()
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
+    cache: CacheSettings = CacheSettings()
     api: ApiConfig = ApiConfig()
 
     @classmethod
