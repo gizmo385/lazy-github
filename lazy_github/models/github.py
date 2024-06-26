@@ -9,8 +9,6 @@ class User(BaseModel):
     id: int
     name: str | None = None
     html_url: str
-    followers: int | None = None
-    following: int | None = None
 
 
 class RepositoryPermission(BaseModel):
@@ -52,6 +50,7 @@ class Issue(BaseModel):
     closed_by: User | None = None
     assignee: User | None = None
     assignees: list[User] | None
+    comments_url: str
 
     # This field isn't actually returned from the API, but we will pass it in manually. It's useful for follow-up
     # requests that require access to the original repo
@@ -83,3 +82,43 @@ class FullPullRequest(PartialPullRequest):
     merged_at: datetime | None
     html_url: str
     diff_url: str
+
+
+class AuthorAssociation(StrEnum):
+    COLLABORATOR = "COLLABORATOR"
+    CONTRIBUTOR = "CONTRIBUTOR"
+    FIRST_TIMER = "FIRST_TIMER"
+    FIRST_TIME_CONTRIBUTOR = "FIRST_TIME_CONTRIBUTOR"
+    MANNEQUIN = "MANNEQUIN"
+    MEMBER = "MEMBER"
+    NONE = "NONE"
+    OWNER = "OWNER"
+
+
+class ReviewState(StrEnum):
+    APPROVED = "APPROVED"
+    CHANGED_REQUESTED = "CHANGED_REQUESTED"
+    COMMENTED = "COMMENTED"
+
+
+class ReviewComment(BaseModel):
+    id: int
+    pull_request_review_id: int
+    body: str
+    user: User | None
+    path: str
+    url: str
+    created_at: datetime
+    updated_at: datetime
+    author_association: AuthorAssociation
+    position: int | None
+    original_position: int | None
+    in_reply_to_id: int | None = None
+
+
+class Review(BaseModel):
+    id: int
+    user: User
+    body: str
+    state: ReviewState
+    comments: list[ReviewComment] = []
