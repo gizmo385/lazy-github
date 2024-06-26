@@ -27,29 +27,7 @@ list_closed_issues = partial(_list, state="closed")
 list_all_issues = partial(_list, state="all")
 
 
-if __name__ == "__main__":
-    import asyncio
-    import logging
-
-    logging.basicConfig(
-        format="%(levelname)s [%(asctime)s] %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG
-    )
-
-    from lazy_github.lib.config import Config
-    from lazy_github.lib.github.auth import token
-
-    client = GithubClient(Config.load_config(), token())
-    repo = Repository(
-        name="discord.clj",
-        full_name="gizmo385/discord.clj",
-        default_branch="main",
-        private=False,
-        archived=False,
-        owner=User(login="gizmo385", id=1, html_url="wat"),
-    )
-    issues = asyncio.run(_list(client, repo, "all"))
-    for issue in issues:
-        if isinstance(issue, PartialPullRequest):
-            print(f"Pull Request #{issue.number}: '{issue.title}' by {issue.user.login}")
-        else:
-            print(f"Issue #{issue.number}: {issue.title}")
+async def get_comments(client: GithubClient, issue: Issue) -> list:
+    response = await client.get(issue.comments_url, headers=client.headers_with_auth_accept())
+    response.raise_for_status()
+    return response.json()
