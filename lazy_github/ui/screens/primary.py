@@ -43,7 +43,7 @@ class LazyGithubStatusSummary(Container):
     """
 
     def compose(self):
-        yield CurrentlySelectedRepo()
+        yield CurrentlySelectedRepo(id="currently_selected_repo")
 
 
 class LazyGithubFooter(Footer):
@@ -174,3 +174,6 @@ class LazyGithubMainScreen(Screen):
             yield LazyGithubStatusSummary()
             yield MainViewPane(self.client)
             yield LazyGithubFooter()
+
+    def on_repo_selected(self, message: RepoSelected) -> None:
+        self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name
