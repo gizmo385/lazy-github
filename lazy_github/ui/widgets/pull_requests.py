@@ -1,16 +1,19 @@
-from typing import Dict
-
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, ScrollableContainer
+from textual.containers import Container, ScrollableContainer, Vertical, VerticalScroll
 from textual.coordinate import Coordinate
-from textual.widgets import Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Collapsible, Label, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.lib.github.pull_requests import get_diff, get_reviews
+from lazy_github.lib.github.pull_requests import (
+    ReviewCommentNode,
+    get_diff,
+    get_reviews,
+    reconstruct_review_conversation_hierarchy,
+)
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewState
+from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -22,7 +25,7 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def __init__(self, client: GithubClient, *args, **kwargs) -> None:
         self.client = client
-        self.pull_requests: Dict[int, PartialPullRequest] = {}
+        self.pull_requests: dict[int, PartialPullRequest] = {}
         self.status_column_index = -1
         self.number_column_index = -1
         self.title_column_index = -1
@@ -61,11 +64,10 @@ class PullRequestsContainer(LazyGithubContainer):
     async def get_selected_pr(self) -> PartialPullRequest:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
         number = self.table.get_cell_at(pr_number_coord)
-        # full_pr = pr_api.get_pull_request(self.client, number)
         return self.pull_requests[number]
 
     @on(LazyGithubDataTable.RowSelected, "#pull_requests_table")
-    async def pr_selected(self):
+    async def pr_selected(self) -> None:
         pr = await self.get_selected_pr()
         log_event(f"Selected PR: #{pr.number}")
         self.post_message(PullRequestSelected(pr))
@@ -140,22 +142,77 @@ class PrDiffTabPane(TabPane):
         self.fetch_diff()
 
 
-class PrReview(Container):
-    def __init__(self, review: Review) -> None:
+class ReviewCommentContainer(Container):
+    DEFAULT_CSS = """
+    ReviewCommentContainer {
+        height: auto;
+        border: round $accent;
+    }
+    """
+
+    def __init__(self, comment: ReviewComment) -> None:
         super().__init__()
-        self.review = review
+        self.comment = comment
 
     def compose(self) -> ComposeResult:
-        # TODO: Color the review text baesd on the state
+        comment_time = self.comment.created_at.strftime("%x at %X")
+        author = self.comment.user.login if self.comment.user else "Unknown"
+        yield Markdown(f"**{author}** on {comment_time}")
+        yield Markdown(self.comment.body)
+
+
+class ReviewConversation(Container):
+    DEFAULT_CSS = """
+    ReviewConversation {
+        height: auto;
+        border: solid $secondary;
+    }
+    """
+
+    def __init__(self, root_conversation_node: ReviewCommentNode) -> None:
+        super().__init__()
+        self.root_conversation_node = root_conversation_node
+
+    def _flatten_comments(self, root: ReviewCommentNode) -> list[ReviewComment]:
+        result = [root.comment]
+        for child in root.children:
+            result.extend(self._flatten_comments(child))
+        return result
+
+    def compose(self) -> ComposeResult:
+        for comment in self._flatten_comments(self.root_conversation_node):
+            yield ReviewCommentContainer(comment)
+
+
+class ReviewContainer(Container):
+    DEFAULT_CSS = """
+    ReviewContainer {
+        height: auto;
+    }
+
+    Markdown {
+        height: auto;
+    }
+    """
+
+    def __init__(self, review: Review, hierarchy: dict[int, ReviewCommentNode]) -> None:
+        super().__init__()
+        self.review = review
+        self.hierarchy = hierarchy
+
+    def compose(self) -> ComposeResult:
         if self.review.state == ReviewState.APPROVED:
-            pass
-        yield Label(f"Review from {self.review.user.login} ({self.review.state.title()}")
+            review_state_text = "[green]Approved[/green]"
+        elif self.review.state == ReviewState.CHANGED_REQUESTED:
+            review_state_text = "[red]Changes Requested[/red]"
+        else:
+            review_state_text = self.review.state.title()
+        yield Label(f"Review from {self.review.user.login} ({review_state_text})")
         yield Markdown(self.review.body)
         for comment in self.review.comments:
-            if comment.user:
-                created_at = comment.created_at.strftime("%x at %X")
-                yield Label(f"Comment from {comment.user.login} at {created_at}")
-                yield Markdown(comment.body)
+            if comment_node := self.hierarchy[comment.id]:
+                log_event(f"Adding review conversation {comment.id}")
+                yield ReviewConversation(comment_node)
 
 
 class PrConversationTabPane(TabPane):
@@ -165,11 +222,12 @@ class PrConversationTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield ListView(id="conversation_elements")
+        with VerticalScroll(id="reviews"):
+            yield Label("")
 
     @property
-    def conversation_elements(self) -> ListView:
-        return self.query_one("#conversation_elements", ListView)
+    def reviews(self) -> VerticalScroll:
+        return self.query_one("#reviews", VerticalScroll)
 
     @work
     async def fetch_conversation(self):
@@ -182,13 +240,12 @@ class PrConversationTabPane(TabPane):
         # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
         # actually has the full conversation associated with a review, so might need to query this as well :(
         reviews = await get_reviews(self.client, self.pr)
+        review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
+        self.reviews.remove_children()
         for review in reviews:
-            log_event(f"Adding  review to the view with {len(review.comments)} comments")
-            self.conversation_elements.append(ListItem(PrReview(review)))
-        # comments = self.pr.get_issue_comments()
-        # reviews = self.pr.get_reviews()
-        # review_comments = self.pr.get_review_comments()
-        # self.render_conversation(comments, reviews, review_comments)
+            if review.body:
+                review_container = ReviewContainer(review, review_hierarchy)
+                self.reviews.mount(review_container)
 
     def on_mount(self) -> None:
         self.fetch_conversation()
