@@ -13,7 +13,7 @@ from lazy_github.lib.github.pull_requests import (
 )
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState, User
+from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
