@@ -1,6 +1,6 @@
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, ScrollableContainer, Vertical, VerticalScroll
+from textual.containers import Container, ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Collapsible, Label, Markdown, RichLog, Rule, TabPane
 
@@ -13,7 +13,7 @@ from lazy_github.lib.github.pull_requests import (
 )
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState
+from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState, User
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -116,7 +116,7 @@ class PrOverviewTabPane(TabPane):
             yield Label(change_summary)
 
             if self.pr.merged_at:
-                date = self.pr.merged_at.strftime("%x at %X")
+                date = self.pr.merged_at.strftime("%c")
                 yield Label(f"\nMerged on {date}")
 
             yield Rule()
@@ -146,7 +146,21 @@ class ReviewCommentContainer(Container):
     DEFAULT_CSS = """
     ReviewCommentContainer {
         height: auto;
-        border: round $accent;
+        border-left: solid $secondary-background;
+        margin-left: 1;
+        margin-bottom: 1;
+    }
+
+    .comment-author {
+        color: $text-muted;
+        margin-left: 1;
+        margin-bottom: 1;
+    }
+
+    Markdown {
+        margin-left: 1;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
     """
 
@@ -155,17 +169,18 @@ class ReviewCommentContainer(Container):
         self.comment = comment
 
     def compose(self) -> ComposeResult:
-        comment_time = self.comment.created_at.strftime("%x at %X")
+        comment_time = self.comment.created_at.strftime("%c")
         author = self.comment.user.login if self.comment.user else "Unknown"
-        yield Markdown(f"**{author}** on {comment_time}")
         yield Markdown(self.comment.body)
+        yield Label(f"{author} • {comment_time}", classes="comment-author")
 
 
 class ReviewConversation(Container):
     DEFAULT_CSS = """
     ReviewConversation {
         height: auto;
-        border: solid $secondary;
+        border-left: solid $secondary-background;
+        margin-bottom: 1;
     }
     """
 
@@ -184,13 +199,9 @@ class ReviewConversation(Container):
             yield ReviewCommentContainer(comment)
 
 
-class ReviewContainer(Container):
+class ReviewContainer(Collapsible):
     DEFAULT_CSS = """
     ReviewContainer {
-        height: auto;
-    }
-
-    Markdown {
         height: auto;
     }
     """
@@ -222,8 +233,7 @@ class PrConversationTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id="reviews"):
-            yield Label("")
+        yield VerticalScroll(id="reviews")
 
     @property
     def reviews(self) -> VerticalScroll:
@@ -231,14 +241,6 @@ class PrConversationTabPane(TabPane):
 
     @work
     async def fetch_conversation(self):
-        # TODO: Okay, so the review API in Github is weird. There are 3 APIs we might need to leverage here.
-        #
-        # 1. The conversation API, which contains comments that happen separately from a review. Unclear if these
-        # actually show up for PRs or if they're only actually present on issues (need to find an example).
-        # 2. The reviews API, which returns distinct reviews and the comments that accompany them. This will be
-        # necessary to setup a list of distinct threads of a review conversation that are happening.
-        # 3. The review comments API, which pulls comments for a particular review. It doesn't look like the reviews API
-        # actually has the full conversation associated with a review, so might need to query this as well :(
         reviews = await get_reviews(self.client, self.pr)
         review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
         self.reviews.remove_children()
@@ -249,3 +251,4 @@ class PrConversationTabPane(TabPane):
 
     def on_mount(self) -> None:
         self.fetch_conversation()
+        self.focus()
