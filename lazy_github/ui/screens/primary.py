@@ -1,4 +1,3 @@
-from textual import log
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
@@ -151,9 +150,7 @@ class MainViewPane(Container):
         yield SelectionDetailsPane(self.client)
 
     async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
-        log(f"PR = {message.pr}")
         full_pr = await get_full_pull_request(self.client, message.pr)
-        log(f"Full PR = {full_pr}")
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         tabbed_content.clear_panes()
         tabbed_content.add_pane(PrOverviewTabPane(full_pr))
