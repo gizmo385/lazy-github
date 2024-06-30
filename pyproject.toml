@@ -2,9 +2,20 @@
 name = "lazy-github"
 description = "A terminal UI for interacting with Github"
 version = "0.1"
-
-
+authors = [
+	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
+]
+maintainers = [
+	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
+]
 license = { file = "LICENSE"}
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+]
 
 requires-python = ">=3.11"
 dependencies = [
@@ -22,7 +33,7 @@ checks = [
 ]
 
 [project.scripts]
-lazy-github = "lazy_github:main"
+lazy-github = "lazy_github.__main__:main"
 
 
 [tool.ruff]
