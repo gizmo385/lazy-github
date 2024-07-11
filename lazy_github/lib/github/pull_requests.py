@@ -1,14 +1,10 @@
-from datetime import datetime
 from typing import Self
 
-from lazy_github.lib.config import Config
-from lazy_github.lib.github.auth import token
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.models.github import (
     FullPullRequest,
-    IssueState,
     PartialPullRequest,
     Repository,
     Review,
