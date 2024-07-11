@@ -1,13 +1,14 @@
-import httpx
+import httpx_cache
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.github.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.models.github import User
 
 
-class GithubClient(httpx.AsyncClient):
+class GithubClient(httpx_cache.AsyncClient):
     def __init__(self, config: Config, access_token: str) -> None:
-        super().__init__(base_url=config.api.base_url)
+        cache = httpx_cache.FileCache(cache_dir=config.cache.cache_directory)
+        super().__init__(cache=cache, base_url=config.api.base_url)
         self.config = config
         self.access_token = access_token
         self._user: User | None = None

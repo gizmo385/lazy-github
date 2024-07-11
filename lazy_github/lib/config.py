@@ -1,6 +1,7 @@
 import json
 from contextlib import contextmanager
 from datetime import timedelta
+from pathlib import Path
 from typing import Generator, List, Literal, Self
 
 from pydantic import BaseModel
@@ -25,7 +26,8 @@ class RepositorySettings(BaseModel):
 
 
 class CacheSettings(BaseModel):
-    repo_cache_duration: int = int(timedelta(days=1).total_seconds())
+    cache_directory: Path = CONFIG_FOLDER / ".cache"
+    default_ttl: int = int(timedelta(days=1).total_seconds())
 
 
 class AppearenceSettings(BaseModel):
