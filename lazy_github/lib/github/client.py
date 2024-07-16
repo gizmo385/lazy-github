@@ -1,21 +1,28 @@
-import httpx_cache
+from typing import Optional
+
+import hishel
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.github.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.models.github import User
 
 
-class GithubClient(httpx_cache.AsyncClient):
+class GithubClient(hishel.AsyncCacheClient):
     def __init__(self, config: Config, access_token: str) -> None:
-        cache = httpx_cache.FileCache(cache_dir=config.cache.cache_directory)
-        super().__init__(cache=cache, base_url=config.api.base_url)
+        storage = hishel.AsyncFileStorage(base_path=config.cache.cache_directory)
+        super().__init__(storage=storage, base_url=config.api.base_url)
         self.config = config
         self.access_token = access_token
         self._user: User | None = None
 
-    def headers_with_auth_accept(self, accept: str = JSON_CONTENT_ACCEPT_TYPE) -> dict[str, str]:
+    def headers_with_auth_accept(
+        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None
+    ) -> dict[str, str]:
         """Helper function to build a request with specific headers"""
-        return {"Accept": accept, "Authorization": f"Bearer {self.access_token}"}
+        headers = {"Accept": accept, "Authorization": f"Bearer {self.access_token}"}
+        max_age = cache_duration or self.config.cache.default_ttl
+        headers["Cache-Control"] = f"max-age={max_age}"
+        return headers
 
     async def user(self) -> User:
         """Returns the authed user for this client"""
