@@ -18,8 +18,9 @@ async def _list(
     per_page: int = 50,
 ) -> list[Repository]:
     """Retrieves Github repos matching the specified criteria"""
+    headers = client.headers_with_auth_accept(cache_duration=client.config.cache.list_repos_ttl)
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
-    response = await client.get("/user/repos", headers=client.headers_with_auth_accept(), params=query_params)
+    response = await client.get("/user/repos", headers=headers, params=query_params)
     response.raise_for_status()
     return [Repository(**r) for r in response.json()]
 

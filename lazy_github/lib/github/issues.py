@@ -10,9 +10,8 @@ IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
 async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter) -> list[Issue]:
     query_params = {"state": state}
     user = await client.user()
-    response = await client.get(
-        f"/repos/{user.login}/{repo.name}/issues", headers=client.headers_with_auth_accept(), params=query_params
-    )
+    headers = client.headers_with_auth_accept(cache_duration=client.config.cache.list_issues_ttl)
+    response = await client.get(f"/repos/{user.login}/{repo.name}/issues", headers=headers, params=query_params)
     result: list[Issue] = []
     for issue in response.json():
         if "draft" in issue:

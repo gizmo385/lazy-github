@@ -27,7 +27,9 @@ class RepositorySettings(BaseModel):
 
 class CacheSettings(BaseModel):
     cache_directory: Path = CONFIG_FOLDER / ".cache"
-    default_ttl: int = int(timedelta(days=1).total_seconds())
+    default_ttl: int = int(timedelta(minutes=10).total_seconds())
+    list_repos_ttl: int = int(timedelta(days=1).total_seconds())
+    list_issues_ttl: int = int(timedelta(hours=1).total_seconds())
 
 
 class AppearenceSettings(BaseModel):
