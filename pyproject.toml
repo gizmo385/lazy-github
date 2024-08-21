@@ -27,12 +27,6 @@ dependencies = [
 	"textual-dev",
 ]
 
-[project.optional-dependencies]
-checks = [
-	"pyright",
-	"ruff",
-]
-
 [project.scripts]
 lazy-github = "lazy_github.__main__:main"
 
