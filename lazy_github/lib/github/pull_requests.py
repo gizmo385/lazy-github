@@ -3,6 +3,7 @@ from lazy_github.lib.github.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.models.github import (
     FullPullRequest,
+    Issue,
     PartialPullRequest,
     Repository,
     Review,
@@ -53,6 +54,15 @@ async def get_reviews(client: GithubClient, pr: FullPullRequest, with_comments: 
             review.comments = await get_review_comments(client, pr, review)
         reviews.append(review)
     return reviews
+
+
+async def reply_to_review_comment(
+    client: GithubClient, repo: Repository, issue: Issue, comment: ReviewComment, comment_body: str
+) -> ReviewComment:
+    url = f"/repos/{repo.owner.login}/{repo.name}/pulls/{issue.number}/comments/{comment.id}/replies"
+    response = await client.post(url, headers=client.headers_with_auth_accept(), json={"body": comment_body})
+    response.raise_for_status()
+    return ReviewComment(**response.json())
 
 
 class ReviewCommentNode:
