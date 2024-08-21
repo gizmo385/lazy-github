@@ -10,7 +10,7 @@ from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
-from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
+from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.issues import IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
