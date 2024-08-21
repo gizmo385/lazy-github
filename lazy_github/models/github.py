@@ -97,7 +97,7 @@ class AuthorAssociation(StrEnum):
 
 class ReviewState(StrEnum):
     APPROVED = "APPROVED"
-    CHANGED_REQUESTED = "CHANGED_REQUESTED"
+    CHANGES_REQUESTED = "CHANGES_REQUESTED"
     COMMENTED = "COMMENTED"
 
 
@@ -122,3 +122,4 @@ class Review(BaseModel):
     body: str
     state: ReviewState
     comments: list[ReviewComment] = []
+    submitted_at: datetime
