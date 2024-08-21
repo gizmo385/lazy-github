@@ -1,3 +1,5 @@
+from inspect import FullArgSpec
+
 from httpx import HTTPStatusError
 from textual import on, work
 from textual.app import ComposeResult
@@ -15,6 +17,7 @@ from lazy_github.lib.github.pull_requests import (
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState
+from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
 
@@ -151,7 +154,7 @@ class PrDiffTabPane(TabPane):
         self.fetch_diff()
 
 
-class ReviewCommentContainer(Container):
+class ReviewCommentContainer(Container, can_focus=True):
     DEFAULT_CSS = """
     ReviewCommentContainer {
         height: auto;
@@ -171,10 +174,18 @@ class ReviewCommentContainer(Container):
         margin-bottom: 0;
         padding-bottom: 0;
     }
+
+    ReviewCommentContainer:focus-within {
+        border: dashed $success;
+    }
     """
 
-    def __init__(self, comment: ReviewComment) -> None:
+    BINDINGS = [("r", "reply_to_individual_comment", "Reply to comment")]
+
+    def __init__(self, client: GithubClient, pr: FullPullRequest, comment: ReviewComment) -> None:
         super().__init__()
+        self.client = client
+        self.pr = pr
         self.comment = comment
 
     def compose(self) -> ComposeResult:
@@ -182,6 +193,9 @@ class ReviewCommentContainer(Container):
         author = self.comment.user.login if self.comment.user else "Unknown"
         yield Markdown(self.comment.body)
         yield Label(f"{author} • {comment_time}", classes="comment-author")
+
+    def action_reply_to_individual_comment(self) -> None:
+        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.comment))
 
 
 class ReviewConversation(Container):
@@ -193,8 +207,10 @@ class ReviewConversation(Container):
     }
     """
 
-    def __init__(self, root_conversation_node: ReviewCommentNode) -> None:
+    def __init__(self, client: GithubClient, pr: FullPullRequest, root_conversation_node: ReviewCommentNode) -> None:
         super().__init__()
+        self.client = client
+        self.pr = pr
         self.root_conversation_node = root_conversation_node
 
     def _flatten_comments(self, root: ReviewCommentNode) -> list[ReviewComment]:
@@ -205,25 +221,34 @@ class ReviewConversation(Container):
 
     def compose(self) -> ComposeResult:
         for comment in self._flatten_comments(self.root_conversation_node):
-            yield ReviewCommentContainer(comment)
+            yield ReviewCommentContainer(self.client, self.pr, comment)
 
 
-class ReviewContainer(Collapsible):
+class ReviewContainer(Collapsible, can_focus=True):
     DEFAULT_CSS = """
     ReviewContainer {
         height: auto;
     }
-    """
 
-    def __init__(self, review: Review, hierarchy: dict[int, ReviewCommentNode]) -> None:
+    ReviewContainer:focus-within {
+        border: solid $success-lighten-3;
+    }
+    """
+    BINDINGS = [("r", "reply_to_review", "Reply to review")]
+
+    def __init__(
+        self, client: GithubClient, pr: FullPullRequest, review: Review, hierarchy: dict[int, ReviewCommentNode]
+    ) -> None:
         super().__init__()
+        self.client = client
+        self.pr = pr
         self.review = review
         self.hierarchy = hierarchy
 
     def compose(self) -> ComposeResult:
         if self.review.state == ReviewState.APPROVED:
             review_state_text = "[green]Approved[/green]"
-        elif self.review.state == ReviewState.CHANGED_REQUESTED:
+        elif self.review.state == ReviewState.CHANGES_REQUESTED:
             review_state_text = "[red]Changes Requested[/red]"
         else:
             review_state_text = self.review.state.title()
@@ -231,11 +256,15 @@ class ReviewContainer(Collapsible):
         yield Markdown(self.review.body)
         for comment in self.review.comments:
             if comment_node := self.hierarchy[comment.id]:
-                log_event(f"Adding review conversation {comment.id}")
-                yield ReviewConversation(comment_node)
+                yield ReviewConversation(self.client, self.pr, comment_node)
+
+    def action_reply_to_review(self) -> None:
+        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.review))
 
 
 class PrConversationTabPane(TabPane):
+    BINDINGS = [("n", "new_comment", "New comment")]
+
     def __init__(self, client: GithubClient, pr: FullPullRequest) -> None:
         super().__init__("Conversation", id="conversation_pane")
         self.client = client
@@ -255,9 +284,11 @@ class PrConversationTabPane(TabPane):
         self.reviews.remove_children()
         for review in reviews:
             if review.body:
-                review_container = ReviewContainer(review, review_hierarchy)
+                review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
                 self.reviews.mount(review_container)
 
     def on_mount(self) -> None:
         self.fetch_conversation()
-        self.focus()
+
+    def action_new_comment(self) -> None:
+        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))
