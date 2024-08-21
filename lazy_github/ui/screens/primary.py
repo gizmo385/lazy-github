@@ -1,3 +1,4 @@
+from httpx import HTTPStatusError
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
@@ -112,10 +113,17 @@ class SelectionsPane(Container):
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
         # self.actions.post_message(message)
-        issues_and_pull_requests = await list_all_issues(self.client, message.repo)
-        issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)
-        self.pull_requests.post_message(issue_and_pr_message)
-        self.issues.post_message(issue_and_pr_message)
+        try:
+            issues_and_pull_requests = await list_all_issues(self.client, message.repo)
+        except HTTPStatusError as hse:
+            if hse.response.status_code == 404:
+                pass
+            else:
+                raise
+        else:
+            issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)
+            self.pull_requests.post_message(issue_and_pr_message)
+            self.issues.post_message(issue_and_pr_message)
 
 
 class SelectionDetailsPane(Container):
