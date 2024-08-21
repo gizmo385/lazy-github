@@ -1,3 +1,4 @@
+from httpx import HTTPStatusError
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, ScrollableContainer, VerticalScroll
@@ -135,8 +136,16 @@ class PrDiffTabPane(TabPane):
 
     @work
     async def fetch_diff(self):
-        diff = await get_diff(self.client, self.pr)
-        self.query_one("#diff_contents", RichLog).write(diff)
+        diff_contents = self.query_one("#diff_contents", RichLog)
+        try:
+            diff = await get_diff(self.client, self.pr)
+        except HTTPStatusError as hse:
+            if hse.response.status_code == 404:
+                diff_contents.write("No diff contents found")
+            else:
+                raise
+        else:
+            diff_contents.write(diff)
 
     def on_mount(self) -> None:
         self.fetch_diff()
