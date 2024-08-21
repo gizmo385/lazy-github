@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.models.github import Issue, PartialPullRequest, Repository
+from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, Repository
 
 IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
 
@@ -30,3 +30,11 @@ async def get_comments(client: GithubClient, issue: Issue) -> list:
     response = await client.get(issue.comments_url, headers=client.headers_with_auth_accept())
     response.raise_for_status()
     return response.json()
+
+
+async def create_comment(client: GithubClient, repo: Repository, issue: Issue, comment_body: str) -> IssueComment:
+    url = f"/repos/{repo.owner.login}/{repo.name}/issues/{issue.number}/comments"
+    body = {"body": comment_body}
+    response = await client.post(url, json=body, headers=client.headers_with_auth_accept())
+    response.raise_for_status()
+    return IssueComment(**response.json())
