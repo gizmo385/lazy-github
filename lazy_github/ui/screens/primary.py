@@ -10,7 +10,7 @@ from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
-from lazy_github.ui.widgets.command_log import CommandLogSection
+from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.issues import IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
@@ -134,7 +134,7 @@ class MainViewPane(Container):
         ("2", "focus_section('#pull_requests_table')"),
         ("3", "focus_section('#issues_table')"),
         ("4", "focus_section('#actions_table')"),
-        # ("5", "focus_section('#scratch_space_tabs')"),
+        ("5", "focus_tabs"),
         ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
@@ -145,6 +145,13 @@ class MainViewPane(Container):
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
 
+    def action_focus_tabs(self) -> None:
+        tabs = self.query_one("#selection_detail_tabs", TabbedContent)
+        if tabs.children and tabs.tab_count > 0:
+            log_event("Attempting to focus tabs")
+            focused = tabs.children[0].focus()
+            log_event(f"Focusing on {focused}")
+
     def compose(self) -> ComposeResult:
         yield SelectionsPane(self.client)
         yield SelectionDetailsPane(self.client)
@@ -153,9 +160,9 @@ class MainViewPane(Container):
         full_pr = await get_full_pull_request(self.client, message.pr)
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
-        tabbed_content.add_pane(PrOverviewTabPane(full_pr))
-        tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
-        tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
+        await tabbed_content.add_pane(PrOverviewTabPane(full_pr))
+        await tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
+        await tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
         tabbed_content.focus()
 
 
