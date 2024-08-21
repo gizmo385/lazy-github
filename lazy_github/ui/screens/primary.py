@@ -152,7 +152,7 @@ class MainViewPane(Container):
     async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
         full_pr = await get_full_pull_request(self.client, message.pr)
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
-        tabbed_content.clear_panes()
+        await tabbed_content.clear_panes()
         tabbed_content.add_pane(PrOverviewTabPane(full_pr))
         tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
         tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
