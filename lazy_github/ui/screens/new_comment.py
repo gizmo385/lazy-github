@@ -5,7 +5,7 @@ from textual.containers import Container, Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown, Rule, TextArea
 
-from lazy_github.lib.github import issues
+from lazy_github.lib.github import issues, pull_requests
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.github import Issue, Repository, Review, ReviewComment
 from lazy_github.ui.widgets.command_log import log_event
@@ -83,15 +83,17 @@ class NewCommentContainer(Container):
 
     @on(Button.Pressed, "#post_comment")
     async def post_comment(self, _: Button.Pressed) -> None:
-        comment_body = self.query_one("#new_comment_body", TextArea).text
+        body = self.query_one("#new_comment_body", TextArea).text
         try:
-            await issues.create_comment(self.client, self.repo, self.issue, comment_body)
+            if isinstance(self.reply_to, ReviewComment):
+                await pull_requests.reply_to_review_comment(self.client, self.repo, self.issue, self.reply_to, body)
+            else:
+                await issues.create_comment(self.client, self.repo, self.issue, body)
         except HTTPStatusError as hse:
-            # TODO Pop screen with error
+            # TODO: We should handle the error case better here
             log_event(f"Error while posting comment for issue #{self.issue.number}: {hse}")
             self.app.pop_screen()
         else:
-            # TODO Pop screen with success
             log_event(f"Successfully posted new comment for issue #{self.issue.number}")
             self.app.pop_screen()
 
