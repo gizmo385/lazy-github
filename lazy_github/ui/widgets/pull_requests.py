@@ -1,5 +1,3 @@
-from inspect import FullArgSpec
-
 from httpx import HTTPStatusError
 from textual import on, work
 from textual.app import ComposeResult
