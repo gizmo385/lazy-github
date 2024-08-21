@@ -95,22 +95,25 @@ class AuthorAssociation(StrEnum):
     OWNER = "OWNER"
 
 
+class IssueComment(BaseModel):
+    id: int
+    body: str
+    user: User | None
+    created_at: datetime
+    updated_at: datetime
+    author_association: AuthorAssociation
+
+
 class ReviewState(StrEnum):
     APPROVED = "APPROVED"
     CHANGES_REQUESTED = "CHANGES_REQUESTED"
     COMMENTED = "COMMENTED"
 
 
-class ReviewComment(BaseModel):
-    id: int
+class ReviewComment(IssueComment):
     pull_request_review_id: int
-    body: str
-    user: User | None
     path: str
     url: str
-    created_at: datetime
-    updated_at: datetime
-    author_association: AuthorAssociation
     position: int | None
     original_position: int | None
     in_reply_to_id: int | None = None
