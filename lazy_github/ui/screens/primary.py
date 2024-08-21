@@ -148,9 +148,7 @@ class MainViewPane(Container):
     def action_focus_tabs(self) -> None:
         tabs = self.query_one("#selection_detail_tabs", TabbedContent)
         if tabs.children and tabs.tab_count > 0:
-            log_event("Attempting to focus tabs")
-            focused = tabs.children[0].focus()
-            log_event(f"Focusing on {focused}")
+            tabs.children[0].focus()
 
     def compose(self) -> ComposeResult:
         yield SelectionsPane(self.client)
@@ -163,7 +161,7 @@ class MainViewPane(Container):
         await tabbed_content.add_pane(PrOverviewTabPane(full_pr))
         await tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
         await tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
-        tabbed_content.focus()
+        tabbed_content.children[0].focus()
 
 
 class LazyGithubMainScreen(Screen):
