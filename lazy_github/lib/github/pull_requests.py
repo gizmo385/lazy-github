@@ -1,5 +1,3 @@
-from typing import Self
-
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.issues import list_all_issues
@@ -59,7 +57,7 @@ async def get_reviews(client: GithubClient, pr: FullPullRequest, with_comments: 
 
 class ReviewCommentNode:
     def __init__(self, comment: ReviewComment) -> None:
-        self.children: list[Self] = []
+        self.children: list["ReviewCommentNode"] = []
         self.comment = comment
 
 
