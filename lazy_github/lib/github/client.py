@@ -3,7 +3,7 @@ from typing import Optional
 import hishel
 
 from lazy_github.lib.config import Config
-from lazy_github.lib.github.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.models.github import User
 
 

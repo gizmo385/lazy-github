@@ -1,5 +1,5 @@
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.lib.github.constants import DIFF_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.models.github import (
     FullPullRequest,
