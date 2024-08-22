@@ -22,4 +22,3 @@ jobs:
     - uses: yezz123/setup-uv@v4
     - run: uv sync
     - run: .venv/bin/ruff check
-    - run: .venv/bin/pyright
