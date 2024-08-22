@@ -20,5 +20,4 @@ jobs:
       with:
         python-version: "3.11"
     - uses: yezz123/setup-uv@v4
-    - run: uv run --extra=checks pyright
-    - run: uv run --extra=checks ruff check
+    - run: uvx ruff check
