@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-uvx ruff check
+uv sync
+.venv/bin/ruff check
+.venv/bin/pyright

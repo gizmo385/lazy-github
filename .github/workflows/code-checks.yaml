@@ -20,4 +20,6 @@ jobs:
       with:
         python-version: "3.11"
     - uses: yezz123/setup-uv@v4
-    - run: uvx ruff check
+    - run: uv sync
+    - run: .venv/bin/ruff check
+    - run: .venv/bin/pyright
