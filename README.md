@@ -22,11 +22,4 @@ Planned features:
 ## Running Locally
 
 I'm not currently automatically pushing LazyGithub up to [PyPi](https://pypi.org/) (although I plan
-to in the future), so for the time being you can run this locally via:
-
-```bash
--> uv venv --python python3.11
--> source .venv/bin/activate
-(lazy-github) -> uv pip sync requirements.txt
-(lazy-github) -> python -m lazy_github
-```
+to in the future), so for the time being you can run this locally via the `./start.sh` script.
