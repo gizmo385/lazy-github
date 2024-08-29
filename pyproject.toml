@@ -30,6 +30,8 @@ dependencies = [
 [project.scripts]
 lazy-github = "lazy_github.__main__:main"
 
+[tool.hatch.envs.default]
+installer = "uv"
 
 [tool.ruff]
 
