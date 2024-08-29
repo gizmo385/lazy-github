@@ -1,6 +1,7 @@
 [project]
 name = "lazy-github"
 description = "A terminal UI for interacting with Github"
+readme = "README.md"
 version = "0.1"
 authors = [
 	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
