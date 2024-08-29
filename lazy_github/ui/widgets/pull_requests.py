@@ -3,21 +3,21 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
-from textual.widgets import Collapsible, Label, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.pull_requests import (
-    ReviewCommentNode,
     get_diff,
     get_reviews,
     reconstruct_review_conversation_hierarchy,
 )
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.string_utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest, Review, ReviewComment, ReviewState
+from lazy_github.models.github import FullPullRequest, PartialPullRequest, ReviewComment
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
+from lazy_github.ui.widgets.conversations import ReviewContainer
 
 
 class PullRequestsContainer(LazyGithubContainer):
@@ -194,70 +194,6 @@ class ReviewCommentContainer(Container, can_focus=True):
 
     def action_reply_to_individual_comment(self) -> None:
         self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.comment))
-
-
-class ReviewConversation(Container):
-    DEFAULT_CSS = """
-    ReviewConversation {
-        height: auto;
-        border-left: solid $secondary-background;
-        margin-bottom: 1;
-    }
-    """
-
-    def __init__(self, client: GithubClient, pr: FullPullRequest, root_conversation_node: ReviewCommentNode) -> None:
-        super().__init__()
-        self.client = client
-        self.pr = pr
-        self.root_conversation_node = root_conversation_node
-
-    def _flatten_comments(self, root: ReviewCommentNode) -> list[ReviewComment]:
-        result = [root.comment]
-        for child in root.children:
-            result.extend(self._flatten_comments(child))
-        return result
-
-    def compose(self) -> ComposeResult:
-        for comment in self._flatten_comments(self.root_conversation_node):
-            yield ReviewCommentContainer(self.client, self.pr, comment)
-
-
-class ReviewContainer(Collapsible, can_focus=True):
-    DEFAULT_CSS = """
-    ReviewContainer {
-        height: auto;
-    }
-
-    ReviewContainer:focus-within {
-        border: solid $success-lighten-3;
-    }
-    """
-    BINDINGS = [("r", "reply_to_review", "Reply to review")]
-
-    def __init__(
-        self, client: GithubClient, pr: FullPullRequest, review: Review, hierarchy: dict[int, ReviewCommentNode]
-    ) -> None:
-        super().__init__()
-        self.client = client
-        self.pr = pr
-        self.review = review
-        self.hierarchy = hierarchy
-
-    def compose(self) -> ComposeResult:
-        if self.review.state == ReviewState.APPROVED:
-            review_state_text = "[green]Approved[/green]"
-        elif self.review.state == ReviewState.CHANGES_REQUESTED:
-            review_state_text = "[red]Changes Requested[/red]"
-        else:
-            review_state_text = self.review.state.title()
-        yield Label(f"Review from {self.review.user.login} ({review_state_text})")
-        yield Markdown(self.review.body)
-        for comment in self.review.comments:
-            if comment_node := self.hierarchy[comment.id]:
-                yield ReviewConversation(self.client, self.pr, comment_node)
-
-    def action_reply_to_review(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.review))
 
 
 class PrConversationTabPane(TabPane):
