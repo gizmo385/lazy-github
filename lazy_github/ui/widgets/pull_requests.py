@@ -235,5 +235,3 @@ class PrConversationTabPane(TabPane):
 
     def action_new_comment(self) -> None:
         self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))
-    def action_new_comment(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))
