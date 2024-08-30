@@ -16,7 +16,7 @@ from lazy_github.lib.string_utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest, ReviewComment
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
-from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
+from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
 from lazy_github.ui.widgets.conversations import ReviewContainer
 
 
@@ -35,11 +35,20 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
-        yield LazyGithubDataTable(id="pull_requests_table")
+        yield SearchableLazyGithubDataTable(
+            id="searchable_prs",
+            table_id="pull_requests_table",
+            search_input_id="pr_search_query",
+            sort_key="number",
+        )
+
+    @property
+    def searchable_table(self) -> SearchableLazyGithubDataTable:
+        return self.query_one("#searchable_prs", SearchableLazyGithubDataTable)
 
     @property
     def table(self) -> LazyGithubDataTable:
-        return self.query_one("#pull_requests_table", LazyGithubDataTable)
+        return self.searchable_table.table
 
     def on_mount(self) -> None:
         self.table.cursor_type = "row"
@@ -61,7 +70,7 @@ class PullRequestsContainer(LazyGithubContainer):
         for pr in message.pull_requests:
             self.pull_requests[pr.number] = pr
             rows.append((pr.state, pr.number, pr.user.login, pr.title))
-        self.table.add_rows(rows)
+        self.searchable_table.add_rows(rows)
 
     async def get_selected_pr(self) -> PartialPullRequest:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
@@ -224,5 +233,7 @@ class PrConversationTabPane(TabPane):
     def on_mount(self) -> None:
         self.fetch_conversation()
 
+    def action_new_comment(self) -> None:
+        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))
     def action_new_comment(self) -> None:
         self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))

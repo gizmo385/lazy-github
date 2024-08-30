@@ -32,7 +32,10 @@ class ReposContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
         yield SearchableLazyGithubDataTable(
-            id="searchable_repos_table", table_id="repos_table", search_input_id="repo_search"
+            id="searchable_repos_table",
+            table_id="repos_table",
+            search_input_id="repo_search",
+            sort_key="favorite",
         )
 
     @property
@@ -78,9 +81,6 @@ class ReposContainer(LazyGithubContainer):
             rows.append([favorited, repo.owner.login, repo.name, private])
             self.repos[repo.full_name] = repo
         self.searchable_table.add_rows(rows)
-
-        if config.repositories.favorites:
-            self.table.sort("favorite")
 
     @work
     async def load_repos(self) -> None:
