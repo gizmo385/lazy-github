@@ -1,5 +1,5 @@
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.models.github import (
     FullPullRequest,
@@ -19,8 +19,7 @@ async def list_for_repo(client: GithubClient, repo: Repository) -> list[PartialP
 
 async def get_full_pull_request(client: GithubClient, partial_pr: PartialPullRequest) -> FullPullRequest:
     """Converts a partial pull request into a full pull request"""
-    user = await client.user()
-    url = f"/repos/{user.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
+    url = f"/repos/{partial_pr.repo.owner.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
     response = await client.get(url, headers=client.headers_with_auth_accept())
     response.raise_for_status()
     return FullPullRequest(**response.json(), repo=partial_pr.repo)
@@ -35,16 +34,14 @@ async def get_diff(client: GithubClient, pr: FullPullRequest) -> str:
 
 
 async def get_review_comments(client: GithubClient, pr: FullPullRequest, review: Review) -> list[ReviewComment]:
-    user = await client.user()
-    url = f"/repos/{user.login}/{pr.repo.name}/pulls/{pr.number}/reviews/{review.id}/comments"
+    url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews/{review.id}/comments"
     response = await client.get(url, headers=client.headers_with_auth_accept())
     response.raise_for_status()
     return [ReviewComment(**c) for c in response.json()]
 
 
 async def get_reviews(client: GithubClient, pr: FullPullRequest, with_comments: bool = True) -> list[Review]:
-    user = await client.user()
-    url = url = f"/repos/{user.login}/{pr.repo.name}/pulls/{pr.number}/reviews"
+    url = url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews"
     response = await client.get(url, headers=client.headers_with_auth_accept())
     response.raise_for_status()
     reviews: list[Review] = []
