@@ -11,7 +11,7 @@ from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.command_log import log_event
-from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
+from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
 
 
 class ReposContainer(LazyGithubContainer):
@@ -31,11 +31,17 @@ class ReposContainer(LazyGithubContainer):
 
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
-        yield LazyGithubDataTable(id="repos_table")
+        yield SearchableLazyGithubDataTable(
+            id="searchable_repos_table", table_id="repos_table", search_input_id="repo_search"
+        )
+
+    @property
+    def searchable_table(self) -> SearchableLazyGithubDataTable:
+        return self.query_one("#searchable_repos_table", SearchableLazyGithubDataTable)
 
     @property
     def table(self) -> LazyGithubDataTable:
-        return self.query_one("#repos_table", LazyGithubDataTable)
+        return self.searchable_table.table
 
     async def on_mount(self) -> None:
         # Setup the table
@@ -71,7 +77,7 @@ class ReposContainer(LazyGithubContainer):
             private = private_string(repo.private)
             rows.append([favorited, repo.owner.login, repo.name, private])
             self.repos[repo.full_name] = repo
-        self.table.add_rows(rows)
+        self.searchable_table.add_rows(rows)
 
         if config.repositories.favorites:
             self.table.sort("favorite")
