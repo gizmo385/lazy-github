@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Generator, List, Literal, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from lazy_github.lib.constants import CONFIG_FOLDER
 
@@ -32,12 +32,13 @@ class CacheSettings(BaseModel):
     list_issues_ttl: int = int(timedelta(hours=1).total_seconds())
 
 
-class AppearenceSettings(BaseModel):
+class AppearanceSettings(BaseModel):
     dark_mode: bool = True
 
 
 class Config(BaseModel):
-    appearence: AppearenceSettings = AppearenceSettings()
+    # This field is aliased because I can't spell :)
+    appearance: AppearanceSettings = Field(default=AppearanceSettings(), alias="appearence")
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
     cache: CacheSettings = CacheSettings()
