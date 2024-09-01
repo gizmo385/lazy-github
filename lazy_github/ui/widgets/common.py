@@ -64,10 +64,10 @@ class SearchableLazyGithubDataTable(Vertical):
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
-        search_query = self.search_input.value.strip()
+        search_query = self.search_input.value.strip().lower()
         filtered_rows: Iterable[Iterable] = []
         for row in self._rows_cache:
-            if search_query in str(row) or not search_query:
+            if search_query in str(row).lower() or not search_query:
                 filtered_rows.append(row)
 
         self._set_rows(filtered_rows)
