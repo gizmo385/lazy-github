@@ -51,6 +51,7 @@ class Issue(BaseModel):
     assignee: User | None = None
     assignees: list[User] | None
     comments_url: str
+    html_url: str
 
     # This field isn't actually returned from the API, but we will pass it in manually. It's useful for follow-up
     # requests that require access to the original repo
@@ -80,7 +81,6 @@ class FullPullRequest(PartialPullRequest):
     head: Ref
     base: Ref
     merged_at: datetime | None
-    html_url: str
     diff_url: str
 
 
