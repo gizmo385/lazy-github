@@ -9,11 +9,11 @@ from textual.widgets import Footer, TabbedContent
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import list_all_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
-from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected, RepoSelected
+from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
-from lazy_github.ui.widgets.issues import IssuesContainer
+from lazy_github.ui.widgets.issues import IssueOverviewTabPane, IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
     PrDiffTabPane,
@@ -169,6 +169,12 @@ class MainViewPane(Container):
         await tabbed_content.add_pane(PrOverviewTabPane(full_pr))
         await tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
         await tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
+        tabbed_content.children[0].focus()
+
+    async def on_issue_selected(self, message: IssueSelected) -> None:
+        tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
+        await tabbed_content.clear_panes()
+        await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
         tabbed_content.children[0].focus()
 
 
