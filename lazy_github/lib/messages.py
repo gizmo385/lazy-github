@@ -28,6 +28,16 @@ class PullRequestSelected(Message):
         super().__init__()
 
 
+class IssueSelected(Message):
+    """
+    A message indicating that the user is looking for additional information on a particular issue.
+    """
+
+    def __init__(self, issue: Issue) -> None:
+        self.issue = issue
+        super().__init__()
+
+
 class IssuesAndPullRequestsFetched(Message):
     """
     Since issues and pull requests are both represented on the Github API as issues, we want to pull issues once and
