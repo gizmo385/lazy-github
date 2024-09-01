@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched
 from lazy_github.models.github import Issue
-from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable
+from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
 
 
 class IssuesContainer(LazyGithubContainer):
@@ -15,7 +15,14 @@ class IssuesContainer(LazyGithubContainer):
 
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
-        yield LazyGithubDataTable(id="issues_table")
+        # yield LazyGithubDataTable(id="issues_table")
+        yield SearchableLazyGithubDataTable(
+            id="searchable_issues_table", table_id="issues_table", search_input_id="issues_search", sort_key="number"
+        )
+
+    @property
+    def searchable_table(self) -> SearchableLazyGithubDataTable:
+        return self.query_one("#searchable_issues_table", SearchableLazyGithubDataTable)
 
     @property
     def table(self) -> LazyGithubDataTable:
@@ -41,4 +48,4 @@ class IssuesContainer(LazyGithubContainer):
         for issue in message.issues:
             self.issues[issue.number] = issue
             rows.append((issue.state, issue.number, issue.user.login, issue.title))
-        self.table.add_rows(rows)
+        self.searchable_table.add_rows(rows)
