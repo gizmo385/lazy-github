@@ -2,7 +2,7 @@ from typing import Dict
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
+from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, Rule, TabPane
 
@@ -13,6 +13,7 @@ from lazy_github.lib.string_utils import link
 from lazy_github.models.github import Issue, IssueState
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
+from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
 
 class IssuesContainer(LazyGithubContainer):
@@ -107,11 +108,11 @@ class IssueConversationTabPane(TabPane):
         self.issue = issue
 
     @property
-    def content(self) -> Markdown:
-        return self.query_one("#pr_conversation", Markdown)
+    def comments(self) -> VerticalScroll:
+        return self.query_one("#issue_conversation", VerticalScroll)
 
     def compose(self) -> ComposeResult:
-        yield Markdown(id="pr_conversation")
+        yield VerticalScroll(id="issue_conversation")
 
     def on_mount(self) -> None:
         self.fetch_issue_comments()
@@ -119,4 +120,7 @@ class IssueConversationTabPane(TabPane):
     @work
     async def fetch_issue_comments(self) -> None:
         comments = await get_comments(self.client, self.issue)
-        self.content.update(str(comments))
+        self.comments.remove_children()
+        for comment in comments:
+            comment_container = IssueCommentContainer(self.client, self.issue, comment)
+            self.comments.mount(comment_container)

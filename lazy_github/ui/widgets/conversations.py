@@ -4,17 +4,21 @@ from textual.widgets import Collapsible, Label, Markdown
 
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.pull_requests import ReviewCommentNode
-from lazy_github.models.github import FullPullRequest, Review, ReviewComment, ReviewState
+from lazy_github.models.github import FullPullRequest, Issue, IssueComment, Review, ReviewComment, ReviewState
 from lazy_github.ui.screens.new_comment import NewCommentModal
 
 
-class ReviewCommentContainer(Container, can_focus=True):
+class IssueCommentContainer(Container, can_focus=True):
     DEFAULT_CSS = """
-    ReviewCommentContainer {
+    IssueCommentContainer {
         height: auto;
         border-left: solid $secondary-background;
         margin-left: 1;
         margin-bottom: 1;
+    }
+
+    IssueCommentContainer:focus-within {
+        border: dashed $success;
     }
 
     .comment-author {
@@ -29,17 +33,14 @@ class ReviewCommentContainer(Container, can_focus=True):
         padding-bottom: 0;
     }
 
-    ReviewCommentContainer:focus-within {
-        border: dashed $success;
-    }
     """
 
     BINDINGS = [("r", "reply_to_individual_comment", "Reply to comment")]
 
-    def __init__(self, client: GithubClient, pr: FullPullRequest, comment: ReviewComment) -> None:
+    def __init__(self, client: GithubClient, issue: Issue, comment: IssueComment) -> None:
         super().__init__()
         self.client = client
-        self.pr = pr
+        self.issue = issue
         self.comment = comment
 
     def compose(self) -> ComposeResult:
@@ -49,7 +50,7 @@ class ReviewCommentContainer(Container, can_focus=True):
         yield Label(f"{author} • {comment_time}", classes="comment-author")
 
     def action_reply_to_individual_comment(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.comment))
+        self.app.push_screen(NewCommentModal(self.client, self.issue.repo, self.issue, self.comment))
 
 
 class ReviewConversation(Container):
@@ -75,7 +76,7 @@ class ReviewConversation(Container):
 
     def compose(self) -> ComposeResult:
         for comment in self._flatten_comments(self.root_conversation_node):
-            yield ReviewCommentContainer(self.client, self.pr, comment)
+            yield IssueCommentContainer(self.client, self.pr, comment)
 
 
 class ReviewContainer(Collapsible, can_focus=True):

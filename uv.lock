@@ -275,7 +275,7 @@ wheels = [
 [[package]]
 name = "lazy-github"
 version = "0.1.1"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "hishel" },
     { name = "httpx" },
