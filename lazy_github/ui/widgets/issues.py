@@ -1,11 +1,13 @@
 from typing import Dict
 
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, Rule, TabPane
 
+from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.string_utils import link
 from lazy_github.models.github import Issue, IssueState
@@ -96,3 +98,25 @@ class IssueOverviewTabPane(TabPane):
 
             yield Rule()
             yield Markdown(self.issue.body)
+
+
+class IssueConversationTabPane(TabPane):
+    def __init__(self, client: GithubClient, issue: Issue) -> None:
+        super().__init__("Conversation", id="issue_conversation")
+        self.client = client
+        self.issue = issue
+
+    @property
+    def content(self) -> Markdown:
+        return self.query_one("#pr_conversation", Markdown)
+
+    def compose(self) -> ComposeResult:
+        yield Markdown(id="pr_conversation")
+
+    def on_mount(self) -> None:
+        self.fetch_issue_comments()
+
+    @work
+    async def fetch_issue_comments(self) -> None:
+        comments = await get_comments(self.client, self.issue)
+        self.content.update(str(comments))

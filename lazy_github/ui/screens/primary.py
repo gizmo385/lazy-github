@@ -13,7 +13,7 @@ from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
-from lazy_github.ui.widgets.issues import IssueOverviewTabPane, IssuesContainer
+from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
     PrDiffTabPane,
@@ -175,6 +175,7 @@ class MainViewPane(Container):
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
         await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
+        await tabbed_content.add_pane(IssueConversationTabPane(self.client, message.issue))
         tabbed_content.children[0].focus()
 
 
