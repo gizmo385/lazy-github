@@ -26,10 +26,10 @@ list_closed_issues = partial(_list, state="closed")
 list_all_issues = partial(_list, state="all")
 
 
-async def get_comments(client: GithubClient, issue: Issue) -> list:
+async def get_comments(client: GithubClient, issue: Issue) -> list[IssueComment]:
     response = await client.get(issue.comments_url, headers=client.headers_with_auth_accept())
     response.raise_for_status()
-    return response.json()
+    return [IssueComment(**i) for i in response.json()]
 
 
 async def create_comment(client: GithubClient, repo: Repository, issue: Issue, comment_body: str) -> IssueComment:
