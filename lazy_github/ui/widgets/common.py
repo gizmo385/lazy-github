@@ -11,7 +11,19 @@ from textual.widgets.data_table import CellType
 class LazyGithubDataTable(DataTable):
     "An data table for LazyGithub that provides some more vim-like bindings"
 
-    BINDINGS = [("j", "cursor_down"), ("k", "cursor_up"), ("space", "select")]
+    BINDINGS = [
+        # Add space as an additional selection key
+        ("space", "select"),
+        # Add some vim bindings
+        ("j", "cursor_down"),
+        ("k", "cursor_up"),
+        ("l", "scroll_right"),
+        ("h", "scroll_left"),
+        ("g", "scroll_top"),
+        ("G", "scroll_bottom"),
+        ("^", "page_left"),
+        ("$", "page_right"),
+    ]
 
 
 class LazyGithubDataTableSearchInput(Input):
