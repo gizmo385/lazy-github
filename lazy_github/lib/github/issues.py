@@ -1,14 +1,20 @@
-from functools import partial
 from typing import Literal
 
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, Repository
 
 IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
+IssueOwnerFilter = Literal["all"] | Literal["mine"]
 
 
-async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter) -> list[Issue]:
+async def list_issues(
+    client: GithubClient, repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter
+) -> list[Issue]:
     query_params = {"state": state}
+    if owner == "mine":
+        user = await client.user()
+        query_params["creator"] = user.login
+
     headers = client.headers_with_auth_accept(cache_duration=client.config.cache.list_issues_ttl)
     response = await client.get(f"/repos/{repo.owner.login}/{repo.name}/issues", headers=headers, params=query_params)
     response.raise_for_status()
@@ -19,11 +25,6 @@ async def _list(client: GithubClient, repo: Repository, state: IssueStateFilter)
         else:
             result.append(Issue(**issue, repo=repo))
     return result
-
-
-list_open_issues = partial(_list, state="open")
-list_closed_issues = partial(_list, state="closed")
-list_all_issues = partial(_list, state="all")
 
 
 async def get_comments(client: GithubClient, issue: Issue) -> list[IssueComment]:

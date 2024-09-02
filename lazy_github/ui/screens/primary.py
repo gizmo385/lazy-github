@@ -7,7 +7,7 @@ from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.lib.github.issues import list_all_issues
+from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
 from lazy_github.ui.widgets.actions import ActionsContainer
@@ -114,7 +114,9 @@ class SelectionsPane(Container):
     async def on_repo_selected(self, message: RepoSelected) -> None:
         # self.actions.post_message(message)
         try:
-            issues_and_pull_requests = await list_all_issues(self.client, message.repo)
+            state_filter = self.client.config.issues.state_filter
+            owner_filter = self.client.config.issues.owner_filter
+            issues_and_pull_requests = await list_issues(self.client, message.repo, state_filter, owner_filter)
         except HTTPStatusError as hse:
             if hse.response.status_code == 404:
                 pass

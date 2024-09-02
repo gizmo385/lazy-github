@@ -1,6 +1,6 @@
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.lib.github.issues import list_all_issues
+from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
     Issue,
@@ -13,7 +13,9 @@ from lazy_github.models.github import (
 
 async def list_for_repo(client: GithubClient, repo: Repository) -> list[PartialPullRequest]:
     """Lists the pull requests associated with the specified repo"""
-    issues = await list_all_issues(client, repo)
+    state_filter = client.config.pull_requests.state_filter
+    owner_filter = client.config.pull_requests.owner_filter
+    issues = await list_issues(client, repo, state_filter, owner_filter)
     return [i for i in issues if isinstance(i, PartialPullRequest)]
 
 

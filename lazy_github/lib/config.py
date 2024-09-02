@@ -10,7 +10,8 @@ from lazy_github.lib.constants import CONFIG_FOLDER
 
 _CONFIG_FILE_LOCATION = CONFIG_FOLDER / "config.json"
 
-PR_STATE_FILTER = Literal["all"] | Literal["open"] | Literal["closed"]
+ISSUE_STATE_FILTER = Literal["all"] | Literal["open"] | Literal["closed"]
+ISSUE_OWNER_FILTER = Literal["mine"] | Literal["all"]
 
 
 class ApiConfig(BaseModel):
@@ -18,7 +19,17 @@ class ApiConfig(BaseModel):
 
 
 class PullRequestSettings(BaseModel):
-    state_filter: PR_STATE_FILTER = "all"
+    """Changes how PRs are retrieved from the Github API"""
+
+    state_filter: ISSUE_STATE_FILTER = "all"
+    owner_filter: ISSUE_OWNER_FILTER = "all"
+
+
+class IssueSettings(BaseModel):
+    """Changes how issues are retrieved from the Github API"""
+
+    state_filter: ISSUE_STATE_FILTER = "all"
+    owner_filter: ISSUE_OWNER_FILTER = "all"
 
 
 class RepositorySettings(BaseModel):
@@ -41,6 +52,7 @@ class Config(BaseModel):
     appearance: AppearanceSettings = Field(default=AppearanceSettings(), alias="appearence")
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
+    issues: IssueSettings = IssueSettings()
     cache: CacheSettings = CacheSettings()
     api: ApiConfig = ApiConfig()
 
