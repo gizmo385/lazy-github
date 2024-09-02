@@ -10,6 +10,7 @@ IssueOwnerFilter = Literal["all"] | Literal["mine"]
 async def list_issues(
     client: GithubClient, repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter
 ) -> list[Issue]:
+    """Fetch issues (included pull requests) from the repo matching the state/owner filters"""
     query_params = {"state": state}
     if owner == "mine":
         user = await client.user()
