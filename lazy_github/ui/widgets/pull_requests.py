@@ -222,7 +222,7 @@ class PrConversationTabPane(TabPane):
         return self.query_one("#reviews", VerticalScroll)
 
     @work
-    async def fetch_conversation(self):
+    async def fetch_conversation(self) -> None:
         reviews = await get_reviews(self.client, self.pr)
         review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
         self.reviews.remove_children()
