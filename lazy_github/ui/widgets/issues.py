@@ -22,7 +22,11 @@ class IssuesContainer(LazyGithubContainer):
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
         yield SearchableLazyGithubDataTable(
-            id="searchable_issues_table", table_id="issues_table", search_input_id="issues_search", sort_key="number"
+            id="searchable_issues_table",
+            table_id="issues_table",
+            search_input_id="issues_search",
+            sort_key="number",
+            reverse_sort=True,
         )
 
     @property
@@ -35,8 +39,8 @@ class IssuesContainer(LazyGithubContainer):
 
     def on_mount(self) -> None:
         self.table.cursor_type = "row"
+        self.table.add_column("#", key="number")
         self.table.add_column("Status", key="status")
-        self.table.add_column("Number", key="number")
         self.table.add_column("Author", key="author")
         self.table.add_column("Title", key="title")
 
@@ -52,7 +56,7 @@ class IssuesContainer(LazyGithubContainer):
         rows = []
         for issue in message.issues:
             self.issues[issue.number] = issue
-            rows.append((issue.state, issue.number, issue.user.login, issue.title))
+            rows.append((issue.number, issue.state, issue.user.login, issue.title))
         self.searchable_table.add_rows(rows)
 
     async def get_selected_issue(self) -> Issue:

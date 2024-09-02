@@ -32,13 +32,16 @@ class SearchableLazyGithubDataTable(Vertical):
     }
     """
 
-    def __init__(self, table_id: str, search_input_id: str, sort_key: str, *args, **kwargs) -> None:
+    def __init__(
+        self, table_id: str, search_input_id: str, sort_key: str, *args, reverse_sort: bool = False, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.table = LazyGithubDataTable(id=table_id)
         self.search_input = LazyGithubDataTableSearchInput(placeholder="Search...", id=search_input_id)
         self.search_input.display = False
         self.search_input.can_focus = False
         self.sort_key = sort_key
+        self.reverse_sort = reverse_sort
         self._rows_cache = []
 
     def compose(self) -> ComposeResult:
@@ -60,7 +63,7 @@ class SearchableLazyGithubDataTable(Vertical):
     def _set_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
         self.table.clear()
         self.table.add_rows(rows)
-        self.table.sort(self.sort_key)
+        self.table.sort(self.sort_key, reverse=self.reverse_sort)
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:

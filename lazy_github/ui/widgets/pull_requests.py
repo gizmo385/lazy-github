@@ -40,6 +40,7 @@ class PullRequestsContainer(LazyGithubContainer):
             table_id="pull_requests_table",
             search_input_id="pr_search_query",
             sort_key="number",
+            reverse_sort=True,
         )
 
     @property
@@ -52,8 +53,8 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def on_mount(self) -> None:
         self.table.cursor_type = "row"
+        self.table.add_column("#", key="number")
         self.table.add_column("Status", key="status")
-        self.table.add_column("Number", key="number")
         self.table.add_column("Author", key="author")
         self.table.add_column("Title", key="title")
 
@@ -69,7 +70,7 @@ class PullRequestsContainer(LazyGithubContainer):
         rows = []
         for pr in message.pull_requests:
             self.pull_requests[pr.number] = pr
-            rows.append((pr.state, pr.number, pr.user.login, pr.title))
+            rows.append((pr.number, pr.state, pr.user.login, pr.title))
         self.searchable_table.add_rows(rows)
 
     async def get_selected_pr(self) -> PartialPullRequest:
