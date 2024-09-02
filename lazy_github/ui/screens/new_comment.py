@@ -7,10 +7,10 @@ from textual.widgets import Button, Label, Markdown, Rule, TextArea
 
 from lazy_github.lib.github import issues, pull_requests
 from lazy_github.lib.github.client import GithubClient
-from lazy_github.models.github import Issue, Repository, Review, ReviewComment
+from lazy_github.models.github import Issue, IssueComment, Repository, Review, ReviewComment
 from lazy_github.ui.widgets.command_log import log_event
 
-CommmentReplyTarget = ReviewComment | Review
+CommmentReplyTarget = ReviewComment | Review | IssueComment
 
 
 class ReplyingToContainer(Container):
@@ -19,7 +19,7 @@ class ReplyingToContainer(Container):
         self.reply_to = reply_to
 
     def compose(self) -> ComposeResult:
-        if isinstance(self.reply_to, ReviewComment):
+        if isinstance(self.reply_to, (ReviewComment, IssueComment)):
             comment_time = self.reply_to.created_at.strftime("%c")
         else:
             comment_time = self.reply_to.submitted_at.strftime("%c")
