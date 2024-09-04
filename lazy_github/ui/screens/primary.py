@@ -1,8 +1,13 @@
+from functools import partial
+from typing import NamedTuple
+
 from httpx import HTTPStatusError
 from textual.app import ComposeResult
+from textual.command import Hit, Hits, Provider
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
+from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
@@ -53,11 +58,12 @@ class LazyGithubFooter(Footer):
 class SelectionDetailsContainer(LazyGithubContainer):
     DEFAULT_CSS = """
     SelectionDetailsContainer {
-        height: 90%;
+        height: 100%;
         dock: right;
     }
     SelectionDetailsContainer:focus-within {
-        height: 80%;
+        min-height: 80%;
+        dock: right;
     }
     """
 
@@ -95,9 +101,17 @@ class SelectionsPane(Container):
 
     def compose(self) -> ComposeResult:
         yield ReposContainer(self.client, id="repos")
-        yield PullRequestsContainer(self.client, id="pull_requests")
-        yield IssuesContainer(id="issues")
-        yield ActionsContainer(id="actions")
+        pulls = PullRequestsContainer(self.client, id="pull_requests")
+        pulls.display = self.client.config.appearance.show_pull_requests
+        yield pulls
+
+        issues = IssuesContainer(id="issues")
+        issues.display = self.client.config.appearance.show_issues
+        yield issues
+
+        actions = ActionsContainer(id="actions")
+        actions.display = self.client.config.appearance.show_actions
+        yield actions
 
     @property
     def pull_requests(self) -> PullRequestsContainer:
@@ -116,7 +130,9 @@ class SelectionsPane(Container):
         try:
             state_filter = self.client.config.issues.state_filter
             owner_filter = self.client.config.issues.owner_filter
-            issues_and_pull_requests = await list_issues(self.client, message.repo, state_filter, owner_filter)
+            issues_and_pull_requests = []
+            if self.pull_requests.display or self.issues.display:
+                issues_and_pull_requests = await list_issues(self.client, message.repo, state_filter, owner_filter)
         except HTTPStatusError as hse:
             if hse.response.status_code == 404:
                 pass
@@ -135,7 +151,9 @@ class SelectionDetailsPane(Container):
 
     def compose(self) -> ComposeResult:
         yield SelectionDetailsContainer(id="selection_details")
-        yield CommandLogSection()
+        command_log_section = CommandLogSection(id="command_log")
+        command_log_section.display = self.client.config.appearance.show_command_log
+        yield command_log_section
 
 
 class MainViewPane(Container):
@@ -181,8 +199,49 @@ class MainViewPane(Container):
         tabbed_content.children[0].focus()
 
 
+class LazyGithubCommand(NamedTuple):
+    name: str
+    action: IgnoreReturnCallbackType
+    help_text: str
+
+
+class MainScreenCommandProvider(Provider):
+    @property
+    def commands(self) -> tuple[LazyGithubCommand, ...]:
+        assert isinstance(self.screen, LazyGithubMainScreen)
+
+        toggle_ui = self.screen.action_toggle_ui
+
+        _commands: list[LazyGithubCommand] = [
+            LazyGithubCommand(
+                "Toggle Command Log", partial(toggle_ui, "command_log"), "Toggle showing or hiding the command log"
+            ),
+            LazyGithubCommand("Toggle Actions", partial(toggle_ui, "actions"), "Toggle showing or hiding repo actions"),
+            LazyGithubCommand("Toggle Issues", partial(toggle_ui, "issues"), "Toggle showing or hiding repo issues"),
+            LazyGithubCommand(
+                "Toggle Pull Requests",
+                partial(toggle_ui, "pull_requests"),
+                "Toggle showing or hiding repo pull requests",
+            ),
+        ]
+        return tuple(_commands)
+
+    async def search(self, query: str) -> Hits:
+        matcher = self.matcher(query)
+        for command in self.commands:
+            if (match := matcher.match(command.name)) > 0:
+                yield Hit(
+                    match,
+                    matcher.highlight(command.name),
+                    command.action,
+                    help=command.help_text,
+                )
+
+
 class LazyGithubMainScreen(Screen):
     BINDINGS = [("r", "refresh_repos", "Refresh global repo state")]
+
+    COMMANDS = {MainScreenCommandProvider}
 
     def __init__(self, client: GithubClient, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -193,6 +252,10 @@ class LazyGithubMainScreen(Screen):
             yield LazyGithubStatusSummary()
             yield MainViewPane(self.client)
             yield LazyGithubFooter()
+
+    async def action_toggle_ui(self, ui_to_hide: str):
+        widget = self.query_one(f"#{ui_to_hide}", Widget)
+        widget.display = not widget.display
 
     def on_repo_selected(self, message: RepoSelected) -> None:
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name

@@ -45,11 +45,16 @@ class CacheSettings(BaseModel):
 
 class AppearanceSettings(BaseModel):
     dark_mode: bool = True
+    # Settings to configure which UI elements to display by default
+    show_command_log: bool = True
+    show_actions: bool = True
+    show_issues: bool = True
+    show_pull_requests: bool = True
 
 
 class Config(BaseModel):
     # This field is aliased because I can't spell :)
-    appearance: AppearanceSettings = Field(default=AppearanceSettings(), alias="appearence")
+    appearance: AppearanceSettings = AppearanceSettings()
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
     issues: IssueSettings = IssueSettings()
@@ -76,4 +81,5 @@ class Config(BaseModel):
 
 
 if __name__ == "__main__":
+    print(f"Config file location: {_CONFIG_FILE_LOCATION} (exists => {_CONFIG_FILE_LOCATION.exists()})")
     print(Config.load_config().model_dump_json(indent=4))
