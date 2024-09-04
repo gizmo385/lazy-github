@@ -157,8 +157,10 @@ class PrDiffTabPane(TabPane):
                 raise
         else:
             diff_contents.write(diff)
+        self.loading = False
 
     def on_mount(self) -> None:
+        self.loading = True
         self.fetch_diff()
 
 
@@ -182,12 +184,17 @@ class PrConversationTabPane(TabPane):
         reviews = await get_reviews(self.client, self.pr)
         review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
         self.reviews.remove_children()
-        for review in reviews:
-            if review.body:
-                review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
-                self.reviews.mount(review_container)
+        if reviews:
+            for review in reviews:
+                if review.body:
+                    review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
+                    self.reviews.mount(review_container)
+        else:
+            self.reviews.mount(Label("No reviews available"))
+        self.loading = False
 
     def on_mount(self) -> None:
+        self.loading = True
         self.fetch_conversation()
 
     def action_new_comment(self) -> None:
