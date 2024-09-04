@@ -6,6 +6,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.github.pull_requests import (
     get_diff,
     get_reviews,
@@ -17,7 +18,7 @@ from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
-from lazy_github.ui.widgets.conversations import ReviewContainer
+from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
 
 
 class PullRequestsContainer(LazyGithubContainer):
@@ -173,24 +174,34 @@ class PrConversationTabPane(TabPane):
         self.pr = pr
 
     def compose(self) -> ComposeResult:
-        yield VerticalScroll(id="pr_review_comments")
+        yield VerticalScroll(id="pr_comments_and_reviews")
 
     @property
-    def reviews(self) -> VerticalScroll:
-        return self.query_one("#pr_review_comments", VerticalScroll)
+    def comments_and_reviews(self) -> VerticalScroll:
+        return self.query_one("#pr_comments_and_reviews", VerticalScroll)
 
     @work
     async def fetch_conversation(self) -> None:
         reviews = await get_reviews(self.client, self.pr)
         review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
-        self.reviews.remove_children()
-        if reviews:
-            for review in reviews:
-                if review.body:
-                    review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
-                    self.reviews.mount(review_container)
-        else:
-            self.reviews.mount(Label("No reviews available"))
+        comments = await get_comments(self.client, self.pr)
+        self.comments_and_reviews.remove_children()
+
+        handled_comment_node_ids: list[int] = []
+        for review in reviews:
+            if review.body:
+                handled_comment_node_ids.extend([c.id for c in review.comments])
+                review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
+                self.comments_and_reviews.mount(review_container)
+
+        for comment in comments:
+            if comment.body and comment.id not in handled_comment_node_ids:
+                comment_container = IssueCommentContainer(self.client, self.pr, comment)
+                self.comments_and_reviews.mount(comment_container)
+
+        if len(self.comments_and_reviews.children) == 0:
+            self.comments_and_reviews.mount(Label("No reviews or comments available"))
+
         self.loading = False
 
     def on_mount(self) -> None:
