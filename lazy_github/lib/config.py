@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Generator, List, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from lazy_github.lib.constants import CONFIG_FOLDER
 
