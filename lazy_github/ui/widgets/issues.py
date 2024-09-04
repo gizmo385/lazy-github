@@ -103,7 +103,7 @@ class IssueOverviewTabPane(TabPane):
 
 class IssueConversationTabPane(TabPane):
     def __init__(self, client: GithubClient, issue: Issue) -> None:
-        super().__init__("Conversation", id="issue_conversation")
+        super().__init__("Comments", id="issue_conversation")
         self.client = client
         self.issue = issue
 
@@ -121,6 +121,9 @@ class IssueConversationTabPane(TabPane):
     async def fetch_issue_comments(self) -> None:
         comments = await get_comments(self.client, self.issue)
         self.comments.remove_children()
-        for comment in comments:
-            comment_container = IssueCommentContainer(self.client, self.issue, comment)
-            self.comments.mount(comment_container)
+        if comments:
+            for comment in comments:
+                comment_container = IssueCommentContainer(self.client, self.issue, comment)
+                self.comments.mount(comment_container)
+        else:
+            self.comments.mount(Label("No comments available"))
