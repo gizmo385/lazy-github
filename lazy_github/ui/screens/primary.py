@@ -15,6 +15,7 @@ from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
+from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
@@ -223,6 +224,7 @@ class MainScreenCommandProvider(Provider):
                 partial(toggle_ui, "pull_requests"),
                 "Toggle showing or hiding repo pull requests",
             ),
+            LazyGithubCommand("Change Settings", self.screen.action_show_settings_modal, "Adjust LazyGithub settings"),
         ]
         return tuple(_commands)
 
@@ -256,6 +258,9 @@ class LazyGithubMainScreen(Screen):
     async def action_toggle_ui(self, ui_to_hide: str):
         widget = self.query_one(f"#{ui_to_hide}", Widget)
         widget.display = not widget.display
+
+    async def action_show_settings_modal(self) -> None:
+        self.app.push_screen(SettingsModal(self.client.config))
 
     def on_repo_selected(self, message: RepoSelected) -> None:
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name

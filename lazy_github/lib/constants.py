@@ -1,3 +1,4 @@
+from enum import StrEnum
 from pathlib import Path
 
 # Content types
@@ -25,3 +26,14 @@ def favorite_string(favorite: bool) -> str:
 def private_string(private: bool) -> str:
     """Helper function to return the right string to indicate if something is private"""
     return IS_PRIVATE if private else IS_PUBLIC
+
+
+class IssueStateFilter(StrEnum):
+    ALL = "all"
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+class IssueOwnerFilter(StrEnum):
+    MINE = "mine"
+    ALL = "all"

@@ -1,18 +1,14 @@
-from typing import Literal
-
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, Repository
-
-IssueStateFilter = Literal["open"] | Literal["closed"] | Literal["all"]
-IssueOwnerFilter = Literal["all"] | Literal["mine"]
+from lazy_github.lib.constants import IssueStateFilter, IssueOwnerFilter
 
 
 async def list_issues(
     client: GithubClient, repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter
 ) -> list[Issue]:
     """Fetch issues (included pull requests) from the repo matching the state/owner filters"""
-    query_params = {"state": state}
-    if owner == "mine":
+    query_params = {"state": str(state).lower()}
+    if owner == IssueOwnerFilter.MINE:
         user = await client.user()
         query_params["creator"] = user.login
 

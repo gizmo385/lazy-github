@@ -6,7 +6,7 @@ from typing import Generator, List, Literal, Self
 
 from pydantic import BaseModel
 
-from lazy_github.lib.constants import CONFIG_FOLDER
+from lazy_github.lib.constants import CONFIG_FOLDER, IssueOwnerFilter, IssueStateFilter
 
 _CONFIG_FILE_LOCATION = CONFIG_FOLDER / "config.json"
 
@@ -21,15 +21,15 @@ class ApiConfig(BaseModel):
 class PullRequestSettings(BaseModel):
     """Changes how PRs are retrieved from the Github API"""
 
-    state_filter: ISSUE_STATE_FILTER = "all"
-    owner_filter: ISSUE_OWNER_FILTER = "all"
+    state_filter: IssueStateFilter = IssueStateFilter.ALL
+    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
 
 
 class IssueSettings(BaseModel):
     """Changes how issues are retrieved from the Github API"""
 
-    state_filter: ISSUE_STATE_FILTER = "all"
-    owner_filter: ISSUE_OWNER_FILTER = "all"
+    state_filter: IssueStateFilter = IssueStateFilter.ALL
+    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
 
 
 class RepositorySettings(BaseModel):
