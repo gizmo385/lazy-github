@@ -1,9 +1,4 @@
-from lazy_github.ui.app import app
-
-
-def main():
-    app.run()
-
+from lazy_github.cli import cli
 
 if __name__ == "__main__":
-    main()
+    cli()

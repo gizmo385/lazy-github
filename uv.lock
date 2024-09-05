@@ -274,9 +274,10 @@ wheels = [
 
 [[package]]
 name = "lazy-github"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "hishel" },
     { name = "httpx" },
     { name = "pydantic" },
@@ -292,6 +293,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
     { name = "hishel" },
     { name = "httpx" },
     { name = "pydantic" },
