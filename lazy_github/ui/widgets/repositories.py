@@ -101,7 +101,9 @@ class ReposContainer(LazyGithubContainer):
 
         # Flip the state of the favorited column in the UI
         favorite_coord = Coordinate(self.table.cursor_row, self.favorite_column_index)
-        self.table.update_cell_at(favorite_coord, favorite_string(not favorited))
+        updated_favorited = repo.full_name in config.repositories.favorites
+        self.table.update_cell_at(favorite_coord, favorite_string(updated_favorited))
+        self.table.sort()
 
     @on(LazyGithubDataTable.RowSelected, "#repos_table")
     async def repo_selected(self):

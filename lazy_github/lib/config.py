@@ -2,7 +2,7 @@ import json
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Generator, List, Literal, Self
+from typing import Generator, List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -52,6 +52,9 @@ class AppearanceSettings(BaseModel):
     show_pull_requests: bool = True
 
 
+_CONFIG_INSTANCE: Optional["Config"] = None
+
+
 class Config(BaseModel):
     # This field is aliased because I can't spell :)
     appearance: AppearanceSettings = AppearanceSettings()
@@ -62,11 +65,14 @@ class Config(BaseModel):
     api: ApiConfig = ApiConfig()
 
     @classmethod
-    def load_config(cls) -> Self:
-        if _CONFIG_FILE_LOCATION.exists():
-            return cls(**json.loads(_CONFIG_FILE_LOCATION.read_text()))
-        else:
-            return cls()
+    def load_config(cls) -> "Config":
+        global _CONFIG_INSTANCE
+        if _CONFIG_INSTANCE is None:
+            if _CONFIG_FILE_LOCATION.exists():
+                _CONFIG_INSTANCE = cls(**json.loads(_CONFIG_FILE_LOCATION.read_text()))
+            else:
+                _CONFIG_INSTANCE = cls()
+        return _CONFIG_INSTANCE
 
     def save(self) -> None:
         CONFIG_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -74,7 +80,7 @@ class Config(BaseModel):
 
     @classmethod
     @contextmanager
-    def to_edit(cls) -> Generator[Self, None, None]:
+    def to_edit(cls) -> Generator["Config", None, None]:
         current_config = cls.load_config()
         yield current_config
         current_config.save()

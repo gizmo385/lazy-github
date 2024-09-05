@@ -135,7 +135,6 @@ class SettingsContainer(Container):
                         )
 
                     setattr(model, field_name, updated_value_input.value)
-                setattr(self.config, section_name, model)
 
     @on(Button.Pressed, "#save_settings")
     async def save_settings(self, _: Button.Pressed) -> None:

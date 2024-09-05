@@ -56,6 +56,9 @@ class SearchableLazyGithubDataTable(Vertical):
         self.reverse_sort = reverse_sort
         self._rows_cache = []
 
+    def sort(self):
+        self.table.sort(self.sort_key, reverse=self.reverse_sort)
+
     def compose(self) -> ComposeResult:
         yield self.search_input
         yield self.table
@@ -75,7 +78,7 @@ class SearchableLazyGithubDataTable(Vertical):
     def _set_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
         self.table.clear()
         self.table.add_rows(rows)
-        self.table.sort(self.sort_key, reverse=self.reverse_sort)
+        self.sort()
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
