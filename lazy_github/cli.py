@@ -30,3 +30,10 @@ def clear_auth():
     from lazy_github.lib.github.auth import _AUTHENTICATION_CACHE_LOCATION
 
     _AUTHENTICATION_CACHE_LOCATION.unlink(missing_ok=True)
+
+
+@cli.command
+def clear_config():
+    """Reset the user's settings"""
+    _CONFIG_FILE_LOCATION.unlink(missing_ok=True)
+    print("Your settings have been cleared")
