@@ -10,7 +10,6 @@ from textual.widget import Widget
 from textual.widgets import Button, Input, Markdown, Rule, Select, Static, Switch
 
 from lazy_github.lib.config import Config
-from lazy_github.ui.widgets.command_log import log_event
 
 
 def field_name_to_readable_name(name: str) -> str:
