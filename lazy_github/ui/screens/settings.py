@@ -5,19 +5,24 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from textual.app import ComposeResult, on
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Button, Input, Markdown, Rule, Select, Static, Switch
+from textual.widgets import Button, Input, Label, Markdown, Rule, Select, Switch
 
 from lazy_github.lib.config import Config
 
+# There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
+# through more obvious means elsewhere
+_SECTIONS_TO_SKIP = {"repositories"}
 
-def field_name_to_readable_name(name: str) -> str:
+
+def _field_name_to_readable_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-class FieldName(Static):
-    pass
+def _id_for_field_input(field_name: str) -> str:
+    return f"adjust_{field_name}_input"
 
 
 class FieldSetting(Container):
@@ -28,26 +33,21 @@ class FieldSetting(Container):
         height: 3;
     }
 
-    FieldName {
-        width: auto;
-        align: right middle;
-    }
-
     Input {
         width: 70;
     }
     """
 
     def _field_to_widget(self) -> Widget:
-        id = f"adjust_{self.field_name}_input"
+        id = _id_for_field_input(self.field_name)
         if self.field.annotation is bool:
             # If the setting is a boolean, render a on/off switch
             return Switch(value=self.value, id=id)
         elif isinstance(self.field.annotation, type) and issubclass(self.field.annotation, enum.StrEnum):
             # If the setting is an enum, then we'll render a dropdown with all of the available options
-            result = Select(options=[(t.title(), t) for t in list(self.field.annotation)], value=self.value, id=id)
-            return result
+            return Select(options=[(t.title(), t) for t in list(self.field.annotation)], value=self.value, id=id)
         else:
+            # If no other input mechanism fits, then we'll fallback to just a raw string input field
             return Input(value=str(self.value), id=id)
 
     def __init__(self, field_name: str, field: FieldInfo, value: Any) -> None:
@@ -57,7 +57,7 @@ class FieldSetting(Container):
         self.value = value
 
     def compose(self) -> ComposeResult:
-        yield FieldName(f"{field_name_to_readable_name(self.field_name)}:")
+        yield Label(f"{_field_name_to_readable_name(self.field_name)}:")
         yield self._field_to_widget()
 
 
@@ -76,7 +76,7 @@ class SettingsSection(Vertical):
         self.fields = model.model_fields
 
     def compose(self) -> ComposeResult:
-        yield Markdown(f"## {field_name_to_readable_name(self.parent_field_name)}")
+        yield Markdown(f"## {_field_name_to_readable_name(self.parent_field_name)}")
         for field_name, field_info in self.fields.items():
             current_value = getattr(self.model, field_name)
             yield FieldSetting(field_name, field_info, current_value)
@@ -105,6 +105,8 @@ class SettingsContainer(Container):
         yield Markdown("# LazyGithub Settings")
         with ScrollableContainer(id="settings_adjustment"):
             for field, value in self.config:
+                if field in _SECTIONS_TO_SKIP:
+                    continue
                 yield SettingsSection(field, value)
 
         yield Rule()
@@ -113,11 +115,31 @@ class SettingsContainer(Container):
             yield Button("Save", id="save_settings", variant="success")
             yield Button("Cancel", id="cancel_settings", variant="error")
 
-    def _build_updated_settings(self):
-        pass
+    def _update_settings(self):
+        with self.config.to_edit() as updated_config:
+            for section_name, model in updated_config:
+                if not isinstance(model, BaseModel):
+                    continue
+
+                for field_name, _ in model:
+                    value_adjustment_id = _id_for_field_input(field_name)
+                    try:
+                        updated_value_input = self.query_one(f"#{value_adjustment_id}")
+                    except NoMatches:
+                        # If there isn't a way to adjust this setting, skip it
+                        continue
+
+                    if not isinstance(updated_value_input, (Switch, Input, Select)):
+                        raise TypeError(
+                            f"Unexpected value input type: {type(updated_value_input)}. Please file an issue"
+                        )
+
+                    setattr(model, field_name, updated_value_input.value)
+                setattr(self.config, section_name, model)
 
     @on(Button.Pressed, "#save_settings")
     async def save_settings(self, _: Button.Pressed) -> None:
+        self._update_settings()
         self.notify("Settings saved")
         self.app.pop_screen()
 
