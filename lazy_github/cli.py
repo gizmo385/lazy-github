@@ -22,3 +22,11 @@ def dump_config():
     """Dump the current configuration, as it would be loaded by LazyGithub"""
     print(f"Config file location: {_CONFIG_FILE_LOCATION} (exists => {_CONFIG_FILE_LOCATION.exists()})")
     print(Config.load_config().model_dump_json(indent=4))
+
+
+@cli.command
+def clear_auth():
+    """Clears out any existing authentication config for LazyGithub, forcing the user to relogin"""
+    from lazy_github.lib.github.auth import _AUTHENTICATION_CACHE_LOCATION
+
+    _AUTHENTICATION_CACHE_LOCATION.unlink(missing_ok=True)
