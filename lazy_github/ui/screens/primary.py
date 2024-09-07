@@ -19,6 +19,7 @@ from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
+from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
 from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
@@ -52,10 +53,6 @@ class LazyGithubStatusSummary(Container):
         yield CurrentlySelectedRepo(id="currently_selected_repo")
 
 
-class LazyGithubFooter(Footer):
-    pass
-
-
 class SelectionDetailsContainer(LazyGithubContainer):
     DEFAULT_CSS = """
     SelectionDetailsContainer {
@@ -71,13 +68,17 @@ class SelectionDetailsContainer(LazyGithubContainer):
 
     BINDINGS = [("j", "scroll_tab_down"), ("k", "scroll_tab_up")]
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.tabs = TabbedContent(id="selection_detail_tabs")
+
     def compose(self) -> ComposeResult:
         self.border_title = "[5] Details"
-        yield TabbedContent(id="selection_detail_tabs")
+        yield self.tabs
 
-    @property
-    def tabs(self) -> TabbedContent:
-        return self.query_one("#selection_detail_tabs", TabbedContent)
+    def on_mount(self) -> None:
+        self.tabs.add_pane(LazyGithubInfoTabPane())
+        pass
 
     def action_scroll_tab_down(self) -> None:
         if self.tabs.active_pane:
@@ -182,7 +183,11 @@ class MainViewPane(Container):
 
     def compose(self) -> ComposeResult:
         yield SelectionsPane(self.client)
-        yield SelectionDetailsPane(self.client)
+        yield SelectionDetailsPane(self.client, id="details_pane")
+
+    @property
+    def details(self) -> SelectionDetailsContainer:
+        return self.query_one("#selection_details", SelectionDetailsContainer)
 
     async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
         full_pr = await get_full_pull_request(self.client, message.pr)
@@ -192,6 +197,7 @@ class MainViewPane(Container):
         await tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
         await tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
         tabbed_content.children[0].focus()
+        self.details.border_title = f"[5] PR #{full_pr.number} Details"
 
     async def on_issue_selected(self, message: IssueSelected) -> None:
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
@@ -199,6 +205,7 @@ class MainViewPane(Container):
         await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
         await tabbed_content.add_pane(IssueConversationTabPane(self.client, message.issue))
         tabbed_content.children[0].focus()
+        self.details.border_title = f"[5] Issue #{message.issue.number} Details"
 
 
 class LazyGithubCommand(NamedTuple):
@@ -254,7 +261,7 @@ class LazyGithubMainScreen(Screen):
         with Container():
             yield LazyGithubStatusSummary()
             yield MainViewPane(self.client)
-            yield LazyGithubFooter()
+            yield Footer()
 
     async def action_toggle_ui(self, ui_to_hide: str):
         widget = self.query_one(f"#{ui_to_hide}", Widget)
