@@ -172,13 +172,3 @@ class SettingsModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield SettingsContainer(self.config)
-
-
-if __name__ == "__main__":
-    from textual.app import App
-
-    class SettingsMain(App):
-        def compose(self) -> ComposeResult:
-            yield SettingsContainer(Config.load_config())
-
-    SettingsMain().run()
