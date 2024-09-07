@@ -2,8 +2,14 @@
 
 This is a **WIP** terminal UI client for interacting with [GitHub](https://github.com). It draws heavy
 inspiration from the [lazygit](https://github.com/jesseduffield/lazygit) project and uses
-[Textual](https://textual.textualize.io/) to drive the terminal UI interactions. Currently, it
-supports the following:
+[Textual](https://textual.textualize.io/) to drive the terminal UI interactions.
+
+
+![Example screenshot](./images/lazy-github-conversation-ui.svg)
+
+
+Currently, it supports the following:
+
 
 - Listing the repositories associated with your account 
 - Listing the issues and pull requests on those repositories
