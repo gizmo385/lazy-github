@@ -97,6 +97,8 @@ class SettingsContainer(Container):
     }
     """
 
+    BINDINGS = [("q", "exit_settings", "Exit settings")]
+
     def __init__(self, config: Config) -> None:
         super().__init__()
         self.config = config
@@ -144,6 +146,9 @@ class SettingsContainer(Container):
 
     @on(Button.Pressed, "#cancel_settings")
     async def cancel_settings(self, _: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+    async def action_exit_settings(self) -> None:
         self.app.pop_screen()
 
 
