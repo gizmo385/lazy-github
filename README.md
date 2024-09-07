@@ -14,6 +14,7 @@ Currently, it supports the following:
 - Listing the repositories associated with your account 
 - Listing the issues and pull requests on those repositories
 - Listing the details, diff, and reviews on any of those pull requests
+- Detailed issue views, including conversation participation
 
 Planned features:
 - Local caching, improving reload times and making it easier to use within a terminal or editor
@@ -22,10 +23,10 @@ Planned features:
 - The ability to list, view, and trigger actions on a repository
 - More fleshed out PR interactions, including commenting and eventually submitting full PR reviews
   from within your terminal.
-- Detailed issue views, including conversation participation
 
 
 ## Running Locally
 
-I'm not currently automatically pushing LazyGithub up to [PyPi](https://pypi.org/) (although I plan
-to in the future), so for the time being you can run this locally via the `./start.sh` script.
+If you have [uv](https://github.com/astral-sh/uv) installed, then you can try LazyGithub by running
+`uvx lazy-github`. Alternatively, you can pull the repo and run it locally by running the
+`./start.sh` script in the root of the repo.
