@@ -119,7 +119,7 @@ class SettingsContainer(Container):
 
     def _update_settings(self):
         with self.config.to_edit() as updated_config:
-            for section_name, model in updated_config:
+            for _, model in updated_config:
                 if not isinstance(model, BaseModel):
                     continue
 
