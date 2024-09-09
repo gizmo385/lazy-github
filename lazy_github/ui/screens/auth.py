@@ -9,8 +9,6 @@ from textual.widget import Widget
 from textual.widgets import Footer
 
 import lazy_github.lib.github.auth as auth
-from lazy_github.lib.config import Config
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
@@ -71,7 +69,7 @@ class AuthenticationModal(ModalScreen):
                 log("Successfully authenticated!")
                 auth.save_access_token(access_token)
                 self.access_token_timer.stop()
-                self.app.switch_screen(LazyGithubMainScreen(GithubClient(Config.load_config(), auth.token())))
+                self.app.switch_screen(LazyGithubMainScreen())
 
     @work
     async def get_device_token(self):

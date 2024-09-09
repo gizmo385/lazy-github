@@ -1,5 +1,6 @@
+from lazy_github.lib.config import Config
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.github.client import GithubClient
+import lazy_github.lib.github.client as github
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
@@ -11,55 +12,56 @@ from lazy_github.models.github import (
 )
 
 
-async def list_for_repo(client: GithubClient, repo: Repository) -> list[PartialPullRequest]:
+async def list_for_repo(repo: Repository) -> list[PartialPullRequest]:
     """Lists the pull requests associated with the specified repo"""
-    state_filter = client.config.pull_requests.state_filter
-    owner_filter = client.config.pull_requests.owner_filter
-    issues = await list_issues(client, repo, state_filter, owner_filter)
+    config = Config.load_config()
+    state_filter = config.pull_requests.state_filter
+    owner_filter = config.pull_requests.owner_filter
+    issues = await list_issues(repo, state_filter, owner_filter)
     return [i for i in issues if isinstance(i, PartialPullRequest)]
 
 
-async def get_full_pull_request(client: GithubClient, partial_pr: PartialPullRequest) -> FullPullRequest:
+async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullRequest:
     """Converts a partial pull request into a full pull request"""
     url = f"/repos/{partial_pr.repo.owner.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
-    response = await client.get(url, headers=client.headers_with_auth_accept())
+    response = await github.get(url, headers=github.headers_with_auth_accept())
     response.raise_for_status()
     return FullPullRequest(**response.json(), repo=partial_pr.repo)
 
 
-async def get_diff(client: GithubClient, pr: FullPullRequest) -> str:
+async def get_diff(pr: FullPullRequest) -> str:
     """Fetches the raw diff for an individual pull request"""
-    headers = client.headers_with_auth_accept(DIFF_CONTENT_ACCEPT_TYPE)
-    response = await client.get(pr.diff_url, headers=headers, follow_redirects=True)
+    headers = github.headers_with_auth_accept(DIFF_CONTENT_ACCEPT_TYPE)
+    response = await github.get(pr.diff_url, headers=headers, follow_redirects=True)
     response.raise_for_status()
     return response.text
 
 
-async def get_review_comments(client: GithubClient, pr: FullPullRequest, review: Review) -> list[ReviewComment]:
+async def get_review_comments(pr: FullPullRequest, review: Review) -> list[ReviewComment]:
     url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews/{review.id}/comments"
-    response = await client.get(url, headers=client.headers_with_auth_accept())
+    response = await github.get(url, headers=github.headers_with_auth_accept())
     response.raise_for_status()
     return [ReviewComment(**c) for c in response.json()]
 
 
-async def get_reviews(client: GithubClient, pr: FullPullRequest, with_comments: bool = True) -> list[Review]:
+async def get_reviews(pr: FullPullRequest, with_comments: bool = True) -> list[Review]:
     url = url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews"
-    response = await client.get(url, headers=client.headers_with_auth_accept())
+    response = await github.get(url, headers=github.headers_with_auth_accept())
     response.raise_for_status()
     reviews: list[Review] = []
     for raw_review in response.json():
         review = Review(**raw_review)
         if with_comments:
-            review.comments = await get_review_comments(client, pr, review)
+            review.comments = await get_review_comments(pr, review)
         reviews.append(review)
     return reviews
 
 
 async def reply_to_review_comment(
-    client: GithubClient, repo: Repository, issue: Issue, comment: ReviewComment, comment_body: str
+    repo: Repository, issue: Issue, comment: ReviewComment, comment_body: str
 ) -> ReviewComment:
     url = f"/repos/{repo.owner.login}/{repo.name}/pulls/{issue.number}/comments/{comment.id}/replies"
-    response = await client.post(url, headers=client.headers_with_auth_accept(), json={"body": comment_body})
+    response = await github.post(url, headers=github.headers_with_auth_accept(), json={"body": comment_body})
     response.raise_for_status()
     return ReviewComment(**response.json())
 

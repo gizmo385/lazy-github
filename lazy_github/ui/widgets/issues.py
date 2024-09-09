@@ -6,7 +6,6 @@ from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, Rule, TabPane
 
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.string_utils import link
@@ -24,10 +23,6 @@ class IssuesContainer(LazyGithubContainer):
     status_column_index = -1
     number_column_index = -1
     title_column_index = -1
-
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.client = client
 
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
@@ -76,7 +71,7 @@ class IssuesContainer(LazyGithubContainer):
 
     async def action_edit_issue(self) -> None:
         issue = await self.get_selected_issue()
-        self.app.push_screen(EditIssueModal(self.client, issue))
+        self.app.push_screen(EditIssueModal(issue))
 
     @on(LazyGithubDataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:
@@ -94,9 +89,8 @@ class IssueOverviewTabPane(TabPane):
 
     BINDINGS = [("E", "edit_issue", "Edit Issue")]
 
-    def __init__(self, client: GithubClient, issue: Issue) -> None:
+    def __init__(self, issue: Issue) -> None:
         super().__init__("Overview", id="issue_overview_pane")
-        self.client = client
         self.issue = issue
 
     def compose(self) -> ComposeResult:
@@ -115,13 +109,12 @@ class IssueOverviewTabPane(TabPane):
             yield Markdown(self.issue.body)
 
     def action_edit_issue(self) -> None:
-        self.app.push_screen(EditIssueModal(self.client, self.issue))
+        self.app.push_screen(EditIssueModal(self.issue))
 
 
 class IssueConversationTabPane(TabPane):
-    def __init__(self, client: GithubClient, issue: Issue) -> None:
+    def __init__(self, issue: Issue) -> None:
         super().__init__("Comments", id="issue_conversation")
-        self.client = client
         self.issue = issue
 
     @property
@@ -137,11 +130,11 @@ class IssueConversationTabPane(TabPane):
 
     @work
     async def fetch_issue_comments(self) -> None:
-        comments = await get_comments(self.client, self.issue)
+        comments = await get_comments(self.issue)
         self.comments.remove_children()
         if comments:
             for comment in comments:
-                comment_container = IssueCommentContainer(self.client, self.issue, comment)
+                comment_container = IssueCommentContainer(self.issue, comment)
                 self.comments.mount(comment_container)
         else:
             self.comments.mount(Label("No comments available"))

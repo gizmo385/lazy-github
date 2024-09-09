@@ -4,8 +4,7 @@ from typing import Optional
 
 import httpx
 
-from lazy_github.lib.constants import CONFIG_FOLDER
-from lazy_github.lib.constants import DEVICE_CODE_GRANT_TYPE, LAZY_GITHUB_CLIENT_ID
+from lazy_github.lib.constants import CONFIG_FOLDER, DEVICE_CODE_GRANT_TYPE, LAZY_GITHUB_CLIENT_ID
 
 # Auth and client globals
 _AUTHENTICATION_CACHE_LOCATION = CONFIG_FOLDER / "auth.text"

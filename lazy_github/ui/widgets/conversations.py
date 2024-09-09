@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Collapsible, Label, Markdown
 
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.pull_requests import ReviewCommentNode
 from lazy_github.models.github import FullPullRequest, Issue, IssueComment, Review, ReviewComment, ReviewState
 from lazy_github.ui.screens.new_comment import NewCommentModal
@@ -37,9 +36,8 @@ class IssueCommentContainer(Container, can_focus=True):
 
     BINDINGS = [("r", "reply_to_individual_comment", "Reply to comment")]
 
-    def __init__(self, client: GithubClient, issue: Issue, comment: IssueComment) -> None:
+    def __init__(self, issue: Issue, comment: IssueComment) -> None:
         super().__init__()
-        self.client = client
         self.issue = issue
         self.comment = comment
 
@@ -50,7 +48,7 @@ class IssueCommentContainer(Container, can_focus=True):
         yield Label(f"{author} • {comment_time}", classes="comment-author")
 
     def action_reply_to_individual_comment(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.issue.repo, self.issue, self.comment))
+        self.app.push_screen(NewCommentModal(self.issue.repo, self.issue, self.comment))
 
 
 class ReviewConversation(Container):
@@ -62,9 +60,8 @@ class ReviewConversation(Container):
     }
     """
 
-    def __init__(self, client: GithubClient, pr: FullPullRequest, root_conversation_node: ReviewCommentNode) -> None:
+    def __init__(self, pr: FullPullRequest, root_conversation_node: ReviewCommentNode) -> None:
         super().__init__()
-        self.client = client
         self.pr = pr
         self.root_conversation_node = root_conversation_node
 
@@ -76,7 +73,7 @@ class ReviewConversation(Container):
 
     def compose(self) -> ComposeResult:
         for comment in self._flatten_comments(self.root_conversation_node):
-            yield IssueCommentContainer(self.client, self.pr, comment)
+            yield IssueCommentContainer(self.pr, comment)
 
 
 class ReviewContainer(Collapsible, can_focus=True):
@@ -91,11 +88,8 @@ class ReviewContainer(Collapsible, can_focus=True):
     """
     BINDINGS = [("r", "reply_to_review", "Reply to review")]
 
-    def __init__(
-        self, client: GithubClient, pr: FullPullRequest, review: Review, hierarchy: dict[int, ReviewCommentNode]
-    ) -> None:
+    def __init__(self, pr: FullPullRequest, review: Review, hierarchy: dict[int, ReviewCommentNode]) -> None:
         super().__init__()
-        self.client = client
         self.pr = pr
         self.review = review
         self.hierarchy = hierarchy
@@ -111,7 +105,7 @@ class ReviewContainer(Collapsible, can_focus=True):
         yield Markdown(self.review.body)
         for comment in self.review.comments:
             if comment_node := self.hierarchy[comment.id]:
-                yield ReviewConversation(self.client, self.pr, comment_node)
+                yield ReviewConversation(self.pr, comment_node)
 
     def action_reply_to_review(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, self.review))
+        self.app.push_screen(NewCommentModal(self.pr.repo, self.pr, self.review))

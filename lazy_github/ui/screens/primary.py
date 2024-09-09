@@ -11,7 +11,7 @@ from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
-from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.config import Config
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
@@ -98,22 +98,19 @@ class SelectionsPane(Container):
     }
     """
 
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.client = client
-
     def compose(self) -> ComposeResult:
-        yield ReposContainer(self.client, id="repos")
-        pulls = PullRequestsContainer(self.client, id="pull_requests")
-        pulls.display = self.client.config.appearance.show_pull_requests
+        config = Config.load_config()
+        yield ReposContainer(id="repos")
+        pulls = PullRequestsContainer(id="pull_requests")
+        pulls.display = config.appearance.show_pull_requests
         yield pulls
 
-        issues = IssuesContainer(self.client, id="issues")
-        issues.display = self.client.config.appearance.show_issues
+        issues = IssuesContainer(id="issues")
+        issues.display = config.appearance.show_issues
         yield issues
 
         actions = ActionsContainer(id="actions")
-        actions.display = self.client.config.appearance.show_actions
+        actions.display = config.appearance.show_actions
         yield actions
 
     @property
@@ -131,11 +128,12 @@ class SelectionsPane(Container):
     async def on_repo_selected(self, message: RepoSelected) -> None:
         # self.actions.post_message(message)
         try:
-            state_filter = self.client.config.issues.state_filter
-            owner_filter = self.client.config.issues.owner_filter
+            config = Config.load_config()
+            state_filter = config.issues.state_filter
+            owner_filter = config.issues.owner_filter
             issues_and_pull_requests = []
             if self.pull_requests.display or self.issues.display:
-                issues_and_pull_requests = await list_issues(self.client, message.repo, state_filter, owner_filter)
+                issues_and_pull_requests = await list_issues(message.repo, state_filter, owner_filter)
         except HTTPStatusError as hse:
             if hse.response.status_code == 404:
                 pass
@@ -148,14 +146,11 @@ class SelectionsPane(Container):
 
 
 class SelectionDetailsPane(Container):
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.client = client
-
     def compose(self) -> ComposeResult:
+        config = Config.load_config()
         yield SelectionDetailsContainer(id="selection_details")
         command_log_section = CommandLogSection(id="command_log")
-        command_log_section.display = self.client.config.appearance.show_command_log
+        command_log_section.display = config.appearance.show_command_log
         yield command_log_section
 
 
@@ -169,10 +164,6 @@ class MainViewPane(Container):
         ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.client = client
-
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
 
@@ -182,28 +173,28 @@ class MainViewPane(Container):
             tabs.children[0].focus()
 
     def compose(self) -> ComposeResult:
-        yield SelectionsPane(self.client)
-        yield SelectionDetailsPane(self.client, id="details_pane")
+        yield SelectionsPane()
+        yield SelectionDetailsPane(id="details_pane")
 
     @property
     def details(self) -> SelectionDetailsContainer:
         return self.query_one("#selection_details", SelectionDetailsContainer)
 
     async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
-        full_pr = await get_full_pull_request(self.client, message.pr)
+        full_pr = await get_full_pull_request(message.pr)
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
         await tabbed_content.add_pane(PrOverviewTabPane(full_pr))
-        await tabbed_content.add_pane(PrDiffTabPane(self.client, full_pr))
-        await tabbed_content.add_pane(PrConversationTabPane(self.client, full_pr))
+        await tabbed_content.add_pane(PrDiffTabPane(full_pr))
+        await tabbed_content.add_pane(PrConversationTabPane(full_pr))
         tabbed_content.children[0].focus()
         self.details.border_title = f"[5] PR #{full_pr.number} Details"
 
     async def on_issue_selected(self, message: IssueSelected) -> None:
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
-        await tabbed_content.add_pane(IssueOverviewTabPane(self.client, message.issue))
-        await tabbed_content.add_pane(IssueConversationTabPane(self.client, message.issue))
+        await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
+        await tabbed_content.add_pane(IssueConversationTabPane(message.issue))
         tabbed_content.children[0].focus()
         self.details.border_title = f"[5] Issue #{message.issue.number} Details"
 
@@ -253,14 +244,10 @@ class LazyGithubMainScreen(Screen):
 
     COMMANDS = {MainScreenCommandProvider}
 
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.client = client
-
     def compose(self):
         with Container():
             yield LazyGithubStatusSummary()
-            yield MainViewPane(self.client)
+            yield MainViewPane()
             yield Footer()
 
     async def action_toggle_ui(self, ui_to_hide: str):
@@ -268,7 +255,7 @@ class LazyGithubMainScreen(Screen):
         widget.display = not widget.display
 
     async def action_show_settings_modal(self) -> None:
-        self.app.push_screen(SettingsModal(self.client.config))
+        self.app.push_screen(SettingsModal())
 
     def on_repo_selected(self, message: RepoSelected) -> None:
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name

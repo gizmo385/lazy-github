@@ -6,7 +6,6 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown, Rule, TextArea
 
 from lazy_github.lib.github import issues, pull_requests
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.github import Issue, IssueComment, Repository, Review, ReviewComment
 from lazy_github.ui.widgets.command_log import log_event
 
@@ -53,7 +52,6 @@ class NewCommentContainer(Container):
 
     def __init__(
         self,
-        client: GithubClient,
         repo: Repository,
         issue: Issue,
         reply_to: CommmentReplyTarget | None,
@@ -62,7 +60,6 @@ class NewCommentContainer(Container):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.reply_to = reply_to
-        self.client = client
         self.repo = repo
         self.issue = issue
 
@@ -86,9 +83,9 @@ class NewCommentContainer(Container):
         body = self.query_one("#new_comment_body", TextArea).text
         try:
             if isinstance(self.reply_to, ReviewComment):
-                await pull_requests.reply_to_review_comment(self.client, self.repo, self.issue, self.reply_to, body)
+                await pull_requests.reply_to_review_comment(self.repo, self.issue, self.reply_to, body)
             else:
-                await issues.create_comment(self.client, self.issue, body)
+                await issues.create_comment(self.issue, body)
         except HTTPStatusError as hse:
             # TODO: We should handle the error case better here
             log_event(f"Error while posting comment for issue #{self.issue.number}: {hse}")
@@ -123,7 +120,6 @@ class NewCommentModal(ModalScreen):
 
     def __init__(
         self,
-        client: GithubClient,
         repo: Repository,
         issue: Issue,
         reply_to: CommmentReplyTarget | None,
@@ -132,12 +128,11 @@ class NewCommentModal(ModalScreen):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.reply_to = reply_to
-        self.client = client
         self.repo = repo
         self.issue = issue
 
     def compose(self) -> ComposeResult:
-        yield NewCommentContainer(self.client, self.repo, self.issue, self.reply_to)
+        yield NewCommentContainer(self.repo, self.issue, self.reply_to)
 
     def action_cancel(self) -> None:
         self.app.pop_screen()

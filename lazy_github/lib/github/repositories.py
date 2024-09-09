@@ -1,7 +1,8 @@
 from functools import partial
 from typing import Literal
 
-from lazy_github.lib.github.client import GithubClient
+import lazy_github.lib.github.client as github
+from lazy_github.lib.config import Config
 from lazy_github.models.github import Repository
 
 RepoTypeFilter = Literal["all"] | Literal["owner"] | Literal["member"]
@@ -13,7 +14,6 @@ MAX_PAGES = 30
 
 
 async def _list_for_page(
-    client: GithubClient,
     repo_types: RepoTypeFilter,
     sort: RepositorySortKey,
     direction: SortDirection,
@@ -21,9 +21,11 @@ async def _list_for_page(
     page: int,
 ) -> tuple[list[Repository], bool]:
     """Retrieves a single page of Github repos matching the specified criteria"""
-    headers = client.headers_with_auth_accept(cache_duration=client.config.cache.list_repos_ttl)
+    config = Config.load_config()
+    headers = github.headers_with_auth_accept(cache_duration=config.cache.list_repos_ttl)
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
-    response = await client.get("/user/repos", headers=headers, params=query_params)
+
+    response = await github.get("/user/repos", headers=headers, params=query_params)
     response.raise_for_status()
 
     link_header = response.headers.get("link")
@@ -33,7 +35,6 @@ async def _list_for_page(
 
 
 async def _list(
-    client: GithubClient,
     repo_types: RepoTypeFilter,
     sort: RepositorySortKey = "full_name",
     direction: SortDirection = "asc",
@@ -43,7 +44,7 @@ async def _list(
     repositories: list[Repository] = []
 
     for page in range(1, MAX_PAGES):
-        repos_in_page, more_pages = await _list_for_page(client, repo_types, sort, direction, per_page, page)
+        repos_in_page, more_pages = await _list_for_page(repo_types, sort, direction, per_page, page)
         repositories.extend(repos_in_page)
         if not more_pages:
             break

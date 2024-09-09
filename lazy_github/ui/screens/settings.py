@@ -99,9 +99,9 @@ class SettingsContainer(Container):
 
     BINDINGS = [("q", "exit_settings", "Exit settings")]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.config = config
+        self.config = Config.load_config()
 
     def compose(self) -> ComposeResult:
         yield Markdown("# LazyGithub Settings")
@@ -166,9 +166,5 @@ class SettingsModal(ModalScreen):
     }
     """
 
-    def __init__(self, config: Config) -> None:
-        super().__init__()
-        self.config = config
-
     def compose(self) -> ComposeResult:
-        yield SettingsContainer(self.config)
+        yield SettingsContainer()

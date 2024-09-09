@@ -5,7 +5,6 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Rule, TextArea
 
 from lazy_github.lib.github import issues
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.models.github import Issue
 
 
@@ -20,9 +19,8 @@ class EditIssueContainer(Container):
     }
     """
 
-    def __init__(self, client: GithubClient, issue: Issue, *args, **kwargs) -> None:
+    def __init__(self, issue: Issue, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.client = client
         self.issue = issue
 
     def compose(self) -> ComposeResult:
@@ -49,7 +47,7 @@ class EditIssueContainer(Container):
         updated_title = self.query_one("#updated_issue_title", Input).value
         updated_body = self.query_one("#updated_issue_body", TextArea).text
         self.notify(f"Updating issue #{self.issue.number}...", timeout=1)
-        await issues.update_issue(self.client, self.issue, title=updated_title, body=updated_body)
+        await issues.update_issue(self.issue, title=updated_title, body=updated_body)
         self.notify(f"Successfully updated issue #{self.issue.number}")
         self.app.pop_screen()
 
@@ -69,10 +67,9 @@ class EditIssueModal(ModalScreen):
     }
     """
 
-    def __init__(self, client: GithubClient, issue: Issue, *args, **kwargs):
+    def __init__(self, issue: Issue, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.issue = issue
-        self.client = client
 
     def compose(self) -> ComposeResult:
-        yield EditIssueContainer(self.client, self.issue)
+        yield EditIssueContainer(self.issue)

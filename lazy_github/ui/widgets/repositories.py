@@ -7,7 +7,6 @@ from textual.coordinate import Coordinate
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.command_log import log_event
@@ -20,9 +19,8 @@ class ReposContainer(LazyGithubContainer):
         ("enter", "select"),
     ]
 
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.client = client
         self.repos: Dict[str, Repository] = {}
         self.favorite_column_index = -1
         self.owner_column_index = 1
@@ -84,7 +82,7 @@ class ReposContainer(LazyGithubContainer):
 
     @work
     async def load_repos(self) -> None:
-        repos = await repos_api.list_all(self.client)
+        repos = await repos_api.list_all()
         self.add_repos_to_table(repos)
 
     async def action_toggle_favorite_repo(self):

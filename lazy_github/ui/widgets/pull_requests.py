@@ -5,7 +5,6 @@ from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
 
-from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.github.pull_requests import (
     get_diff,
@@ -26,13 +25,12 @@ class PullRequestsContainer(LazyGithubContainer):
     This container includes the primary datatable for viewing pull requests on the UI.
     """
 
-    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
-        self.client = client
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.pull_requests: dict[int, PartialPullRequest] = {}
         self.status_column_index = -1
         self.number_column_index = -1
         self.title_column_index = -1
-        super().__init__(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
@@ -137,9 +135,8 @@ class PrOverviewTabPane(TabPane):
 
 
 class PrDiffTabPane(TabPane):
-    def __init__(self, client: GithubClient, pr: FullPullRequest) -> None:
+    def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Diff", id="diff_pane")
-        self.client = client
         self.pr = pr
 
     def compose(self) -> ComposeResult:
@@ -150,7 +147,7 @@ class PrDiffTabPane(TabPane):
     async def fetch_diff(self):
         diff_contents = self.query_one("#diff_contents", RichLog)
         try:
-            diff = await get_diff(self.client, self.pr)
+            diff = await get_diff(self.pr)
         except HTTPStatusError as hse:
             if hse.response.status_code == 404:
                 diff_contents.write("No diff contents found")
@@ -168,9 +165,8 @@ class PrDiffTabPane(TabPane):
 class PrConversationTabPane(TabPane):
     BINDINGS = [("n", "new_comment", "New comment")]
 
-    def __init__(self, client: GithubClient, pr: FullPullRequest) -> None:
+    def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Conversation", id="conversation_pane")
-        self.client = client
         self.pr = pr
 
     def compose(self) -> ComposeResult:
@@ -182,21 +178,21 @@ class PrConversationTabPane(TabPane):
 
     @work
     async def fetch_conversation(self) -> None:
-        reviews = await get_reviews(self.client, self.pr)
+        reviews = await get_reviews(self.pr)
         review_hierarchy = reconstruct_review_conversation_hierarchy(reviews)
-        comments = await get_comments(self.client, self.pr)
+        comments = await get_comments(self.pr)
         self.comments_and_reviews.remove_children()
 
         handled_comment_node_ids: list[int] = []
         for review in reviews:
             if review.body:
                 handled_comment_node_ids.extend([c.id for c in review.comments])
-                review_container = ReviewContainer(self.client, self.pr, review, review_hierarchy)
+                review_container = ReviewContainer(self.pr, review, review_hierarchy)
                 self.comments_and_reviews.mount(review_container)
 
         for comment in comments:
             if comment.body and comment.id not in handled_comment_node_ids:
-                comment_container = IssueCommentContainer(self.client, self.pr, comment)
+                comment_container = IssueCommentContainer(self.pr, comment)
                 self.comments_and_reviews.mount(comment_container)
 
         if len(self.comments_and_reviews.children) == 0:
@@ -209,4 +205,4 @@ class PrConversationTabPane(TabPane):
         self.fetch_conversation()
 
     def action_new_comment(self) -> None:
-        self.app.push_screen(NewCommentModal(self.client, self.pr.repo, self.pr, None))
+        self.app.push_screen(NewCommentModal(self.pr.repo, self.pr, None))
