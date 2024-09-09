@@ -108,7 +108,7 @@ class SelectionsPane(Container):
         pulls.display = self.client.config.appearance.show_pull_requests
         yield pulls
 
-        issues = IssuesContainer(id="issues")
+        issues = IssuesContainer(self.client, id="issues")
         issues.display = self.client.config.appearance.show_issues
         yield issues
 
@@ -202,7 +202,7 @@ class MainViewPane(Container):
     async def on_issue_selected(self, message: IssueSelected) -> None:
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
-        await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
+        await tabbed_content.add_pane(IssueOverviewTabPane(self.client, message.issue))
         await tabbed_content.add_pane(IssueConversationTabPane(self.client, message.issue))
         tabbed_content.children[0].focus()
         self.details.border_title = f"[5] Issue #{message.issue.number} Details"

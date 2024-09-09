@@ -88,7 +88,7 @@ class NewCommentContainer(Container):
             if isinstance(self.reply_to, ReviewComment):
                 await pull_requests.reply_to_review_comment(self.client, self.repo, self.issue, self.reply_to, body)
             else:
-                await issues.create_comment(self.client, self.repo, self.issue, body)
+                await issues.create_comment(self.client, self.issue, body)
         except HTTPStatusError as hse:
             # TODO: We should handle the error case better here
             log_event(f"Error while posting comment for issue #{self.issue.number}: {hse}")

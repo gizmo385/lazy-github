@@ -11,16 +11,23 @@ from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.string_utils import link
 from lazy_github.models.github import Issue, IssueState
+from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
 
 class IssuesContainer(LazyGithubContainer):
+    BINDINGS = [("E", "edit_issue", "Edit Issue")]
+
     issues: Dict[int, Issue] = {}
     status_column_index = -1
     number_column_index = -1
     title_column_index = -1
+
+    def __init__(self, client: GithubClient, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.client = client
 
     def compose(self) -> ComposeResult:
         self.border_title = "[3] Issues"
@@ -67,6 +74,10 @@ class IssuesContainer(LazyGithubContainer):
         number = self.table.get_cell_at(pr_number_coord)
         return self.issues[number]
 
+    async def action_edit_issue(self) -> None:
+        issue = await self.get_selected_issue()
+        self.app.push_screen(EditIssueModal(self.client, issue))
+
     @on(LazyGithubDataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:
         issue = await self.get_selected_issue()
@@ -81,8 +92,11 @@ class IssueOverviewTabPane(TabPane):
     }
     """
 
-    def __init__(self, issue: Issue) -> None:
+    BINDINGS = [("E", "edit_issue", "Edit Issue")]
+
+    def __init__(self, client: GithubClient, issue: Issue) -> None:
         super().__init__("Overview", id="issue_overview_pane")
+        self.client = client
         self.issue = issue
 
     def compose(self) -> ComposeResult:
@@ -99,6 +113,9 @@ class IssueOverviewTabPane(TabPane):
 
             yield Rule()
             yield Markdown(self.issue.body)
+
+    def action_edit_issue(self) -> None:
+        self.app.push_screen(EditIssueModal(self.client, self.issue))
 
 
 class IssueConversationTabPane(TabPane):
