@@ -9,6 +9,7 @@ from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, R
 class UpdateIssuePayload(TypedDict):
     title: str | None
     body: str | None
+    status: str | None
 
 
 async def list_issues(repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter) -> list[Issue]:
