@@ -2,7 +2,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, Rule, Select, TextArea
+from textual.widgets import Button, Input, Label, Rule, TextArea
 
 from lazy_github.lib.github import issues
 from lazy_github.models.github import Repository
