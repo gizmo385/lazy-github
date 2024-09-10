@@ -11,13 +11,17 @@ from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.string_utils import link
 from lazy_github.models.github import Issue, IssueState
 from lazy_github.ui.screens.edit_issue import EditIssueModal
+from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
 
 class IssuesContainer(LazyGithubContainer):
-    BINDINGS = [("E", "edit_issue", "Edit Issue")]
+    BINDINGS = [
+        ("E", "edit_issue", "Edit Issue"),
+        ("N", "new_issue", "New Issue"),
+    ]
 
     issues: Dict[int, Issue] = {}
     status_column_index = -1
@@ -72,6 +76,11 @@ class IssuesContainer(LazyGithubContainer):
     async def action_edit_issue(self) -> None:
         issue = await self.get_selected_issue()
         self.app.push_screen(EditIssueModal(issue))
+
+    async def action_new_issue(self) -> None:
+        # TODO: This way of getting the repo is really hacky :|
+        issue = await self.get_selected_issue()
+        self.app.push_screen(NewIssueModal(issue.repo))
 
     @on(LazyGithubDataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:

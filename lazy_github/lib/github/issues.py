@@ -9,7 +9,7 @@ from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, R
 class UpdateIssuePayload(TypedDict):
     title: str | None
     body: str | None
-    status: str | None
+    state: str | None
 
 
 async def list_issues(repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter) -> list[Issue]:
@@ -50,5 +50,13 @@ async def update_issue(issue_to_update: Issue, **updated_fields: Unpack[UpdateIs
     repo = issue_to_update.repo
     url = f"/repos/{repo.owner.login}/{repo.name}/issues/{issue_to_update.number}"
     response = await github.patch(url, json=updated_fields, headers=github.headers_with_auth_accept())
+    response.raise_for_status()
+    return Issue(**response.json(), repo=repo)
+
+
+async def create_issue(repo: Repository, title: str, body: str) -> Issue:
+    url = f"/repos/{repo.owner.login}/{repo.name}/issues"
+    json_body = {"title": title, "body": body}
+    response = await github.post(url, json=json_body, headers=github.headers_with_auth_accept())
     response.raise_for_status()
     return Issue(**response.json(), repo=repo)
