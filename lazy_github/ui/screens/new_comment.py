@@ -111,7 +111,7 @@ class NewCommentModal(ModalScreen):
         width: 100;
         height: 50;
         border: thick $background 80%;
-        background: $surface;
+        background: $surface-lighten-3;
         margin: 1;
     }
     """

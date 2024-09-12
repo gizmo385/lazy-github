@@ -73,7 +73,7 @@ class NewIssueModal(ModalScreen):
         height: 30;
         width: 100;
         border: thick $background 80%;
-        background: $surface;
+        background: $surface-lighten-3;
     }
     """
 
