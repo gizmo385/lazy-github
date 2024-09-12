@@ -34,6 +34,9 @@ lazy-github = "lazy_github.cli:cli"
 [tool.hatch.envs.default]
 installer = "uv"
 
+[tool.setuptools]
+packages = ["lazy_github"]
+
 [tool.ruff]
 
 line-length = 120
