@@ -5,6 +5,7 @@ from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.auth import token
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.utils import classproperty
+from lazy_github.models.github import Repository
 
 
 class LazyGithubContext:
@@ -12,6 +13,7 @@ class LazyGithubContext:
 
     _config: Config | None = None
     _client: GithubClient | None = None
+    current_repo: Repository | None = None
 
     @classproperty
     def config(cls) -> Config:

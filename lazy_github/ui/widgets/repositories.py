@@ -5,8 +5,8 @@ from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 
 import lazy_github.lib.github.repositories as repos_api
-from lazy_github.lib.config import Config
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.command_log import log_event
@@ -69,12 +69,11 @@ class ReposContainer(LazyGithubContainer):
 
     @work
     async def add_repos_to_table(self, repos: Iterable[Repository]) -> None:
-        config = Config.load_config()
         self.repos = {}
         self.table.clear()
         rows = []
         for repo in repos:
-            favorited = favorite_string(repo.full_name in config.repositories.favorites)
+            favorited = favorite_string(repo.full_name in LazyGithubContext.config.repositories.favorites)
             private = private_string(repo.private)
             rows.append([favorited, repo.owner.login, repo.name, private])
             self.repos[repo.full_name] = repo
@@ -88,7 +87,7 @@ class ReposContainer(LazyGithubContainer):
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
         # Update the config to add/remove the favorite
-        with Config.to_edit() as config:
+        with LazyGithubContext.config.to_edit() as config:
             favorited = repo.full_name in config.repositories.favorites
             if favorited:
                 log_event(f"Unfavoriting repo {repo.full_name}")

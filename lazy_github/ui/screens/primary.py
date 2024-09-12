@@ -11,7 +11,7 @@ from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
-from lazy_github.lib.config import Config
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
@@ -99,18 +99,17 @@ class SelectionsPane(Container):
     """
 
     def compose(self) -> ComposeResult:
-        config = Config.load_config()
         yield ReposContainer(id="repos")
         pulls = PullRequestsContainer(id="pull_requests")
-        pulls.display = config.appearance.show_pull_requests
+        pulls.display = LazyGithubContext.config.appearance.show_pull_requests
         yield pulls
 
         issues = IssuesContainer(id="issues")
-        issues.display = config.appearance.show_issues
+        issues.display = LazyGithubContext.config.appearance.show_issues
         yield issues
 
         actions = ActionsContainer(id="actions")
-        actions.display = config.appearance.show_actions
+        actions.display = LazyGithubContext.config.appearance.show_actions
         yield actions
 
     @property
@@ -128,9 +127,9 @@ class SelectionsPane(Container):
     async def on_repo_selected(self, message: RepoSelected) -> None:
         # self.actions.post_message(message)
         try:
-            config = Config.load_config()
-            state_filter = config.issues.state_filter
-            owner_filter = config.issues.owner_filter
+            LazyGithubContext.current_repo = message.repo
+            state_filter = LazyGithubContext.config.issues.state_filter
+            owner_filter = LazyGithubContext.config.issues.owner_filter
             issues_and_pull_requests = []
             if self.pull_requests.display or self.issues.display:
                 issues_and_pull_requests = await list_issues(message.repo, state_filter, owner_filter)
@@ -147,10 +146,9 @@ class SelectionsPane(Container):
 
 class SelectionDetailsPane(Container):
     def compose(self) -> ComposeResult:
-        config = Config.load_config()
         yield SelectionDetailsContainer(id="selection_details")
         command_log_section = CommandLogSection(id="command_log")
-        command_log_section.display = config.appearance.show_command_log
+        command_log_section.display = LazyGithubContext.config.appearance.show_command_log
         yield command_log_section
 
 

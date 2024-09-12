@@ -10,7 +10,7 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Markdown, Rule, Select, Switch
 
-from lazy_github.lib.config import Config
+from lazy_github.lib.context import LazyGithubContext
 
 # There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
 # through more obvious means elsewhere
@@ -101,12 +101,11 @@ class SettingsContainer(Container):
 
     def __init__(self) -> None:
         super().__init__()
-        self.config = Config.load_config()
 
     def compose(self) -> ComposeResult:
         yield Markdown("# LazyGithub Settings")
         with ScrollableContainer(id="settings_adjustment"):
-            for field, value in self.config:
+            for field, value in LazyGithubContext.config:
                 if field in _SECTIONS_TO_SKIP:
                     continue
                 yield SettingsSection(field, value)
@@ -118,7 +117,7 @@ class SettingsContainer(Container):
             yield Button("Cancel", id="cancel_settings", variant="error")
 
     def _update_settings(self):
-        with self.config.to_edit() as updated_config:
+        with LazyGithubContext.config.to_edit() as updated_config:
             for _, model in updated_config:
                 if not isinstance(model, BaseModel):
                     continue

@@ -2,7 +2,6 @@ from functools import partial
 from typing import Literal
 
 from lazy_github.lib.context import LazyGithubContext, github_headers
-from lazy_github.lib.config import Config
 from lazy_github.models.github import Repository
 
 RepoTypeFilter = Literal["all"] | Literal["owner"] | Literal["member"]
@@ -21,8 +20,7 @@ async def _list_for_page(
     page: int,
 ) -> tuple[list[Repository], bool]:
     """Retrieves a single page of Github repos matching the specified criteria"""
-    config = Config.load_config()
-    headers = github_headers(cache_duration=config.cache.list_repos_ttl)
+    headers = github_headers(cache_duration=LazyGithubContext.config.cache.list_repos_ttl)
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
 
     response = await LazyGithubContext.client.get("/user/repos", headers=headers, params=query_params)

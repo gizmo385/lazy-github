@@ -6,6 +6,7 @@ from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, Rule, TabPane
 
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.utils import link
@@ -78,9 +79,7 @@ class IssuesContainer(LazyGithubContainer):
         self.app.push_screen(EditIssueModal(issue))
 
     async def action_new_issue(self) -> None:
-        # TODO: This way of getting the repo is really hacky :|
-        issue = await self.get_selected_issue()
-        self.app.push_screen(NewIssueModal(issue.repo))
+        self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
 
     @on(LazyGithubDataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:
