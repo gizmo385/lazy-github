@@ -8,7 +8,7 @@ from textual.widgets import Label, Markdown, Rule, TabPane
 
 from lazy_github.lib.github.issues import get_comments
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
-from lazy_github.lib.string_utils import link
+from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_issue import NewIssueModal

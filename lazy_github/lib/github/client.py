@@ -39,10 +39,10 @@ class GithubClient(hishel.AsyncCacheClient):
 _GITHUB_CLIENT: GithubClient | None = None
 
 
-def _get_client() -> GithubClient:
+def _get_client(config: Config | None = None) -> GithubClient:
     global _GITHUB_CLIENT
     if not _GITHUB_CLIENT:
-        _GITHUB_CLIENT = GithubClient(Config.load_config(), token())
+        _GITHUB_CLIENT = GithubClient(config or Config.load_config(), token())
     return _GITHUB_CLIENT
 
 

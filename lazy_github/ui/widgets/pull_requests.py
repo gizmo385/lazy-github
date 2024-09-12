@@ -12,7 +12,7 @@ from lazy_github.lib.github.pull_requests import (
     reconstruct_review_conversation_hierarchy,
 )
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
-from lazy_github.lib.string_utils import bold, link, pluralize
+from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event

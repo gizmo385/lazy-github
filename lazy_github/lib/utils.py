@@ -14,3 +14,13 @@ def bold(s: str) -> str:
 def link(link_text: str, url: str) -> str:
     """Formats a link in Rich-style markup"""
     return f"[link={url}]{link_text}[/link]"
+
+
+class classproperty:
+    """Simple implementation of the @property decorator but for classes"""
+
+    def __init__(self, func):
+        self.fget = func
+
+    def __get__(self, instance, owner):
+        return self.fget(owner)
