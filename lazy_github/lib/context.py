@@ -2,7 +2,8 @@ from typing import Optional
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.github.client import GithubClient, _get_client
+from lazy_github.lib.github.auth import token
+from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.utils import classproperty
 
 
@@ -22,13 +23,10 @@ class LazyGithubContext:
     def client(cls) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
         if not isinstance(cls._client, GithubClient):
-            cls._client = _get_client(config=cls.config)
+            cls._client = GithubClient(cls.config, token())
         return cls._client
 
 
 def github_headers(accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None) -> dict[str, str]:
     """Helper function to build headers for Github API requests"""
-    headers = {"Accept": accept, "Authorization": f"Bearer {LazyGithubContext.client.access_token}"}
-    max_age = cache_duration or LazyGithubContext.config.cache.default_ttl
-    headers["Cache-Control"] = f"max-age={max_age}"
-    return headers
+    return LazyGithubContext.client.github_headers(accept, cache_duration)

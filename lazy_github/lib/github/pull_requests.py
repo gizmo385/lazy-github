@@ -1,6 +1,6 @@
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
@@ -24,15 +24,14 @@ async def list_for_repo(repo: Repository) -> list[PartialPullRequest]:
 async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullRequest:
     """Converts a partial pull request into a full pull request"""
     url = f"/repos/{partial_pr.repo.owner.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
-    headers = LazyGithubContext.client.headers_with_auth_accept()
-    response = await LazyGithubContext.client.get(url, headers=headers)
+    response = await LazyGithubContext.client.get(url, headers=github_headers())
     response.raise_for_status()
     return FullPullRequest(**response.json(), repo=partial_pr.repo)
 
 
 async def get_diff(pr: FullPullRequest) -> str:
     """Fetches the raw diff for an individual pull request"""
-    headers = LazyGithubContext.client.headers_with_auth_accept(DIFF_CONTENT_ACCEPT_TYPE)
+    headers = github_headers(DIFF_CONTENT_ACCEPT_TYPE)
     response = await LazyGithubContext.client.get(pr.diff_url, headers=headers, follow_redirects=True)
     response.raise_for_status()
     return response.text
@@ -40,16 +39,14 @@ async def get_diff(pr: FullPullRequest) -> str:
 
 async def get_review_comments(pr: FullPullRequest, review: Review) -> list[ReviewComment]:
     url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews/{review.id}/comments"
-    headers = LazyGithubContext.client.headers_with_auth_accept()
-    response = await LazyGithubContext.client.get(url, headers=headers)
+    response = await LazyGithubContext.client.get(url, headers=github_headers())
     response.raise_for_status()
     return [ReviewComment(**c) for c in response.json()]
 
 
 async def get_reviews(pr: FullPullRequest, with_comments: bool = True) -> list[Review]:
     url = url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/reviews"
-    headers = LazyGithubContext.client.headers_with_auth_accept()
-    response = await LazyGithubContext.client.get(url, headers=headers)
+    response = await LazyGithubContext.client.get(url, headers=github_headers())
     response.raise_for_status()
     reviews: list[Review] = []
     for raw_review in response.json():
@@ -64,8 +61,7 @@ async def reply_to_review_comment(
     repo: Repository, issue: Issue, comment: ReviewComment, comment_body: str
 ) -> ReviewComment:
     url = f"/repos/{repo.owner.login}/{repo.name}/pulls/{issue.number}/comments/{comment.id}/replies"
-    headers = LazyGithubContext.client.headers_with_auth_accept()
-    response = await LazyGithubContext.client.post(url, headers=headers, json={"body": comment_body})
+    response = await LazyGithubContext.client.post(url, headers=github_headers(), json={"body": comment_body})
     response.raise_for_status()
     return ReviewComment(**response.json())
 

@@ -1,8 +1,8 @@
 from textual import log
 from textual.app import App
 
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
-import lazy_github.lib.github.client as github
 from lazy_github.ui.screens.auth import AuthenticationModal
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
@@ -13,7 +13,7 @@ class LazyGithub(App):
     async def authenticate_with_github(self):
         try:
             # We pull the user here to validate auth
-            _ = await github.user()
+            _ = await LazyGithubContext.client.user()
             self.push_screen(LazyGithubMainScreen())
         except GithubAuthenticationRequired:
             log("Triggering auth with github")
