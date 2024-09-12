@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-uv run lazy_github/__main__.py -- "$@"
+uv sync --quiet
+.venv/bin/python -m lazy_github -- "$@"
