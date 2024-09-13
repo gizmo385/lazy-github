@@ -1,13 +1,9 @@
-from collections.abc import Coroutine
-from typing import Any, Optional
+from typing import Optional
 
 import hishel
-from httpx import URL, Response
-from httpx._types import HeaderTypes, QueryParamTypes
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.github.auth import token
 from lazy_github.models.github import User
 
 
