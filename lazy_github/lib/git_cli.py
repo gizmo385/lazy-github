@@ -28,6 +28,3 @@ def current_local_branch_name() -> str | None:
         return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
     except subprocess.SubprocessError:
         return None
-
-
-print(current_local_branch_name())
