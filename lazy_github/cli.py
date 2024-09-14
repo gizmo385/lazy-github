@@ -1,4 +1,5 @@
 import click
+import rich
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
 from lazy_github.ui.app import app
@@ -21,7 +22,7 @@ def run():
 def dump_config():
     """Dump the current configuration, as it would be loaded by LazyGithub"""
     print(f"Config file location: {_CONFIG_FILE_LOCATION} (exists => {_CONFIG_FILE_LOCATION.exists()})")
-    print(Config.load_config().model_dump_json(indent=4))
+    rich.print_json(Config.load_config().model_dump_json())
 
 
 @cli.command
