@@ -79,6 +79,12 @@ class ReposContainer(LazyGithubContainer):
             self.repos[repo.full_name] = repo
         self.searchable_table.add_rows(rows)
 
+        # If the current user's directory is a git repo and they don't already have a git repo selected, try and mark
+        # that repo as the current repo
+        if LazyGithubContext.current_directory_repo and not LazyGithubContext.current_repo:
+            if repo := self.repos.get(LazyGithubContext.current_directory_repo):
+                self.post_message(RepoSelected(repo))
+
     @work
     async def load_repos(self) -> None:
         repos = await repos_api.list_all()

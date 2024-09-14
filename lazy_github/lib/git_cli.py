@@ -1,8 +1,6 @@
 import subprocess
 import re
 
-from dataclasses import dataclass
-
 # Regex designed to match git@github.com:gizmo385/lazy-github.git:
 # ".+:"         Match everything to the first colon
 # "([^\/]+)"    Match everything until the forward slash, which should be owner
@@ -12,16 +10,8 @@ from dataclasses import dataclass
 _GIT_REMOTE_REGEX = re.compile(r".+:([^\/]+)\/([^.]+).git")
 
 
-@dataclass
-class LocalGitRepo:
-    owner: str
-    name: str
-
-
-def current_directory_git_repo_remote_owner(remote: str = "origin") -> LocalGitRepo | None:
-    """
-    Returns the name and owner associated with the remote of the git repo in the current working directory.
-    """
+def current_local_repo_full_name(remote: str = "origin") -> str | None:
+    """Returns the owner/name associated with the remote of the git repo in the current working directory."""
     try:
         output = subprocess.check_output(["git", "remote", "get-url", remote]).decode().strip()
     except subprocess.SubprocessError:
@@ -29,4 +19,15 @@ def current_directory_git_repo_remote_owner(remote: str = "origin") -> LocalGitR
 
     if matches := re.match(_GIT_REMOTE_REGEX, output):
         owner, name = matches.groups()
-        return LocalGitRepo(owner, name)
+        return f"{owner}/{name}"
+
+
+def current_local_branch_name() -> str | None:
+    """Returns the name of the current branch for the git repo in the current working directory."""
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
+    except subprocess.SubprocessError:
+        return None
+
+
+print(current_local_branch_name())
