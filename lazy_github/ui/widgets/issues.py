@@ -5,6 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import Label, Markdown, Rule, TabPane
+from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments
@@ -75,11 +76,17 @@ class IssuesContainer(LazyGithubContainer):
         return self.issues[number]
 
     async def action_edit_issue(self) -> None:
-        issue = await self.get_selected_issue()
-        self.app.push_screen(EditIssueModal(issue))
+        try:
+            issue = await self.get_selected_issue()
+            self.app.push_screen(EditIssueModal(issue))
+        except CellDoesNotExist:
+            self.notify("No issue currently selected", severity="error")
 
     async def action_new_issue(self) -> None:
-        self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
+        if LazyGithubContext.current_repo:
+            self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
+        else:
+            self.notify("No repository currently selected", severity="error")
 
     @on(LazyGithubDataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:
