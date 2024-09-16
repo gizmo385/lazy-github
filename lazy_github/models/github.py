@@ -108,6 +108,7 @@ class ReviewState(StrEnum):
     APPROVED = "APPROVED"
     CHANGES_REQUESTED = "CHANGES_REQUESTED"
     COMMENTED = "COMMENTED"
+    DISMISSED = "DISMISSED"
 
 
 class ReviewComment(IssueComment):
