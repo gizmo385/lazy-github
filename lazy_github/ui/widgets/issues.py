@@ -140,7 +140,7 @@ class IssueConversationTabPane(TabPane):
         yield VerticalScroll(id="issue_conversation")
 
     def on_mount(self) -> None:
-        self.loading = False
+        self.loading = True
         self.fetch_issue_comments()
 
     @work
@@ -153,4 +153,4 @@ class IssueConversationTabPane(TabPane):
                 self.comments.mount(comment_container)
         else:
             self.comments.mount(Label("No comments available"))
-        self.loading = True
+        self.loading = False
