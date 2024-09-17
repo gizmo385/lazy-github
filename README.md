@@ -5,7 +5,7 @@ inspiration from the [lazygit](https://github.com/jesseduffield/lazygit) project
 [Textual](https://textual.textualize.io/) to drive the terminal UI interactions.
 
 
-![Example screenshot](./images/lazy-github-conversation-ui.svg)
+![Example screenshot](https://raw.githubusercontent.com/gizmo385/lazy-github/main/images/lazy-github-conversation-ui.svg)
 
 
 Currently, it supports the following:
