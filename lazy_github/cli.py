@@ -8,6 +8,7 @@ from lazy_github.ui.app import app
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx: click.Context) -> None:
+    """A Terminal UI for interacting with Github"""
     if ctx.invoked_subcommand is None:
         run()
 
