@@ -3,6 +3,7 @@ from typing import Dict, Iterable
 from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
+from textual.widgets import DataTable
 
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
@@ -10,7 +11,7 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.command_log import log_event
-from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
+from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
 
 
 class ReposContainer(LazyGithubContainer):
@@ -29,7 +30,7 @@ class ReposContainer(LazyGithubContainer):
 
     def compose(self) -> ComposeResult:
         self.border_title = "[1] Repositories"
-        yield SearchableLazyGithubDataTable(
+        yield SearchableDataTable(
             id="searchable_repos_table",
             table_id="repos_table",
             search_input_id="repo_search",
@@ -37,11 +38,11 @@ class ReposContainer(LazyGithubContainer):
         )
 
     @property
-    def searchable_table(self) -> SearchableLazyGithubDataTable:
-        return self.query_one("#searchable_repos_table", SearchableLazyGithubDataTable)
+    def searchable_table(self) -> SearchableDataTable:
+        return self.query_one("#searchable_repos_table", SearchableDataTable)
 
     @property
-    def table(self) -> LazyGithubDataTable:
+    def table(self) -> DataTable:
         return self.searchable_table.table
 
     async def on_mount(self) -> None:
@@ -77,7 +78,7 @@ class ReposContainer(LazyGithubContainer):
             private = private_string(repo.private)
             rows.append([favorited, repo.owner.login, repo.name, private])
             self.repos[repo.full_name] = repo
-        self.searchable_table.add_rows(rows)
+        self.searchable_table.set_rows(rows)
 
         # If the current user's directory is a git repo and they don't already have a git repo selected, try and mark
         # that repo as the current repo
@@ -108,7 +109,7 @@ class ReposContainer(LazyGithubContainer):
         self.table.update_cell_at(favorite_coord, favorite_string(updated_favorited))
         self.table.sort()
 
-    @on(LazyGithubDataTable.RowSelected, "#repos_table")
+    @on(DataTable.RowSelected, "#repos_table")
     async def repo_selected(self):
         # Bubble a message up indicating that a repo was selected
         repo = await self.get_selected_repo()
