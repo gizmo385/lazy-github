@@ -1,15 +1,12 @@
-from typing import Awaitable, Callable, Iterable, TypeAlias
+from typing import Awaitable, Callable, Iterable
 
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.events import Blur
 from textual.widgets import DataTable, Input
-from textual.widgets.data_table import CellType
 
-BATCH_SIZE: TypeAlias = int
-BATCH_TO_FETCH: TypeAlias = int
-TABLE_POPULATION_FUNCTION = Callable[[BATCH_SIZE, BATCH_TO_FETCH], Awaitable[Iterable[Iterable[CellType]]]]
+TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int, ...]]]]
 
 
 class _VimLikeDataTable(DataTable):
@@ -62,7 +59,7 @@ class SearchableDataTable(Vertical):
         self.search_input.can_focus = False
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
-        self._rows_cache = []
+        self._rows_cache: list[tuple[str | int, ...]] = []
 
     def sort(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
@@ -81,7 +78,7 @@ class SearchableDataTable(Vertical):
         self._rows_cache = []
         self.table.clear()
 
-    def append_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
+    def append_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
         """Add new rows to the currently displayed table and cache"""
         self._rows_cache.extend(rows)
         # TODO: Should this actually call handle_submitted_search so that new rows which don't match criteria aren't
@@ -89,12 +86,12 @@ class SearchableDataTable(Vertical):
         self.table.add_rows(rows)
         self.sort()
 
-    def set_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
+    def set_rows(self, rows: list[tuple[str | int, ...]]) -> None:
         """Override the set of rows contained in this table. This will remove any existing rows"""
         self._rows_cache = rows
         self.change_displayed_rows(rows)
 
-    def change_displayed_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
+    def change_displayed_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
         """Change which rows are currently displayed in the table"""
         self.table.clear()
         self.table.add_rows(rows)
@@ -103,7 +100,7 @@ class SearchableDataTable(Vertical):
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
         search_query = self.search_input.value.strip().lower()
-        filtered_rows: Iterable[Iterable] = []
+        filtered_rows: Iterable[tuple[str | int, ...]] = []
         for row in self._rows_cache:
             if search_query in str(row).lower() or not search_query:
                 filtered_rows.append(row)
@@ -121,7 +118,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         search_input_id: str,
         sort_key: str,
         load_function: TABLE_POPULATION_FUNCTION | None,
-        batch_size: BATCH_SIZE,
+        batch_size: int,
         *args,
         load_more_data_buffer: int = 5,
         reverse_sort: bool = False,
@@ -131,7 +128,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         self.load_function = load_function
         self.batch_size = batch_size
         self.load_more_data_buffer = load_more_data_buffer
-        self.current_batch: BATCH_TO_FETCH = 0
+        self.current_batch = 0
 
         # We initialize this to true and set it to false later if we believe we've run out of data to load from the load
         # function.
@@ -144,7 +141,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         initial_data = await self.load_function(self.current_batch, self.batch_size)
         self.set_rows(initial_data)
 
-        if len(initial_data) < self.batch_size:
+        if len(initial_data) == 0:
             self.can_load_more = False
 
     def change_load_function(self, new_load_function: TABLE_POPULATION_FUNCTION | None) -> None:
@@ -152,20 +149,14 @@ class LazilyLoadedDataTable(SearchableDataTable):
 
     @work(exclusive=True)
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
-        from lazy_github.ui.widgets.command_log import log_event
-
         rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
-        log_event(f"Row: {row_highlighted}, rows_remaining: {rows_remaining}")
-        log_event(f"can_load_more: {self.can_load_more}, load_function: {self.load_function}")
         if not (self.can_load_more and self.load_function):
             return
 
         if rows_remaining > self.load_more_data_buffer:
             return
 
-        log_event(f"Loading more data: {row_highlighted}")
         additional_data = await self.load_function(self.current_batch + 1, self.batch_size)
-        log_event(f"Loaded {len(additional_data)} new rows")
         self.current_batch += 1
         if len(additional_data) == 0:
             self.can_load_more = False
