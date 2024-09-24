@@ -47,8 +47,13 @@ class IssuesContainer(LazyGithubContainer):
         )
 
     async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> list[tuple[str | int, ...]]:
+        from lazy_github.ui.widgets.command_log import log_event
+
         if not LazyGithubContext.current_repo:
+            log_event("Skipping fetching more")
             return []
+
+        log_event(f"Fetching more issues (batch={batch_to_fetch}, size={batch_size})")
 
         next_page = await list_issues(
             LazyGithubContext.current_repo,
@@ -58,8 +63,10 @@ class IssuesContainer(LazyGithubContainer):
             per_page=batch_size,
         )
 
+        log_event(f"Fetched {len(next_page)} THINGS")
         new_issues = [i for i in next_page if not isinstance(i, PartialPullRequest)]
         self.issues.update({i.number: i for i in new_issues})
+        log_event(f"Fetched {len(new_issues)} issues")
 
         return [issue_to_cell(i) for i in new_issues]
 
@@ -93,7 +100,8 @@ class IssuesContainer(LazyGithubContainer):
             rows.append((issue.number, issue.state, issue.user.login, issue.title))
         self.searchable_table.set_rows(rows)
         self.searchable_table.change_load_function(self.fetch_more_issues)
-        self.searchable_table.current_batch += 1
+        self.searchable_table.can_load_more = True
+        self.searchable_table.current_batch = 1
 
     async def get_selected_issue(self) -> Issue:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)

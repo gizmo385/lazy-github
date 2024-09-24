@@ -138,7 +138,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         if not self.load_function:
             return
 
-        initial_data = await self.load_function(self.current_batch, self.batch_size)
+        initial_data = await self.load_function(self.batch_size, self.current_batch)
         self.set_rows(initial_data)
 
         if len(initial_data) == 0:
@@ -149,6 +149,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
 
     @work(exclusive=True)
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
+        # TODO: This should probably lock instead of relying on exclusive=True
         rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
         if not (self.can_load_more and self.load_function):
             return
@@ -156,7 +157,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         if rows_remaining > self.load_more_data_buffer:
             return
 
-        additional_data = await self.load_function(self.current_batch + 1, self.batch_size)
+        additional_data = await self.load_function(self.batch_size, self.current_batch + 1)
         self.current_batch += 1
         if len(additional_data) == 0:
             self.can_load_more = False
