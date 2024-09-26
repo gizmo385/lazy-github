@@ -1,14 +1,15 @@
-from typing import Iterable
+from typing import Awaitable, Callable, Iterable
 
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.events import Blur
 from textual.widgets import DataTable, Input
-from textual.widgets.data_table import CellType
+
+TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int, ...]]]]
 
 
-class LazyGithubDataTable(DataTable):
+class _VimLikeDataTable(DataTable):
     "An data table for LazyGithub that provides some more vim-like bindings"
 
     BINDINGS = [
@@ -16,9 +17,13 @@ class LazyGithubDataTable(DataTable):
         ("space", "select"),
         # Add some vim bindings
         ("j", "cursor_down"),
+        ("J", "page_down"),
         ("k", "cursor_up"),
+        ("K", "page_up"),
         ("l", "scroll_right"),
+        ("L", "page_right"),
         ("h", "scroll_left"),
+        ("H", "page_left"),
         ("g", "scroll_top"),
         ("G", "scroll_bottom"),
         ("^", "page_left"),
@@ -26,7 +31,7 @@ class LazyGithubDataTable(DataTable):
     ]
 
 
-class LazyGithubDataTableSearchInput(Input):
+class SearchableDataTableSearchInput(Input):
     def _on_blur(self, event: Blur) -> None:
         if not self.value.strip():
             # If we lose focus and the content is empty, hide it
@@ -35,11 +40,11 @@ class LazyGithubDataTableSearchInput(Input):
         return super()._on_blur(event)
 
 
-class SearchableLazyGithubDataTable(Vertical):
+class SearchableDataTable(Vertical):
     BINDINGS = [("/", "focus_search", "Search")]
 
     DEFAULT_CSS = """
-    LazyGithubDataTableSearchInput {
+    SearchableDataTableSearchInput {
         margin-bottom: 1;
     }
     """
@@ -48,13 +53,13 @@ class SearchableLazyGithubDataTable(Vertical):
         self, table_id: str, search_input_id: str, sort_key: str, *args, reverse_sort: bool = False, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.table = LazyGithubDataTable(id=table_id)
-        self.search_input = LazyGithubDataTableSearchInput(placeholder="Search...", id=search_input_id)
+        self.table = _VimLikeDataTable(id=table_id)
+        self.search_input = SearchableDataTableSearchInput(placeholder="Search...", id=search_input_id)
         self.search_input.display = False
         self.search_input.can_focus = False
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
-        self._rows_cache = []
+        self._rows_cache: list[tuple[str | int, ...]] = []
 
     def sort(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
@@ -69,13 +74,25 @@ class SearchableLazyGithubDataTable(Vertical):
         self.search_input.focus()
 
     def clear_rows(self):
+        """Removes all rows currently displayed and tracked in this table"""
+        self._rows_cache = []
         self.table.clear()
 
-    def add_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
-        self._set_rows(rows)
-        self._rows_cache = rows
+    def append_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
+        """Add new rows to the currently displayed table and cache"""
+        self._rows_cache.extend(rows)
+        # TODO: Should this actually call handle_submitted_search so that new rows which don't match criteria aren't
+        # shown?
+        self.table.add_rows(rows)
+        self.sort()
 
-    def _set_rows(self, rows: Iterable[Iterable[CellType]]) -> None:
+    def set_rows(self, rows: list[tuple[str | int, ...]]) -> None:
+        """Override the set of rows contained in this table. This will remove any existing rows"""
+        self._rows_cache = rows
+        self.change_displayed_rows(rows)
+
+    def change_displayed_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
+        """Change which rows are currently displayed in the table"""
         self.table.clear()
         self.table.add_rows(rows)
         self.sort()
@@ -83,13 +100,73 @@ class SearchableLazyGithubDataTable(Vertical):
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
         search_query = self.search_input.value.strip().lower()
-        filtered_rows: Iterable[Iterable] = []
+        filtered_rows: Iterable[tuple[str | int, ...]] = []
         for row in self._rows_cache:
             if search_query in str(row).lower() or not search_query:
                 filtered_rows.append(row)
 
-        self._set_rows(filtered_rows)
+        self.change_displayed_rows(filtered_rows)
         self.table.focus()
+
+
+class LazilyLoadedDataTable(SearchableDataTable):
+    """A searchable data table that is lazily loaded when you have viewed the currently loaded data"""
+
+    def __init__(
+        self,
+        table_id: str,
+        search_input_id: str,
+        sort_key: str,
+        load_function: TABLE_POPULATION_FUNCTION | None,
+        batch_size: int,
+        *args,
+        load_more_data_buffer: int = 5,
+        reverse_sort: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(table_id, search_input_id, sort_key, *args, reverse_sort=reverse_sort, **kwargs)
+        self.load_function = load_function
+        self.batch_size = batch_size
+        self.load_more_data_buffer = load_more_data_buffer
+        self.current_batch = 0
+
+        # We initialize this to true and set it to false later if we believe we've run out of data to load from the load
+        # function.
+        self.can_load_more = True
+
+    async def initialize(self) -> None:
+        if not self.load_function:
+            return
+
+        initial_data = await self.load_function(self.batch_size, self.current_batch)
+        self.set_rows(initial_data)
+
+        if len(initial_data) == 0:
+            self.can_load_more = False
+
+    def change_load_function(self, new_load_function: TABLE_POPULATION_FUNCTION | None) -> None:
+        self.load_function = new_load_function
+
+    @work(exclusive=True)
+    async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
+        # TODO: This should probably lock instead of relying on exclusive=True
+        rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
+        if not (self.can_load_more and self.load_function):
+            return
+
+        if rows_remaining > self.load_more_data_buffer:
+            return
+
+        additional_data = await self.load_function(self.batch_size, self.current_batch + 1)
+        self.current_batch += 1
+        if len(additional_data) == 0:
+            self.can_load_more = False
+
+        self.append_rows(additional_data)
+
+    @on(DataTable.RowHighlighted)
+    async def check_highlighted_row_boundary(self, row_highlighted: DataTable.RowHighlighted) -> None:
+        self.load_more_data(row_highlighted)
 
 
 class LazyGithubContainer(Container):

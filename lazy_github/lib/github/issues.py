@@ -4,6 +4,8 @@ from lazy_github.lib.constants import IssueOwnerFilter, IssueStateFilter
 from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.models.github import Issue, IssueComment, PartialPullRequest, Repository
 
+DEFAULT_PAGE_SIZE = 30
+
 
 class UpdateIssuePayload(TypedDict):
     title: str | None
@@ -11,9 +13,11 @@ class UpdateIssuePayload(TypedDict):
     state: str | None
 
 
-async def list_issues(repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter) -> list[Issue]:
+async def list_issues(
+    repo: Repository, state: IssueStateFilter, owner: IssueOwnerFilter, page: int = 1, per_page: int = DEFAULT_PAGE_SIZE
+) -> list[Issue]:
     """Fetch issues (included pull requests) from the repo matching the state/owner filters"""
-    query_params = {"state": str(state).lower()}
+    query_params = {"state": str(state).lower(), "page": page, "per_page": per_page}
     if owner == IssueOwnerFilter.MINE:
         user = await LazyGithubContext.client.user()
         query_params["creator"] = user.login

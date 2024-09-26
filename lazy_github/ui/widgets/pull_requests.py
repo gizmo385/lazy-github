@@ -3,9 +3,10 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
-from textual.widgets import Label, Markdown, RichLog, Rule, TabPane
+from textual.widgets import DataTable, Label, Markdown, RichLog, Rule, TabPane
 
-from lazy_github.lib.github.issues import get_comments
+from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.github.pull_requests import (
     get_diff,
     get_reviews,
@@ -16,8 +17,12 @@ from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
-from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubDataTable, SearchableLazyGithubDataTable
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
+
+
+def pull_request_to_cell(pr: PartialPullRequest) -> tuple[str | int, ...]:
+    return (pr.number, str(pr.state), pr.user.login, pr.title)
 
 
 class PullRequestsContainer(LazyGithubContainer):
@@ -34,20 +39,38 @@ class PullRequestsContainer(LazyGithubContainer):
 
     def compose(self) -> ComposeResult:
         self.border_title = "[2] Pull Requests"
-        yield SearchableLazyGithubDataTable(
+        yield LazilyLoadedDataTable(
             id="searchable_prs",
             table_id="pull_requests_table",
             search_input_id="pr_search_query",
             sort_key="number",
+            load_function=None,
+            batch_size=30,
             reverse_sort=True,
         )
 
-    @property
-    def searchable_table(self) -> SearchableLazyGithubDataTable:
-        return self.query_one("#searchable_prs", SearchableLazyGithubDataTable)
+    async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> list[tuple[str | int, ...]]:
+        if not LazyGithubContext.current_repo:
+            return []
+
+        next_page = await list_issues(
+            LazyGithubContext.current_repo,
+            LazyGithubContext.config.pull_requests.state_filter,
+            LazyGithubContext.config.pull_requests.owner_filter,
+            page=batch_to_fetch,
+            per_page=batch_size,
+        )
+
+        new_pulls = [i for i in next_page if isinstance(i, PartialPullRequest)]
+
+        return [pull_request_to_cell(i) for i in new_pulls]
 
     @property
-    def table(self) -> LazyGithubDataTable:
+    def searchable_table(self) -> LazilyLoadedDataTable:
+        return self.query_one("#searchable_prs", LazilyLoadedDataTable)
+
+    @property
+    def table(self) -> DataTable:
         return self.searchable_table.table
 
     def on_mount(self) -> None:
@@ -69,15 +92,18 @@ class PullRequestsContainer(LazyGithubContainer):
         rows = []
         for pr in message.pull_requests:
             self.pull_requests[pr.number] = pr
-            rows.append((pr.number, pr.state, pr.user.login, pr.title))
-        self.searchable_table.add_rows(rows)
+            rows.append(pull_request_to_cell(pr))
+        self.searchable_table.set_rows(rows)
+        self.searchable_table.change_load_function(self.fetch_more_pull_requests)
+        self.searchable_table.can_load_more = True
+        self.searchable_table.current_batch = 1
 
     async def get_selected_pr(self) -> PartialPullRequest:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
         number = self.table.get_cell_at(pr_number_coord)
         return self.pull_requests[number]
 
-    @on(LazyGithubDataTable.RowSelected, "#pull_requests_table")
+    @on(DataTable.RowSelected, "#pull_requests_table")
     async def pr_selected(self) -> None:
         pr = await self.get_selected_pr()
         log_event(f"Selected PR: #{pr.number}")
