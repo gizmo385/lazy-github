@@ -17,7 +17,7 @@ from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
-from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, SearchableDataTable
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
 
 
@@ -62,7 +62,6 @@ class PullRequestsContainer(LazyGithubContainer):
         )
 
         new_pulls = [i for i in next_page if isinstance(i, PartialPullRequest)]
-        self.pull_requests.update({i.number: i for i in new_pulls})
 
         return [pull_request_to_cell(i) for i in new_pulls]
 
