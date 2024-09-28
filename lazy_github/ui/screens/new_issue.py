@@ -63,6 +63,7 @@ class NewIssueContainer(Container):
 
 
 class NewIssueModal(ModalScreen):
+    BINDINGS = [("ESC, q", "cancel", "Cancel")]
     DEFAULT_CSS = """
     NewIssueModal {
         align: center middle;
@@ -83,3 +84,6 @@ class NewIssueModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield NewIssueContainer(self.repo)
+
+    def action_cancel(self) -> None:
+        self.dismiss()
