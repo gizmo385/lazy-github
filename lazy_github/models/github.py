@@ -127,3 +127,15 @@ class Review(BaseModel):
     state: ReviewState
     comments: list[ReviewComment] = []
     submitted_at: datetime
+
+
+class Commit(BaseModel):
+    sha: str
+    url: str
+
+
+class Branch(BaseModel):
+    name: str
+    commit: Commit
+    protected: bool
+    pass
