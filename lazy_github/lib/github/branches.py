@@ -8,7 +8,7 @@ async def list_branches(repo: Repository, per_page: int = 30, page: int = 1) -> 
     response = await LazyGithubContext.client.get(
         f"/repos/{repo.owner.login}/{repo.name}/branches",
         headers=github_headers(),
-        query_params=query_params,
+        params=query_params,
     )
     response.raise_for_status()
     return [Branch(**branch) for branch in response.json()]
