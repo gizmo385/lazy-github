@@ -1,7 +1,9 @@
 import click
 import rich
+import shutil
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.ui.app import app
 
 
@@ -39,3 +41,16 @@ def clear_config():
     """Reset the user's settings"""
     _CONFIG_FILE_LOCATION.unlink(missing_ok=True)
     print("Your settings have been cleared")
+
+
+@cli.command
+@click.option("--no-confirm", is_flag=True, default=False, help="Don't ask for confirmation")
+def clear_cache(no_confirm: bool):
+    """Reset the lazy-github cache"""
+    cache_directory = LazyGithubContext.config.cache.cache_directory
+    if no_confirm or click.confirm(f"Confirm deletion of everything in {cache_directory}"):
+        if cache_directory.exists():
+            shutil.rmtree(cache_directory)
+        print("Cache cleared")
+    else:
+        print("Canceling cache deletion")
