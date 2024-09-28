@@ -23,7 +23,9 @@ async def list_issues(
         query_params["creator"] = user.login
 
     response = await LazyGithubContext.client.get(
-        f"/repos/{repo.owner.login}/{repo.name}/issues", headers=github_headers(), params=query_params
+        f"/repos/{repo.owner.login}/{repo.name}/issues",
+        headers=github_headers(),
+        params=query_params,
     )
     response.raise_for_status()
     result: list[Issue] = []
