@@ -63,6 +63,7 @@ class PullRequestsContainer(LazyGithubContainer):
 
         new_pulls = [i for i in next_page if isinstance(i, PartialPullRequest)]
 
+        self.pull_requests.update({i.number: i for i in new_pulls})
         return [pull_request_to_cell(i) for i in new_pulls]
 
     @property
