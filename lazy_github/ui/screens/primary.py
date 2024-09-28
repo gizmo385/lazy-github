@@ -15,6 +15,7 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
+from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
@@ -90,6 +91,10 @@ class SelectionDetailsContainer(LazyGithubContainer):
 
 
 class SelectionsPane(Container):
+    BINDINGS = [
+        ("I", "open_issue", "Open new issue"),
+        ("P", "open_pull_request", "Open new pull request"),
+    ]
     DEFAULT_CSS = """
     SelectionsPane {
         height: 100%;
@@ -111,6 +116,20 @@ class SelectionsPane(Container):
         actions = ActionsContainer(id="actions")
         actions.display = LazyGithubContext.config.appearance.show_actions
         yield actions
+
+    def action_open_issue(self) -> None:
+        if LazyGithubContext.current_repo is None:
+            self.notify("Please select a repository first!", title="Cannot open new issue", severity="error")
+            return
+
+        self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
+
+    def action_open_pull_request(self) -> None:
+        if LazyGithubContext.current_repo is None:
+            self.notify("Please select a repository first!", title="Cannot open new issue", severity="error")
+            return
+
+        self.notify("Coming soon!", title="Not available yet")
 
     @property
     def pull_requests(self) -> PullRequestsContainer:
@@ -238,8 +257,6 @@ class MainScreenCommandProvider(Provider):
 
 
 class LazyGithubMainScreen(Screen):
-    BINDINGS = [("r", "refresh_repos", "Refresh global repo state")]
-
     COMMANDS = {MainScreenCommandProvider}
 
     def compose(self):
