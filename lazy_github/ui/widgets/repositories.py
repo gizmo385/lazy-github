@@ -16,7 +16,7 @@ from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTab
 
 class ReposContainer(LazyGithubContainer):
     BINDINGS = [
-        ("f", "toggle_favorite_repo", "Toggle favorite"),
+        ("ctrl+f", "toggle_favorite_repo", "Toggle favorite"),
         ("enter", "select"),
     ]
 
