@@ -16,6 +16,7 @@ from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
 from lazy_github.ui.screens.new_issue import NewIssueModal
+from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
@@ -126,10 +127,10 @@ class SelectionsPane(Container):
 
     def action_open_pull_request(self) -> None:
         if LazyGithubContext.current_repo is None:
-            self.notify("Please select a repository first!", title="Cannot open new issue", severity="error")
+            self.notify("Please select a repository first!", title="Cannot open new pull request", severity="error")
             return
 
-        self.notify("Coming soon!", title="Not available yet")
+        self.app.push_screen(NewPullRequestModal())
 
     @property
     def pull_requests(self) -> PullRequestsContainer:
