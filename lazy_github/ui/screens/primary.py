@@ -18,7 +18,6 @@ from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import (
     IssuesAndPullRequestsFetched,
     IssueSelected,
-    PullRequestCreated,
     PullRequestSelected,
     RepoSelected,
 )
@@ -26,7 +25,7 @@ from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
-from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
+from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
 from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer

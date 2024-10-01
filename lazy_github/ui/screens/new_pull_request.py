@@ -10,7 +10,6 @@ from lazy_github.lib.github.branches import list_branches
 from lazy_github.lib.github.pull_requests import create_pull_request
 from lazy_github.lib.messages import PullRequestCreated
 from lazy_github.models.github import Branch, FullPullRequest
-from lazy_github.ui.widgets.command_log import log_event
 
 
 class BranchesLoaded(Message):
