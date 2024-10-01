@@ -1,8 +1,29 @@
-from textual import on
+from textual import on, suggester, validation, work
 from textual.app import ComposeResult
+from textual.message import Message
 from textual.screen import ModalScreen
 from textual.containers import Horizontal, VerticalScroll
-from textual.widgets import Button, Input, Label, Markdown, Rule, Select, TextArea
+from textual.widgets import Button, Input, Label, Markdown, Rule, Switch, TextArea
+
+from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github.branches import list_branches
+from lazy_github.lib.github.pull_requests import create_pull_request
+from lazy_github.lib.messages import PullRequestCreated
+from lazy_github.models.github import Branch
+from lazy_github.ui.widgets.command_log import log_event
+
+
+class BranchesLoaded(Message):
+    def __init__(self, branches: list[Branch]) -> None:
+        super().__init__()
+        self.branches = branches
+
+
+class BranchesSelected(Message):
+    def __init__(self, head_ref: str, base_ref: str) -> None:
+        super().__init__()
+        self.head_ref = head_ref
+        self.base_ref = base_ref
 
 
 class BranchSelection(Horizontal):
@@ -15,21 +36,65 @@ class BranchSelection(Horizontal):
     Label {
         padding-top: 1;
     }
+
+    Input {
+        width: 30%;
+    }
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.branches: dict[str, Branch] = {}
+
     def compose(self) -> ComposeResult:
+        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in new PR modal"
+        non_empty_validator = validation.Length(minimum=1)
         yield Label("[bold]Base[/bold]")
-        yield Select(id="base_ref", prompt="Choose a base ref", options=[("main", "main")])
+        yield Input(
+            id="base_ref",
+            placeholder="Choose a base ref",
+            value=LazyGithubContext.current_repo.default_branch,
+            validators=[non_empty_validator],
+        )
         yield Label(":left_arrow: [bold]Compare[/bold]")
-        yield Select(id="head_ref", prompt="Choose a head ref", options=[("main", "main")])
+        yield Input(id="head_ref", placeholder="Choose a head ref", validators=[non_empty_validator])
+        yield Label("Draft")
+        yield Switch(id="pr_is_draft", value=False)
+
+    @property
+    def _head_ref_input(self) -> Input:
+        return self.query_one("#head_ref", Input)
+
+    @property
+    def _base_ref_input(self) -> Input:
+        return self.query_one("#base_ref", Input)
 
     @property
     def head_ref(self) -> str:
-        return str(self.query_one("#head_ref", Select).value)
+        return self._head_ref_input.value
 
     @property
     def base_ref(self) -> str:
-        return str(self.query_one("#base_ref", Select).value)
+        return self._base_ref_input.value
+
+    async def on_mount(self) -> None:
+        self.fetch_branches()
+
+    @on(BranchesLoaded)
+    def handle_loaded_branches(self, message: BranchesLoaded) -> None:
+        self.branches = {b.name: b for b in message.branches}
+        branch_suggester = suggester.SuggestFromList(self.branches.keys())
+        self._head_ref_input.suggester = branch_suggester
+        self._base_ref_input.suggester = branch_suggester
+
+    @work
+    async def fetch_branches(self) -> None:
+        # This shouldn't happen since the current repo needs to be set to open this modal, but we'll validate it to
+        # make sure
+        assert LazyGithubContext.current_repo is not None, "Current repo unexpectedly missing in new PR modal"
+
+        branches = await list_branches(LazyGithubContext.current_repo)
+        self.post_message(BranchesLoaded(branches))
 
 
 class NewPullRequestButtons(Horizontal):
@@ -64,9 +129,8 @@ class NewPullRequestContainer(VerticalScroll):
         margin-bottom: 1;
     }
 
-    #pr_diff {
-        height: auto;
-        width: 100%;
+    #pr_title {
+        margin-bottom: 1;
     }
     """
 
@@ -75,20 +139,47 @@ class NewPullRequestContainer(VerticalScroll):
         yield BranchSelection()
         yield Rule()
         yield Label("[bold]Pull Request Title[/bold]")
-        yield Input(id="pr_title", placeholder="Title")
+        yield Input(id="pr_title", placeholder="Title", validators=[validation.Length(minimum=1)])
         yield Label("[bold]Pull Request Description[/bold]")
-        yield TextArea(id="pr_description")
+        yield TextArea.code_editor(id="pr_description")
         yield NewPullRequestButtons()
-        yield Label("Changes:")
-        yield TextArea(id="pr_diff", disabled=True)
 
     @on(Button.Pressed, "#cancel_new_pr")
     def cancel_pull_request(self, _: Button.Pressed):
         self.app.pop_screen()
 
-    def fetch_branches(self) -> None:
-        # TODO: Fetch the branches from the remote repo that can be loaded
-        pass
+    @on(Button.Pressed, "#submit_new_pr")
+    async def submit_pull_request(self, _: Button.Pressed):
+        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in new PR modal"
+        title_field = self.query_one("#pr_title", Input)
+        title_field.validate(title_field.value)
+        description_field = self.query_one("#pr_description", TextArea)
+        head_ref_field = self.query_one("#head_ref", Input)
+        head_ref_field.validate(head_ref_field.value)
+        base_ref_field = self.query_one("#base_ref", Input)
+        base_ref_field.validate(base_ref_field.value)
+        draft_field = self.query_one("#pr_is_draft", Switch)
+
+        if not (title_field.is_valid and head_ref_field.is_valid and base_ref_field.is_valid):
+            self.notify("Missing required fields!", title="Invalid PR!", severity="error")
+            return
+
+        self.notify("Creating new pull request...")
+        try:
+            created_pr = await create_pull_request(
+                LazyGithubContext.current_repo,
+                title_field.value,
+                description_field.text,
+                base_ref_field.value,
+                head_ref_field.value,
+                draft=draft_field.value,
+            )
+        except Exception as e:
+            self.notify("Error while creating new pull request!", title="Error creating pull request", severity="error")
+            log_event(f"Error creating pull request: {e}")
+        else:
+            self.notify("Successfully created PR!")
+            self.post_message(PullRequestCreated(created_pr))
 
 
 class NewPullRequestModal(ModalScreen):

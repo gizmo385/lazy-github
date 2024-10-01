@@ -2,7 +2,7 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.models.github import Issue, PartialPullRequest, Repository
+from lazy_github.models.github import FullPullRequest, Issue, PartialPullRequest, Repository
 
 
 class RepoSelected(Message):
@@ -59,3 +59,9 @@ class IssuesAndPullRequestsFetched(Message):
             for issue in self.issues_and_pull_requests
             if isinstance(issue, Issue) and not isinstance(issue, PartialPullRequest)
         ]
+
+
+class PullRequestCreated(Message):
+    def __init__(self, pull_request: FullPullRequest) -> None:
+        super().__init__()
+        self.pull_request = pull_request

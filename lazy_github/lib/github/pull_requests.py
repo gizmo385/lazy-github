@@ -19,6 +19,27 @@ async def list_for_repo(repo: Repository) -> list[PartialPullRequest]:
     return [i for i in issues if isinstance(i, PartialPullRequest)]
 
 
+async def create_pull_request(
+    repo: Repository, title: str, body: str, base_ref: str, head_ref: str, draft: bool = False
+) -> FullPullRequest:
+    user = await LazyGithubContext.client.user()
+    url = f"/repos/{repo.owner.login}/{repo.name}/pulls"
+    request_body = {
+        "title": title,
+        "draft": draft,
+        "base": base_ref,
+        "head": f"{user.login}:{head_ref}",
+    }
+    if body:
+        request_body["body"] = body
+    from lazy_github.ui.widgets.command_log import log_event
+
+    log_event(f"PR Body: {request_body}")
+    response = await LazyGithubContext.client.post(url, headers=github_headers(), json=request_body)
+    response.raise_for_status()
+    return FullPullRequest(**response.json())
+
+
 async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullRequest:
     """Converts a partial pull request into a full pull request"""
     url = f"/repos/{partial_pr.repo.owner.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
