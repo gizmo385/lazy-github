@@ -2,6 +2,7 @@ from functools import partial
 from typing import NamedTuple
 
 from httpx import HTTPStatusError
+from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container
@@ -14,12 +15,18 @@ from textual.widgets import Footer, TabbedContent
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
-from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, PullRequestSelected, RepoSelected
+from lazy_github.lib.messages import (
+    IssuesAndPullRequestsFetched,
+    IssueSelected,
+    PullRequestCreated,
+    PullRequestSelected,
+    RepoSelected,
+)
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.actions import ActionsContainer
-from lazy_github.ui.widgets.command_log import CommandLogSection
+from lazy_github.ui.widgets.command_log import CommandLogSection, log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
 from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
@@ -28,6 +35,7 @@ from lazy_github.ui.widgets.pull_requests import (
     PrDiffTabPane,
     PrOverviewTabPane,
     PullRequestsContainer,
+    pull_request_to_cell,
 )
 from lazy_github.ui.widgets.repositories import ReposContainer
 
@@ -125,12 +133,18 @@ class SelectionsPane(Container):
 
         self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
 
-    def action_open_pull_request(self) -> None:
+    async def action_open_pull_request(self) -> None:
+        self.trigger_pr_creation_flow()
+
+    @work
+    async def trigger_pr_creation_flow(self) -> None:
         if LazyGithubContext.current_repo is None:
             self.notify("Please select a repository first!", title="Cannot open new pull request", severity="error")
             return
 
-        self.app.push_screen(NewPullRequestModal())
+        if new_pr := await self.app.push_screen_wait(NewPullRequestModal()):
+            self.pull_requests.searchable_table.append_rows([pull_request_to_cell(new_pr)])
+            self.pull_requests.pull_requests[new_pr.number] = new_pr
 
     @property
     def pull_requests(self) -> PullRequestsContainer:

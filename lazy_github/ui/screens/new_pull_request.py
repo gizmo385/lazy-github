@@ -9,7 +9,7 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.branches import list_branches
 from lazy_github.lib.github.pull_requests import create_pull_request
 from lazy_github.lib.messages import PullRequestCreated
-from lazy_github.models.github import Branch
+from lazy_github.models.github import Branch, FullPullRequest
 from lazy_github.ui.widgets.command_log import log_event
 
 
@@ -174,15 +174,18 @@ class NewPullRequestContainer(VerticalScroll):
                 head_ref_field.value,
                 draft=draft_field.value,
             )
-        except Exception as e:
-            self.notify("Error while creating new pull request!", title="Error creating pull request", severity="error")
-            log_event(f"Error creating pull request: {e}")
+        except Exception:
+            self.notify(
+                "Check that your branches are valid and that a PR does not already exist",
+                title="Error creating pull request",
+                severity="error",
+            )
         else:
             self.notify("Successfully created PR!")
             self.post_message(PullRequestCreated(created_pr))
 
 
-class NewPullRequestModal(ModalScreen):
+class NewPullRequestModal(ModalScreen[FullPullRequest | None]):
     DEFAULT_CSS = """
     NewPullRequestModal {
         border: ascii green;
@@ -205,4 +208,8 @@ class NewPullRequestModal(ModalScreen):
         yield NewPullRequestContainer()
 
     def action_cancel(self) -> None:
-        self.dismiss()
+        self.dismiss(None)
+
+    @on(PullRequestCreated)
+    def on_pull_request_created(self, message: PullRequestCreated) -> None:
+        self.dismiss(message.pull_request)

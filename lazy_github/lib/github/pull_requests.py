@@ -32,12 +32,9 @@ async def create_pull_request(
     }
     if body:
         request_body["body"] = body
-    from lazy_github.ui.widgets.command_log import log_event
-
-    log_event(f"PR Body: {request_body}")
     response = await LazyGithubContext.client.post(url, headers=github_headers(), json=request_body)
     response.raise_for_status()
-    return FullPullRequest(**response.json())
+    return FullPullRequest(**response.json(), repo=repo)
 
 
 async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullRequest:
