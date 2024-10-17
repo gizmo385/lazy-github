@@ -1,19 +1,52 @@
 import asyncio
 import json
+import re
 from typing import Any
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubBackendProtocol, GithubResponse, GithubStatusException
 from lazy_github.models.github import User
 
+header_regex = re.compile(r"\<.([^:]+):(.+)")
+
 
 class CliGithubResponse(GithubResponse):
     def __init__(self, stdout: str, stderr: str) -> None:
-        self.stdout = stdout
+        self._parse_stdout(stdout)
         self.stderr = stderr
 
+    def _parse_stdout(self, stdout: str) -> None:
+        extracted_headers: dict[str, str] = {}
+        response_text: list[str] = []
+        for line in stdout.splitlines():
+            if line.startswith("*"):
+                # This is metadata about the request
+                pass
+            elif line.startswith(">"):
+                # This is the request
+                pass
+            elif line.startswith("<"):
+                if matches := header_regex.match(line):
+                    header_name = matches.group(1)
+                    header_value = matches.group(2)
+                    extracted_headers[header_name] = header_value
+            else:
+                # This is the raw response
+                response_text.append(line)
+
+        self._headers = extracted_headers
+        self._raw_response = "\n".join(response_text)
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return self._headers
+
     def json(self) -> Any:
-        return json.loads(self.stdout)
+        return json.loads(self._raw_response)
+
+    @property
+    def text(self) -> str:
+        return self._raw_response
 
     def raise_for_status(self) -> None:
         try:

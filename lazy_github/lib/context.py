@@ -1,10 +1,10 @@
-from typing import Optional
-
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.git_cli import current_local_repo_full_name
 from lazy_github.lib.github.auth import token
-from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.github.backends.cli import GithubCliClient
+from lazy_github.lib.github.backends.http import GithubApiClient
+from lazy_github.lib.github.backends.protocol import GithubBackendProtocol
 from lazy_github.lib.utils import classproperty
 from lazy_github.models.github import Repository
 
@@ -14,10 +14,11 @@ class LazyGithubContext:
 
     # Attributes exposed via properties
     _config: Config | None = None
-    _client: GithubClient | None = None
+    _client: GithubBackendProtocol | None = None
     _current_directory_repo: str | None = None
 
     # Directly assigned attributes
+    access_token: str | None = None
     current_repo: Repository | None = None
 
     @classproperty
@@ -27,10 +28,11 @@ class LazyGithubContext:
         return cls._config
 
     @classproperty
-    def client(cls) -> GithubClient:
+    def client(cls) -> GithubBackendProtocol:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
-        if not isinstance(cls._client, GithubClient):
-            cls._client = GithubClient(cls.config, token())
+        if not isinstance(cls._client, (GithubApiClient, GithubCliClient)):
+            # cls._client = GithubApiClient(cls.config, token())
+            cls._client = GithubCliClient(cls.config)
         return cls._client
 
     @classproperty
@@ -40,7 +42,15 @@ class LazyGithubContext:
             cls._current_directory_repo = current_local_repo_full_name()
         return cls._current_directory_repo
 
+    @classmethod
+    def _github_headers(cls, accept: str, cache_duration: int | None) -> dict[str, str]:
+        """Helper function to build headers for Github API requests"""
+        headers = {"Accept": accept, "Authorization": f"Bearer {token()}"}
+        max_age = cache_duration or cls.config.cache.default_ttl
+        headers["Cache-Control"] = f"max-age={max_age}"
+        return headers
 
-def github_headers(accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None) -> dict[str, str]:
+
+def github_headers(accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None) -> dict[str, str]:
     """Helper function to build headers for Github API requests"""
-    return LazyGithubContext.client.github_headers(accept, cache_duration)
+    return LazyGithubContext._github_headers(accept, cache_duration)

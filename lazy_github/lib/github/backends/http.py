@@ -3,7 +3,6 @@ import hishel
 from httpx import HTTPStatusError, Response
 
 from lazy_github.lib.config import Config
-from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubBackendProtocol, GithubResponse, GithubStatusException
 from lazy_github.models.github import User
 
@@ -16,19 +15,11 @@ class HttpGithubClient(hishel.AsyncCacheClient):
         self.access_token = access_token
         self._user: User | None = None
 
-    def github_headers(
-        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
-    ) -> dict[str, str]:
-        """Helper function to build a request with specific headers"""
-        headers = {"Accept": accept, "Authorization": f"Bearer {self.access_token}"}
-        max_age = cache_duration or self.config.cache.default_ttl
-        headers["Cache-Control"] = f"max-age={max_age}"
-        return headers
-
     async def user(self) -> User:
         """Returns the authed user for this client"""
+        auth_header = {"Authorization": f"Bearer {self.access_token}"}
         if self._user is None:
-            response = await self.get("/user", headers=self.github_headers())
+            response = await self.get("/user", headers=auth_header)
             self._user = User(**response.json())
         return self._user
 
@@ -43,8 +34,16 @@ class HttpGithubResponse(GithubResponse):
         except HTTPStatusError as hse:
             raise GithubStatusException(hse.response.status_code, hse)
 
+    @property
+    def headers(self) -> dict[str, str]:
+        return dict(self.http_response.headers)
+
     def json(self) -> Any:
         return self.http_response.json()
+
+    @property
+    def text(self) -> str:
+        return self.http_response.text
 
 
 class GithubApiClient(GithubBackendProtocol):
