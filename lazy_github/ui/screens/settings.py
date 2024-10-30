@@ -3,7 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from textual.app import ComposeResult, on
+from textual import on
+from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
 from textual.screen import ModalScreen

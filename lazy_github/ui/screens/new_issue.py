@@ -46,6 +46,8 @@ class NewIssueContainer(Container):
 
     @on(Button.Pressed, "#save_new_issue")
     async def submit_new_issue(self, _: Button) -> None:
+        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo from application context!"
+
         title = self.query_one("#new_issue_title", Input).value
         body = self.query_one("#new_issue_body", TextArea).text
         if not str(title):
