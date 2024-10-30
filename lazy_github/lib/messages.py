@@ -65,3 +65,9 @@ class PullRequestCreated(Message):
     def __init__(self, pull_request: FullPullRequest) -> None:
         super().__init__()
         self.pull_request = pull_request
+
+
+class IssueCreated(Message):
+    def __init__(self, issue: Issue) -> None:
+        super().__init__()
+        self.issue = issue

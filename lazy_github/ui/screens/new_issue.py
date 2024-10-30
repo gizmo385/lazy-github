@@ -4,8 +4,10 @@ from textual.containers import Container, Horizontal, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Rule, TextArea
 
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import issues
-from lazy_github.models.github import Repository
+from lazy_github.lib.messages import IssueCreated
+from lazy_github.models.github import Issue, Repository
 
 
 class NewIssueContainer(Container):
@@ -23,11 +25,8 @@ class NewIssueContainer(Container):
     }
     """
 
-    def __init__(self, repo: Repository, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.repo = repo
-
     def compose(self) -> ComposeResult:
+        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in new PR modal"
         with ScrollableContainer():
             yield Label("[bold]Title[/bold]")
             yield Input(placeholder="Title", id="new_issue_title")
@@ -57,12 +56,12 @@ class NewIssueContainer(Container):
             return
 
         self.notify("Creating new issue...")
-        new_issue = await issues.create_issue(self.repo, title, body)
-        self.notify(f"Successfully updated created issue #{new_issue.number}")
-        self.app.pop_screen()
+        new_issue = await issues.create_issue(LazyGithubContext.current_repo, title, body)
+        self.notify(f"Successfully created issue #{new_issue.number}")
+        self.post_message(IssueCreated(new_issue))
 
 
-class NewIssueModal(ModalScreen):
+class NewIssueModal(ModalScreen[Issue | None]):
     BINDINGS = [("ESC, q", "cancel", "Cancel")]
     DEFAULT_CSS = """
     NewIssueModal {
@@ -78,12 +77,12 @@ class NewIssueModal(ModalScreen):
     }
     """
 
-    def __init__(self, repo: Repository, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.repo = repo
-
     def compose(self) -> ComposeResult:
-        yield NewIssueContainer(self.repo)
+        yield NewIssueContainer()
 
     def action_cancel(self) -> None:
         self.dismiss()
+
+    @on(IssueCreated)
+    def on_issue_created(self, message: IssueCreated) -> None:
+        self.dismiss(message.issue)

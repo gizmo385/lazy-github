@@ -28,7 +28,7 @@ from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
-from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
+from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer, issue_to_cell
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
     PrDiffTabPane,
@@ -126,11 +126,17 @@ class SelectionsPane(Container):
         yield actions
 
     def action_open_issue(self) -> None:
+        self.trigger_issue_creation_flow()
+
+    @work
+    async def trigger_issue_creation_flow(self) -> None:
         if LazyGithubContext.current_repo is None:
-            self.notify("Please select a repository first!", title="Cannot open new issue", severity="error")
+            self.notify("Please select a repository first!", title="Cannot open new pull request", severity="error")
             return
 
-        self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
+        if new_issue := await self.app.push_screen_wait(NewIssueModal()):
+            self.issues.searchable_table.append_rows([issue_to_cell(new_issue)])
+            self.issues.issues[new_issue.number] = new_issue
 
     async def action_open_pull_request(self) -> None:
         self.trigger_pr_creation_flow()

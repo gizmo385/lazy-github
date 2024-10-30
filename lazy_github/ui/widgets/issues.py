@@ -13,7 +13,6 @@ from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
-from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
@@ -26,7 +25,6 @@ def issue_to_cell(issue: Issue) -> tuple[str | int, ...]:
 class IssuesContainer(LazyGithubContainer):
     BINDINGS = [
         ("E", "edit_issue", "Edit Issue"),
-        ("N", "new_issue", "New Issue"),
     ]
 
     issues: Dict[int, Issue] = {}
@@ -107,12 +105,6 @@ class IssuesContainer(LazyGithubContainer):
             self.app.push_screen(EditIssueModal(issue))
         except CellDoesNotExist:
             self.notify("No issue currently selected", severity="error")
-
-    async def action_new_issue(self) -> None:
-        if LazyGithubContext.current_repo:
-            self.app.push_screen(NewIssueModal(LazyGithubContext.current_repo))
-        else:
-            self.notify("No repository currently selected", severity="error")
 
     @on(DataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:

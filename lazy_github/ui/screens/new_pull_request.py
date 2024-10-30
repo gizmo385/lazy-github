@@ -1,8 +1,8 @@
 from textual import on, suggester, validation, work
 from textual.app import ComposeResult
+from textual.containers import Horizontal, VerticalScroll
 from textual.message import Message
 from textual.screen import ModalScreen
-from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import Button, Input, Label, Markdown, Rule, Switch, TextArea
 
 from lazy_github.lib.context import LazyGithubContext
