@@ -164,9 +164,9 @@ class SelectionsPane(Container):
         return self.query_one("#actions", ActionsContainer)
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        # self.actions.post_message(message)
         try:
             LazyGithubContext.current_repo = message.repo
+            self.actions.post_message(message)
             state_filter = LazyGithubContext.config.issues.state_filter
             owner_filter = LazyGithubContext.config.issues.owner_filter
             issues_and_pull_requests = []

@@ -138,4 +138,20 @@ class Branch(BaseModel):
     name: str
     commit: Commit
     protected: bool
-    pass
+
+
+class WorkflowState(StrEnum):
+    ACTIVE = "active"
+    DELETED = "deleted"
+    DISABLED_FORK = "disabled_fork"
+    DISABLED_INACTIVITY = "disabled_inactivity"
+    DISABLED_MANUALLY = "disabled_manually "
+
+
+class Workflow(BaseModel):
+    name: str
+    state: WorkflowState
+    path: str
+    created_at: datetime
+    updated_at: datetime
+    url: str

@@ -7,7 +7,7 @@ from textual.widgets import Button, Input, Label, Rule, TextArea
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import issues
 from lazy_github.lib.messages import IssueCreated
-from lazy_github.models.github import Issue, Repository
+from lazy_github.models.github import Issue
 
 
 class NewIssueContainer(Container):
