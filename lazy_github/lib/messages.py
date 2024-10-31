@@ -2,7 +2,7 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.models.github import FullPullRequest, Issue, PartialPullRequest, Repository
+from lazy_github.models.github import FullPullRequest, Issue, IssueComment, PartialPullRequest, Repository
 
 
 class RepoSelected(Message):
@@ -71,3 +71,9 @@ class IssueCreated(Message):
     def __init__(self, issue: Issue) -> None:
         super().__init__()
         self.issue = issue
+
+
+class NewCommentCreated(Message):
+    def __init__(self, comment: IssueComment) -> None:
+        super().__init__()
+        self.comment = comment

@@ -6,6 +6,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown, Rule, TextArea
 
 from lazy_github.lib.github import issues, pull_requests
+from lazy_github.lib.messages import NewCommentCreated
 from lazy_github.models.github import Issue, IssueComment, Repository, Review, ReviewComment
 from lazy_github.ui.widgets.command_log import log_event
 
@@ -83,23 +84,23 @@ class NewCommentContainer(Container):
         body = self.query_one("#new_comment_body", TextArea).text
         try:
             if isinstance(self.reply_to, ReviewComment):
-                await pull_requests.reply_to_review_comment(self.repo, self.issue, self.reply_to, body)
+                new_comment = await pull_requests.reply_to_review_comment(self.repo, self.issue, self.reply_to, body)
             else:
-                await issues.create_comment(self.issue, body)
+                new_comment = await issues.create_comment(self.issue, body)
         except HTTPStatusError as hse:
             # TODO: We should handle the error case better here
             log_event(f"Error while posting comment for issue #{self.issue.number}: {hse}")
             self.app.pop_screen()
         else:
             log_event(f"Successfully posted new comment for issue #{self.issue.number}")
-            self.app.pop_screen()
+            self.post_message(NewCommentCreated(new_comment))
 
     @on(Button.Pressed, "#cancel_comment")
     def cancel_comment(self, _: Button.Pressed) -> None:
         self.app.pop_screen()
 
 
-class NewCommentModal(ModalScreen):
+class NewCommentModal(ModalScreen[IssueComment | None]):
     DEFAULT_CSS = """
     NewCommentModal {
         border: ascii green;
@@ -134,5 +135,9 @@ class NewCommentModal(ModalScreen):
     def compose(self) -> ComposeResult:
         yield NewCommentContainer(self.repo, self.issue, self.reply_to)
 
+    @on(NewCommentCreated)
+    def on_comment_created(self, message: NewCommentCreated) -> None:
+        self.dismiss(message.comment)
+
     def action_cancel(self) -> None:
-        self.app.pop_screen()
+        self.dismiss(None)

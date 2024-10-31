@@ -1,8 +1,10 @@
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Collapsible, Label, Markdown
 
 from lazy_github.lib.github.pull_requests import ReviewCommentNode
+from lazy_github.lib.messages import NewCommentCreated
 from lazy_github.models.github import FullPullRequest, Issue, IssueComment, Review, ReviewComment, ReviewState
 from lazy_github.ui.screens.new_comment import NewCommentModal
 
@@ -47,8 +49,14 @@ class IssueCommentContainer(Container, can_focus=True):
         yield Markdown(self.comment.body)
         yield Label(f"{author} • {comment_time}", classes="comment-author")
 
+    @work
+    async def reply_to_comment_flow(self) -> None:
+        reply_comment = await self.app.push_screen_wait(NewCommentModal(self.issue.repo, self.issue, self.comment))
+        if reply_comment is not None:
+            self.post_message(NewCommentCreated(reply_comment))
+
     def action_reply_to_individual_comment(self) -> None:
-        self.app.push_screen(NewCommentModal(self.issue.repo, self.issue, self.comment))
+        self.reply_to_comment_flow()
 
 
 class ReviewConversation(Container):

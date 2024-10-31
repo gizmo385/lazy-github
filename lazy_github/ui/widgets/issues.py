@@ -9,10 +9,11 @@ from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
-from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
+from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
 from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
+from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
@@ -146,6 +147,8 @@ class IssueOverviewTabPane(TabPane):
 
 
 class IssueConversationTabPane(TabPane):
+    BINDINGS = [("n", "new_comment", "New comment")]
+
     def __init__(self, issue: Issue) -> None:
         super().__init__("Comments", id="issue_conversation")
         self.issue = issue
@@ -156,6 +159,19 @@ class IssueConversationTabPane(TabPane):
 
     def compose(self) -> ComposeResult:
         yield VerticalScroll(id="issue_conversation")
+
+    @work
+    async def new_comment_flow(self) -> None:
+        new_comment = await self.app.push_screen_wait(NewCommentModal(self.issue.repo, self.issue, None))
+        if new_comment is not None:
+            self.comments.mount(IssueCommentContainer(self.issue, new_comment))
+
+    @on(NewCommentCreated)
+    def handle_new_comment_added(self, message: NewCommentCreated) -> None:
+        self.comments.mount(IssueCommentContainer(self.issue, message.comment))
+
+    async def action_new_comment(self) -> None:
+        self.new_comment_flow()
 
     def on_mount(self) -> None:
         self.loading = True
