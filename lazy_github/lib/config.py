@@ -47,7 +47,7 @@ class AppearanceSettings(BaseModel):
     dark_mode: bool = True
     # Settings to configure which UI elements to display by default
     show_command_log: bool = True
-    show_actions: bool = True
+    show_workflows: bool = True
     show_issues: bool = True
     show_pull_requests: bool = True
 

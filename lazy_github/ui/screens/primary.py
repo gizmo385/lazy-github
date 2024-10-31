@@ -24,7 +24,6 @@ from lazy_github.lib.messages import (
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
-from lazy_github.ui.widgets.actions import ActionsContainer
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
@@ -37,6 +36,7 @@ from lazy_github.ui.widgets.pull_requests import (
     pull_request_to_cell,
 )
 from lazy_github.ui.widgets.repositories import ReposContainer
+from lazy_github.ui.widgets.workflows import WorkflowsContainer
 
 
 class CurrentlySelectedRepo(Widget):
@@ -121,9 +121,9 @@ class SelectionsPane(Container):
         issues.display = LazyGithubContext.config.appearance.show_issues
         yield issues
 
-        actions = ActionsContainer(id="actions")
-        actions.display = LazyGithubContext.config.appearance.show_actions
-        yield actions
+        workflows = WorkflowsContainer(id="workflows")
+        workflows.display = LazyGithubContext.config.appearance.show_workflows
+        yield workflows
 
     def action_open_issue(self) -> None:
         self.trigger_issue_creation_flow()
@@ -160,8 +160,8 @@ class SelectionsPane(Container):
         return self.query_one("#issues", IssuesContainer)
 
     @property
-    def actions(self) -> ActionsContainer:
-        return self.query_one("#actions", ActionsContainer)
+    def actions(self) -> WorkflowsContainer:
+        return self.query_one("#workflows", WorkflowsContainer)
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
         try:
@@ -196,13 +196,19 @@ class MainViewPane(Container):
         ("1", "focus_section('#repos_table')"),
         ("2", "focus_section('#pull_requests_table')"),
         ("3", "focus_section('#issues_table')"),
-        ("4", "focus_section('#actions_table')"),
+        # ("4", "focus_section('#actions_table')"),
+        ("4", "focus_workflow_tabs"),
         ("5", "focus_tabs"),
         ("6", "focus_section('LazyGithubCommandLog')"),
     ]
 
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
+
+    def action_focus_workflow_tabs(self) -> None:
+        tabs = self.query_one("#workflow_tabs", TabbedContent)
+        if tabs.children and tabs.tab_count > 0:
+            tabs.children[0].focus()
 
     def action_focus_tabs(self) -> None:
         tabs = self.query_one("#selection_detail_tabs", TabbedContent)
@@ -253,7 +259,9 @@ class MainScreenCommandProvider(Provider):
             LazyGithubCommand(
                 "Toggle Command Log", partial(toggle_ui, "command_log"), "Toggle showing or hiding the command log"
             ),
-            LazyGithubCommand("Toggle Actions", partial(toggle_ui, "actions"), "Toggle showing or hiding repo actions"),
+            LazyGithubCommand(
+                "Toggle Workflows", partial(toggle_ui, "actions"), "Toggle showing or hiding repo actions"
+            ),
             LazyGithubCommand("Toggle Issues", partial(toggle_ui, "issues"), "Toggle showing or hiding repo issues"),
             LazyGithubCommand(
                 "Toggle Pull Requests",

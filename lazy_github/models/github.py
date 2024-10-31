@@ -155,3 +155,19 @@ class Workflow(BaseModel):
     created_at: datetime
     updated_at: datetime
     url: str
+
+
+class WorkflowRun(BaseModel):
+    name: str
+    display_title: str
+    path: str
+    run_number: int
+    head_branch: str
+    status: str
+    conclusion: str
+    event: str
+    actor: User
+    triggering_actor: User
+    repository: Repository
+    created_at: datetime
+    updated_at: datetime
