@@ -58,8 +58,6 @@ class ActionsContainer(LazyGithubContainer):
         return [workflow_to_cell(w) for w in new_workflows]
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        message.stop()
-
         workflows = await list_workflows(message.repo)
         self.workflows = {}
         rows = []
