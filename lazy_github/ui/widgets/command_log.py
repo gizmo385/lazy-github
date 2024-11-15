@@ -1,5 +1,4 @@
-from datetime import datetime
-from logging import Formatter, Handler, LogRecord
+from logging import Handler, LogRecord
 import logging
 from typing import Optional
 
@@ -8,14 +7,14 @@ from textual.app import ComposeResult
 from textual.widgets import Log
 
 from lazy_github.ui.widgets.common import LazyGithubContainer
-from lazy_github.lib.logging import lg, lazy_github_log_formatter
+from lazy_github.lib.logging import lg, LazyGithubLogFormatter
 
 
 class CommandLogLoggingHandler(Handler):
     def __init__(self, command_log: "LazyGithubCommandLog") -> None:
         super().__init__(logging.INFO)
         self.command_log = command_log
-        self.setFormatter(lazy_github_log_formatter)
+        self.setFormatter(LazyGithubLogFormatter(include_exceptions=False))
 
     def emit(self, record: LogRecord) -> None:
         self.command_log.write_line(self.format(record))
@@ -32,9 +31,7 @@ class LazyGithubCommandLog(Log):
 def log_event(message: str, level=logging.INFO) -> None:
     "Helper function for writing to the textual log and displayed command log"
     textual_log(message)
-    # log_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     lg.log(level, message)
-    # lg.log(level, f"{log_time}: {message}")
 
 
 class CommandLogSection(LazyGithubContainer):

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import NamedTuple
 
-from httpx import HTTPStatusError
+from httpx import HTTPError
 from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
@@ -13,6 +13,7 @@ from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.messages import (
@@ -21,6 +22,7 @@ from lazy_github.lib.messages import (
     PullRequestSelected,
     RepoSelected,
 )
+from lazy_github.models.github import Repository
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
@@ -160,27 +162,28 @@ class SelectionsPane(Container):
         return self.query_one("#issues", IssuesContainer)
 
     @property
-    def actions(self) -> WorkflowsContainer:
+    def workflows(self) -> WorkflowsContainer:
         return self.query_one("#workflows", WorkflowsContainer)
 
-    async def on_repo_selected(self, message: RepoSelected) -> None:
+    @work
+    async def fetch_issues_and_pull_requests(self, repo: Repository) -> None:
+        state_filter = LazyGithubContext.config.issues.state_filter
+        owner_filter = LazyGithubContext.config.issues.owner_filter
         try:
-            LazyGithubContext.current_repo = message.repo
-            self.actions.post_message(message)
-            state_filter = LazyGithubContext.config.issues.state_filter
-            owner_filter = LazyGithubContext.config.issues.owner_filter
-            issues_and_pull_requests = []
-            if self.pull_requests.display or self.issues.display:
-                issues_and_pull_requests = await list_issues(message.repo, state_filter, owner_filter)
-        except HTTPStatusError as hse:
-            if hse.response.status_code == 404:
-                pass
-            else:
-                raise
+            issues_and_pull_requests = await list_issues(repo, state_filter, owner_filter)
+        except HTTPError:
+            lg.exception("Error fetching issues and PRs from Github API")
         else:
             issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)
             self.pull_requests.post_message(issue_and_pr_message)
             self.issues.post_message(issue_and_pr_message)
+
+    async def on_repo_selected(self, message: RepoSelected) -> None:
+        LazyGithubContext.current_repo = message.repo
+        if self.pull_requests.display or self.issues.display:
+            self.fetch_issues_and_pull_requests(message.repo)
+        if self.workflows.display:
+            self.workflows.post_message(message)
 
 
 class SelectionDetailsPane(Container):

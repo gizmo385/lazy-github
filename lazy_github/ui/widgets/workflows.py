@@ -7,7 +7,6 @@ from textual.widgets import DataTable, Label, TabbedContent, TabPane
 from lazy_github.lib.github.workflows import list_workflows
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository, Workflow
-from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 
 
@@ -54,7 +53,6 @@ class AvailableWorkflowsContainers(Container):
         return [workflow_to_cell(w) for w in new_workflows]
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
-        log_event("Repo selected")
         workflows = await list_workflows(message.repo)
         self.workflows = {}
         rows = []

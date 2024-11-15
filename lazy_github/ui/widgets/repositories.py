@@ -1,5 +1,6 @@
 from typing import Dict, Iterable
 
+from httpx import HTTPError
 from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
@@ -8,9 +9,9 @@ from textual.widgets import DataTable
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
-from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
 
 
@@ -59,7 +60,9 @@ class ReposContainer(LazyGithubContainer):
         self.private_column_index = self.table.get_column_index("private")
 
         # Let the UI load, then trigger this as a callback
-        self.set_timer(0.1, self.load_repos)
+        # TODO: Determine if we want this in a timer callback or not
+        self.load_repos()
+        # self.set_timer(0.1, self.load_repos)
 
     async def get_selected_repo(self) -> Repository:
         current_row = self.table.cursor_row
@@ -88,8 +91,12 @@ class ReposContainer(LazyGithubContainer):
 
     @work
     async def load_repos(self) -> None:
-        repos = await repos_api.list_all()
-        self.add_repos_to_table(repos)
+        try:
+            repos = await repos_api.list_all()
+        except HTTPError:
+            lg.exception("Error fetching repositories from Github API")
+        else:
+            self.add_repos_to_table(repos)
 
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
@@ -97,10 +104,10 @@ class ReposContainer(LazyGithubContainer):
         with LazyGithubContext.config.to_edit() as config:
             favorited = repo.full_name in config.repositories.favorites
             if favorited:
-                log_event(f"Unfavoriting repo {repo.full_name}")
+                lg.info(f"Unfavoriting repo {repo.full_name}")
                 config.repositories.favorites.remove(repo.full_name)
             else:
-                log_event(f"Favoriting repo {repo.full_name}")
+                lg.info(f"Favoriting repo {repo.full_name}")
                 config.repositories.favorites.append(repo.full_name)
 
         # Flip the state of the favorited column in the UI
@@ -114,4 +121,4 @@ class ReposContainer(LazyGithubContainer):
         # Bubble a message up indicating that a repo was selected
         repo = await self.get_selected_repo()
         self.post_message(RepoSelected(repo))
-        log_event(f"Selected repo {repo.full_name}")
+        lg.info(f"Selected repo {repo.full_name}")

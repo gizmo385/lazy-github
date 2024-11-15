@@ -1,15 +1,23 @@
 import logging
 from lazy_github.lib.context import LazyGithubContext
 
+
 # A universal logging format that we can use
-lazy_github_log_formatter = logging.Formatter(
-    "%(levelname)s %(asctime)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+class LazyGithubLogFormatter(logging.Formatter):
+    def __init__(self, include_exceptions: bool = True) -> None:
+        super().__init__("%(levelname)s %(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        self.include_exceptions = include_exceptions
+
+    def format(self, record: logging.LogRecord) -> str:
+        if not self.include_exceptions:
+            record.exc_info = None
+            record.exc_text = None
+        return super().format(record)
+
 
 lg = logging.Logger("lazy_github", level=logging.DEBUG)
 _lg_file_handler = logging.FileHandler(filename=LazyGithubContext.config.core.logfile_path)
-_lg_file_handler.setFormatter(lazy_github_log_formatter)
+_lg_file_handler.setFormatter(LazyGithubLogFormatter())
 lg.addHandler(_lg_file_handler)
 
 
