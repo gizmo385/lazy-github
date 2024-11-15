@@ -52,6 +52,10 @@ class AppearanceSettings(BaseModel):
     show_pull_requests: bool = True
 
 
+class CoreConfig(BaseModel):
+    logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
+
+
 _CONFIG_INSTANCE: Optional["Config"] = None
 
 
@@ -63,6 +67,7 @@ class Config(BaseModel):
     issues: IssueSettings = IssueSettings()
     cache: CacheSettings = CacheSettings()
     api: ApiConfig = ApiConfig()
+    core: CoreConfig = CoreConfig()
 
     @classmethod
     def load_config(cls) -> "Config":
