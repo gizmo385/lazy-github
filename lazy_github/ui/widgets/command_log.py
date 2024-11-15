@@ -2,7 +2,6 @@ from logging import Handler, LogRecord
 import logging
 from typing import Optional
 
-from textual import log as textual_log
 from textual.app import ComposeResult
 from textual.widgets import Log
 
