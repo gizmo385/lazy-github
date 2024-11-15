@@ -8,13 +8,13 @@ from textual.widgets import DataTable, Label, Markdown, Rule, TabPane
 from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
 from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
-from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
@@ -110,7 +110,7 @@ class IssuesContainer(LazyGithubContainer):
     @on(DataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:
         issue = await self.get_selected_issue()
-        log_event(f"Selected Issue: #{issue.number}")
+        lg.info(f"Selected Issue: #{issue.number}")
         self.post_message(IssueSelected(issue))
 
 

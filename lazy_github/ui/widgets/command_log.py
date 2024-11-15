@@ -28,12 +28,6 @@ class LazyGithubCommandLog(Log):
         lg.addHandler(CommandLogLoggingHandler(self))
 
 
-def log_event(message: str, level=logging.INFO) -> None:
-    "Helper function for writing to the textual log and displayed command log"
-    textual_log(message)
-    lg.log(level, message)
-
-
 class CommandLogSection(LazyGithubContainer):
     DEFAULT_CSS = """
     CommandLogSection {

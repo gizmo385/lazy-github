@@ -8,7 +8,7 @@ from textual.widgets import Button, Label, Markdown, Rule, TextArea
 from lazy_github.lib.github import issues, pull_requests
 from lazy_github.lib.messages import NewCommentCreated
 from lazy_github.models.github import Issue, IssueComment, Repository, Review, ReviewComment
-from lazy_github.ui.widgets.command_log import log_event
+from lazy_github.lib.logging import lg
 
 CommmentReplyTarget = ReviewComment | Review | IssueComment
 
@@ -87,12 +87,12 @@ class NewCommentContainer(Container):
                 new_comment = await pull_requests.reply_to_review_comment(self.repo, self.issue, self.reply_to, body)
             else:
                 new_comment = await issues.create_comment(self.issue, body)
-        except HTTPStatusError as hse:
+        except HTTPStatusError:
             # TODO: We should handle the error case better here
-            log_event(f"Error while posting comment for issue #{self.issue.number}: {hse}")
+            lg.exception(f"Error while posting comment for issue #{self.issue.number}")
             self.app.pop_screen()
         else:
-            log_event(f"Successfully posted new comment for issue #{self.issue.number}")
+            lg.info(f"Successfully posted new comment for issue #{self.issue.number}")
             self.post_message(NewCommentCreated(new_comment))
 
     @on(Button.Pressed, "#cancel_comment")

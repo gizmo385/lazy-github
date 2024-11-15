@@ -16,8 +16,8 @@ from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSe
 from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
-from lazy_github.ui.widgets.command_log import log_event
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
+from lazy_github.lib.logging import lg
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
 
 
@@ -107,7 +107,7 @@ class PullRequestsContainer(LazyGithubContainer):
     @on(DataTable.RowSelected, "#pull_requests_table")
     async def pr_selected(self) -> None:
         pr = await self.get_selected_pr()
-        log_event(f"Selected PR: #{pr.number}")
+        lg.info(f"Selected PR: #{pr.number}")
         self.post_message(PullRequestSelected(pr))
 
 
