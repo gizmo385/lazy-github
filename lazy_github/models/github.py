@@ -22,9 +22,9 @@ class RepositoryPermission(BaseModel):
 class Repository(BaseModel):
     name: str
     full_name: str
-    default_branch: str
+    default_branch: str | None = None
     private: bool
-    archived: bool
+    archived: bool | None = None
     owner: User
     description: str | None = None
     permissions: RepositoryPermission | None = None

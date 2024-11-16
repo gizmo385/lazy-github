@@ -1,17 +1,22 @@
 from functools import partial
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container
-from textual.widgets import DataTable, Label, TabbedContent, TabPane
+from textual.widgets import DataTable, TabbedContent, TabPane
 
-from lazy_github.lib.github.workflows import list_workflows
+from lazy_github.lib.github.workflows import list_workflow_runs, list_workflows
 from lazy_github.lib.messages import RepoSelected
-from lazy_github.models.github import Repository, Workflow
+from lazy_github.models.github import Repository, Workflow, WorkflowRun
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 
 
 def workflow_to_cell(workflow: Workflow) -> tuple[str | int, ...]:
     return (workflow.name, workflow.created_at.strftime("%c"), workflow.updated_at.strftime("%c"), workflow.path)
+
+
+def workflow_run_to_cell(run: WorkflowRun) -> tuple[str | int, ...]:
+    return (run.created_at.strftime("%Y-%m-%d %H:%M"), run.name, run.display_title, run.conclusion)
 
 
 class AvailableWorkflowsContainers(Container):
@@ -52,8 +57,8 @@ class AvailableWorkflowsContainers(Container):
 
         return [workflow_to_cell(w) for w in new_workflows]
 
-    async def on_repo_selected(self, message: RepoSelected) -> None:
-        workflows = await list_workflows(message.repo)
+    async def load_repo(self, repo: Repository) -> None:
+        workflows = await list_workflows(repo)
         self.workflows = {}
         rows = []
         for workflow in workflows:
@@ -61,14 +66,61 @@ class AvailableWorkflowsContainers(Container):
             rows.append(workflow_to_cell(workflow))
 
         self.searchable_table.set_rows(rows)
-        self.searchable_table.change_load_function(partial(self.fetch_more_workflows, message.repo))
+        self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
 
 
 class WorkflowRunsContainer(Container):
+    workflow_runs: dict[int, WorkflowRun] = {}
+
     def compose(self) -> ComposeResult:
-        yield Label("List of workflow runs")
+        yield LazilyLoadedDataTable(
+            id="searchable_workflow_runs_table",
+            table_id="workflow_runs_table",
+            search_input_id="workflow_runs_search",
+            sort_key="time",
+            load_function=None,
+            batch_size=30,
+            reverse_sort=True,
+        )
+
+    @property
+    def searchable_table(self) -> LazilyLoadedDataTable:
+        return self.query_one("#searchable_workflow_runs_table", LazilyLoadedDataTable)
+
+    @property
+    def table(self) -> DataTable:
+        return self.query_one("#workflow_runs_table", DataTable)
+
+    def on_mount(self) -> None:
+        self.table.cursor_type = "row"
+        self.table.add_column("Time", key="time")
+        self.table.add_column("Job Name", key="job_name")
+        self.table.add_column("Run Name", key="run_name")
+        self.table.add_column("Conclusion", key="conclusion")
+
+    async def fetch_more_workflow_runs(
+        self, repo: Repository, batch_size: int, batch_to_fetch: int
+    ) -> list[tuple[str | int, ...]]:
+        next_page = await list_workflow_runs(repo, page=batch_to_fetch, per_page=batch_size)
+        new_runs = [w for w in next_page if not isinstance(w, WorkflowRun)]
+        self.workflow_runs.update({w.run_number: w for w in new_runs})
+
+        return [workflow_to_cell(w) for w in new_runs]
+
+    async def load_repo(self, repo: Repository) -> None:
+        workflow_runs = await list_workflow_runs(repo)
+        self.workflow_runs = {}
+        rows = []
+        for run in workflow_runs:
+            self.workflow_runs[run.run_number] = run
+            rows.append(workflow_run_to_cell(run))
+
+        self.searchable_table.set_rows(rows)
+        self.searchable_table.change_load_function(partial(self.fetch_more_workflow_runs, repo))
+        self.searchable_table.can_load_more = True
+        self.searchable_table.current_batch = 1
 
 
 class WorkflowsContainer(LazyGithubContainer):
@@ -80,8 +132,7 @@ class WorkflowsContainer(LazyGithubContainer):
             with TabPane("Runs", id="runs_tab"):
                 yield WorkflowRunsContainer(id="workflow_runs")
 
-    def on_repo_selected(self, message: RepoSelected) -> None:
-        self.query_one("#workflows", AvailableWorkflowsContainers).post_message(message)
-        self.query_one("#workflow_runs", WorkflowRunsContainer).post_message(message)
-        # This prevents the message from endlessly cycling and DDOSing the app :)
-        message.stop()
+    @work
+    async def load_repo(self, repo: Repository) -> None:
+        await self.query_one("#workflows", AvailableWorkflowsContainers).load_repo(repo)
+        await self.query_one("#workflow_runs", WorkflowRunsContainer).load_repo(repo)

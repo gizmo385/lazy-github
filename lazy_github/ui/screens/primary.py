@@ -183,7 +183,7 @@ class SelectionsPane(Container):
         if self.pull_requests.display or self.issues.display:
             self.fetch_issues_and_pull_requests(message.repo)
         if self.workflows.display:
-            self.workflows.post_message(message)
+            self.workflows.load_repo(message.repo)
 
 
 class SelectionDetailsPane(Container):
