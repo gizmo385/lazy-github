@@ -21,7 +21,6 @@ from lazy_github.lib.messages import (
     IssueSelected,
     PullRequestSelected,
     RepoSelected,
-    SettingsModalDismissed,
 )
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.new_issue import NewIssueModal

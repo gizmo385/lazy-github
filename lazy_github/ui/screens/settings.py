@@ -7,7 +7,6 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
-from textual.message import Message
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget

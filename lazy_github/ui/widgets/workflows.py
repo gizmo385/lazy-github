@@ -6,7 +6,6 @@ from textual.containers import Container
 from textual.widgets import DataTable, TabbedContent, TabPane
 
 from lazy_github.lib.github.workflows import list_workflow_runs, list_workflows
-from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 
