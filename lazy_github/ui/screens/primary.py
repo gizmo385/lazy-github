@@ -21,6 +21,7 @@ from lazy_github.lib.messages import (
     IssueSelected,
     PullRequestSelected,
     RepoSelected,
+    SettingsModalDismissed,
 )
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.new_issue import NewIssueModal
@@ -127,6 +128,12 @@ class SelectionsPane(Container):
         workflows.display = LazyGithubContext.config.appearance.show_workflows
         yield workflows
 
+    def update_displayed_sections(self) -> None:
+        lg.debug("Updating displayed UI components after settings update")
+        self.pull_requests.display = LazyGithubContext.config.appearance.show_pull_requests
+        self.issues.display = LazyGithubContext.config.appearance.show_issues
+        self.workflows.display = LazyGithubContext.config.appearance.show_workflows
+
     def action_open_issue(self) -> None:
         self.trigger_issue_creation_flow()
 
@@ -219,7 +226,7 @@ class MainViewPane(Container):
             tabs.children[0].focus()
 
     def compose(self) -> ComposeResult:
-        yield SelectionsPane()
+        yield SelectionsPane(id="selections_pane")
         yield SelectionDetailsPane(id="details_pane")
 
     @property
@@ -302,6 +309,9 @@ class LazyGithubMainScreen(Screen):
 
     async def action_show_settings_modal(self) -> None:
         self.app.push_screen(SettingsModal())
+
+    def handle_settings_update(self) -> None:
+        self.query_one("#selections_pane", SelectionsPane).update_displayed_sections()
 
     def on_repo_selected(self, message: RepoSelected) -> None:
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name

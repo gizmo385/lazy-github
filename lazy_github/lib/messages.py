@@ -77,3 +77,9 @@ class NewCommentCreated(Message):
     def __init__(self, comment: IssueComment) -> None:
         super().__init__()
         self.comment = comment
+
+
+class SettingsModalDismissed(Message):
+    def __init__(self, changed: bool) -> None:
+        super().__init__()
+        self.changed = changed

@@ -2,9 +2,10 @@ import json
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Generator, List, Literal, Optional
+from typing import Any, Generator, Literal, Optional
+from textual.theme import BUILTIN_THEMES, Theme
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer, field_validator
 
 from lazy_github.lib.constants import CONFIG_FOLDER, IssueOwnerFilter, IssueStateFilter
 
@@ -33,7 +34,7 @@ class IssueSettings(BaseModel):
 
 
 class RepositorySettings(BaseModel):
-    favorites: List[str] = []
+    favorites: list[str] = []
 
 
 class CacheSettings(BaseModel):
@@ -44,12 +45,22 @@ class CacheSettings(BaseModel):
 
 
 class AppearanceSettings(BaseModel):
-    dark_mode: bool = True
+    theme: Theme = BUILTIN_THEMES["textual-dark"]
     # Settings to configure which UI elements to display by default
     show_command_log: bool = True
     show_workflows: bool = True
     show_issues: bool = True
     show_pull_requests: bool = True
+
+    @field_serializer("theme")
+    @classmethod
+    def serialize_theme(cls, theme: Theme | str) -> str:
+        return theme.name if isinstance(theme, Theme) else theme
+
+    @field_validator("theme", mode="before")
+    @classmethod
+    def validate_theme(cls, theme_name: Any) -> Theme:
+        return BUILTIN_THEMES.get(theme_name, BUILTIN_THEMES["textual-dark"])
 
 
 class CoreConfig(BaseModel):

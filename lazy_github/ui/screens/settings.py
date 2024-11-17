@@ -7,10 +7,13 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
+from textual.message import Message
 from textual.screen import ModalScreen
+from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Markdown, Rule, Select, Switch
 
+from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.lib.context import LazyGithubContext
 
 # There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
@@ -47,6 +50,12 @@ class FieldSetting(Container):
         elif isinstance(self.field.annotation, type) and issubclass(self.field.annotation, enum.StrEnum):
             # If the setting is an enum, then we'll render a dropdown with all of the available options
             return Select(options=[(t.title(), t) for t in list(self.field.annotation)], value=self.value, id=id)
+        elif isinstance(self.field.annotation, type) and issubclass(self.field.annotation, Theme):
+            theme_options = [(t.title().replace("-", " "), t) for t in BUILTIN_THEMES.keys()]
+            if isinstance(self.value, Theme):
+                return Select(options=theme_options, value=self.value.name, id=id)
+            else:
+                return Select(options=theme_options, value=self.value, id=id)
         else:
             # If no other input mechanism fits, then we'll fallback to just a raw string input field
             return Input(value=str(self.value), id=id)
@@ -141,15 +150,14 @@ class SettingsContainer(Container):
     @on(Button.Pressed, "#save_settings")
     async def save_settings(self, _: Button.Pressed) -> None:
         self._update_settings()
-        self.notify("Settings saved")
-        self.app.pop_screen()
+        self.post_message(SettingsModalDismissed(True))
 
     @on(Button.Pressed, "#cancel_settings")
     async def cancel_settings(self, _: Button.Pressed) -> None:
-        self.app.pop_screen()
+        self.post_message(SettingsModalDismissed(False))
 
     async def action_exit_settings(self) -> None:
-        self.app.pop_screen()
+        self.post_message(SettingsModalDismissed(False))
 
 
 class SettingsModal(ModalScreen):
@@ -165,6 +173,9 @@ class SettingsModal(ModalScreen):
         background: $surface-lighten-3;
     }
     """
+
+    def on_settings_modal_dismissed(self, _: SettingsModalDismissed) -> None:
+        self.dismiss()
 
     def compose(self) -> ComposeResult:
         yield SettingsContainer()
