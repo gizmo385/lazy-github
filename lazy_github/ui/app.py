@@ -10,7 +10,9 @@ from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class LazyGithub(App):
-    BINDINGS = [("q", "quit", "Quit"), ("ctrl+p", "command_palette")]
+    BINDINGS = [("q", "quit", "Quit"), ("ctrl+p", "command_palette"), ("ctrl+m", "maximize", "Maximize")]
+
+    has_shown_maximize_toast: bool = False
 
     async def authenticate_with_github(self):
         try:
@@ -38,6 +40,15 @@ class LazyGithub(App):
 
     def on_mount(self) -> None:
         self.theme = LazyGithubContext.config.appearance.theme.name
+
+    def action_maximize(self) -> None:
+        if self.screen.is_maximized:
+            return
+        if self.screen.focused is not None:
+            # We don't need to repeatedly show this to the user
+            if self.screen.maximize(self.screen.focused) and not self.has_shown_maximize_toast:
+                self.notify("Current view maximized. Press [b]escape[/b] to return.", title="View Maximized")
+                self.has_shown_maximize_toast = True
 
 
 app = LazyGithub()
