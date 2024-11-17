@@ -10,7 +10,7 @@ from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class LazyGithub(App):
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode"), ("q", "quit", "Quit"), ("ctrl+p", "command_palette")]
+    BINDINGS = [("q", "quit", "Quit"), ("ctrl+p", "command_palette")]
 
     async def authenticate_with_github(self):
         try:
