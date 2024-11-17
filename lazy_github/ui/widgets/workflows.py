@@ -15,7 +15,7 @@ def workflow_to_cell(workflow: Workflow) -> tuple[str | int, ...]:
 
 
 def workflow_run_to_cell(run: WorkflowRun) -> tuple[str | int, ...]:
-    return (run.created_at.strftime("%Y-%m-%d %H:%M"), run.name, run.display_title, run.conclusion)
+    return (run.created_at.strftime("%Y-%m-%d %H:%M"), run.conclusion, run.name, run.display_title)
 
 
 class AvailableWorkflowsContainers(Container):
@@ -95,9 +95,9 @@ class WorkflowRunsContainer(Container):
     def on_mount(self) -> None:
         self.table.cursor_type = "row"
         self.table.add_column("Time", key="time")
+        self.table.add_column("Result", key="result")
         self.table.add_column("Job Name", key="job_name")
         self.table.add_column("Run Name", key="run_name")
-        self.table.add_column("Conclusion", key="conclusion")
 
     async def fetch_more_workflow_runs(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
