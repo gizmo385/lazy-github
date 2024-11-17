@@ -107,7 +107,10 @@ class SettingsContainer(Container):
     }
     """
 
-    BINDINGS = [("q", "exit_settings", "Exit settings")]
+    BINDINGS = [
+        ("shift+enter", "save_settings", "Save settings"),
+        ("q", "exit_settings", "Exit settings"),
+    ]
 
     def __init__(self) -> None:
         super().__init__()
@@ -149,6 +152,10 @@ class SettingsContainer(Container):
 
     @on(Button.Pressed, "#save_settings")
     async def save_settings(self, _: Button.Pressed) -> None:
+        self._update_settings()
+        self.post_message(SettingsModalDismissed(True))
+
+    async def action_save_settings(self) -> None:
         self._update_settings()
         self.post_message(SettingsModalDismissed(True))
 
