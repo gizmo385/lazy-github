@@ -164,7 +164,7 @@ class WorkflowRun(BaseModel):
     run_number: int
     head_branch: str
     status: str
-    conclusion: str
+    conclusion: str | None = None
     event: str
     actor: User
     triggering_actor: User

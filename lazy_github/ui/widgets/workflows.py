@@ -15,7 +15,7 @@ def workflow_to_cell(workflow: Workflow) -> tuple[str | int, ...]:
 
 
 def workflow_run_to_cell(run: WorkflowRun) -> tuple[str | int, ...]:
-    return (run.created_at.strftime("%Y-%m-%d %H:%M"), run.conclusion, run.name, run.display_title)
+    return (run.created_at.strftime("%Y-%m-%d %H:%M"), run.conclusion or run.status, run.name, run.display_title)
 
 
 class AvailableWorkflowsContainers(Container):
