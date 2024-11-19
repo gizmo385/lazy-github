@@ -15,6 +15,7 @@ class LazyGithubLogFormatter(logging.Formatter):
         return super().format(record)
 
 
+LazyGithubContext.config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
 lg = logging.Logger("lazy_github", level=logging.DEBUG)
 _lg_file_handler = logging.FileHandler(filename=LazyGithubContext.config.core.logfile_path)
 _lg_file_handler.setFormatter(LazyGithubLogFormatter())
