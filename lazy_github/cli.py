@@ -6,8 +6,10 @@ from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.ui.app import app
 
+_CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
-@click.group(invoke_without_command=True)
+
+@click.group(invoke_without_command=True, context_settings=_CLI_CONTEXT_SETTINGS)
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """A Terminal UI for interacting with Github"""
