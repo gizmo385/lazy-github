@@ -2,7 +2,7 @@ from functools import partial
 from typing import NamedTuple
 
 from httpx import HTTPError
-from textual import notifications, work
+from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
