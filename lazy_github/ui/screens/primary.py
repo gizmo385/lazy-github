@@ -2,10 +2,10 @@ from functools import partial
 from typing import NamedTuple
 
 from httpx import HTTPError
-from textual import work
+from textual import notifications, work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.types import IgnoreReturnCallbackType
@@ -51,17 +51,44 @@ class CurrentlySelectedRepo(Widget):
             return "No repository selected"
 
 
+class UnreadNotifications(Widget):
+    notification_count: reactive[int | None] = reactive(None)
+
+    def render(self):
+        if self.notification_count is None:
+            return ""
+        else:
+            count = f"{self.notification_count}+" if self.notification_count >= 30 else str(self.notification_count)
+            return f"[red]• Unread Notifications: {count}[/red]"
+
+
 class LazyGithubStatusSummary(Container):
     DEFAULT_CSS = """
     LazyGithubStatusSummary {
         max-height: 3;
         width: 100%;
+        max-width: 100%;
+        layout: horizontal;
         border: solid $secondary;
+    }
+
+    CurrentlySelectedRepo {
+        max-width: 50%;
+        height: 100%;
+        content-align: left middle;
+    }
+
+    UnreadNotifications {
+        height: 100%;
+        max-width: 50%;
+        content-align: right middle;
     }
     """
 
     def compose(self):
-        yield CurrentlySelectedRepo(id="currently_selected_repo")
+        with Horizontal():
+            yield CurrentlySelectedRepo(id="currently_selected_repo")
+            yield UnreadNotifications(id="unread_notifications")
 
 
 class SelectionDetailsContainer(LazyGithubContainer):
