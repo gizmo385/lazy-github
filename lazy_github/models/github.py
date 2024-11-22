@@ -145,7 +145,7 @@ class WorkflowState(StrEnum):
     DELETED = "deleted"
     DISABLED_FORK = "disabled_fork"
     DISABLED_INACTIVITY = "disabled_inactivity"
-    DISABLED_MANUALLY = "disabled_manually "
+    DISABLED_MANUALLY = "disabled_manually"
 
 
 class Workflow(BaseModel):
