@@ -16,11 +16,13 @@ ISSUE_OWNER_FILTER = Literal["mine"] | Literal["all"]
 
 
 class ApiConfig(BaseModel):
+    """Controlling how the GitHub API is accessed in LazyGithub"""
+
     base_url: str = "https://api.github.com"
 
 
 class PullRequestSettings(BaseModel):
-    """Changes how PRs are retrieved from the Github API"""
+    """Changes how pull requests are retrieved from the Github API"""
 
     state_filter: IssueStateFilter = IssueStateFilter.ALL
     owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
@@ -34,10 +36,14 @@ class IssueSettings(BaseModel):
 
 
 class RepositorySettings(BaseModel):
+    """Repository-specific settings"""
+
     favorites: list[str] = []
 
 
 class CacheSettings(BaseModel):
+    """Settings that control how long data will be cached from the GitHub API"""
+
     cache_directory: Path = CONFIG_FOLDER / ".cache"
     default_ttl: int = int(timedelta(minutes=10).total_seconds())
     list_repos_ttl: int = int(timedelta(days=1).total_seconds())
@@ -45,6 +51,8 @@ class CacheSettings(BaseModel):
 
 
 class AppearanceSettings(BaseModel):
+    """Settings focused on altering the appearance of LazyGithub, including hiding or showing different sections."""
+
     theme: Theme = BUILTIN_THEMES["textual-dark"]
     # Settings to configure which UI elements to display by default
     show_command_log: bool = True
@@ -67,18 +75,25 @@ class CoreConfig(BaseModel):
     logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
 
 
+class NotificationSettings(BaseModel):
+    """Controls the settings for the optional notification feature, which relies on the  standard GitHub CLI."""
+
+    enabled: bool = False
+    show_all_notifications: bool = True
+
+
 _CONFIG_INSTANCE: Optional["Config"] = None
 
 
 class Config(BaseModel):
-    # This field is aliased because I can't spell :)
     appearance: AppearanceSettings = AppearanceSettings()
+    notifications: NotificationSettings = NotificationSettings()
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
     issues: IssueSettings = IssueSettings()
     cache: CacheSettings = CacheSettings()
-    api: ApiConfig = ApiConfig()
     core: CoreConfig = CoreConfig()
+    api: ApiConfig = ApiConfig()
 
     @classmethod
     def load_config(cls) -> "Config":

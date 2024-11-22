@@ -66,7 +66,7 @@ class FieldSetting(Container):
         self.value = value
 
     def compose(self) -> ComposeResult:
-        yield Label(f"{_field_name_to_readable_name(self.field_name)}:")
+        yield Label(f"[bold]{_field_name_to_readable_name(self.field_name)}:[/bold]")
         yield self._field_to_widget()
 
 
@@ -75,6 +75,10 @@ class SettingsSection(Vertical):
     SettingsSection {
         border: blank white;
         height: auto;
+    }
+
+    Markdown {
+        margin-bottom: 1;
     }
     """
 
@@ -85,8 +89,11 @@ class SettingsSection(Vertical):
         self.fields = model.model_fields
 
     def compose(self) -> ComposeResult:
-        yield Markdown(f"## {_field_name_to_readable_name(self.parent_field_name)}")
+        setting_description = self.model.__doc__ or ""
+        yield Markdown(f"## {_field_name_to_readable_name(self.parent_field_name)}\n{setting_description}".strip())
         for field_name, field_info in self.fields.items():
+            if field_info.exclude:
+                continue
             current_value = getattr(self.model, field_name)
             yield FieldSetting(field_name, field_info, current_value)
 
