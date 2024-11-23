@@ -1,6 +1,6 @@
-# LazyGithub
+![PyPI - Version](https://img.shields.io/pypi/v/lazy-github) ![PyPI - Downloads](https://img.shields.io/pypi/dw/lazy-github)
 
-This is a **WIP** terminal UI client for interacting with [GitHub](https://github.com). It draws heavy inspiration from the
+LazyGithub is a terminal UI client for interacting with [GitHub](https://github.com). It draws heavy inspiration from the
 [lazygit](https://github.com/jesseduffield/lazygit) project and uses [Textual](https://textual.textualize.io/) to drive the terminal UI interactions.
 
 ![Example screenshot](https://raw.githubusercontent.com/gizmo385/lazy-github/main/images/lazy-github-conversation-ui.svg)
