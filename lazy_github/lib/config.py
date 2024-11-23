@@ -76,7 +76,7 @@ class CoreConfig(BaseModel):
 
 
 class NotificationSettings(BaseModel):
-    """Controls the settings for the optional notification feature, which relies on the  standard GitHub CLI."""
+    """Controls the settings for the optional notification feature, which relies on the standard GitHub CLI."""
 
     enabled: bool = False
     show_all_notifications: bool = True
