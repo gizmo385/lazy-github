@@ -121,7 +121,6 @@ class SelectionDetailsContainer(LazyGithubContainer):
 
     def on_mount(self) -> None:
         self.tabs.add_pane(LazyGithubInfoTabPane())
-        pass
 
     def action_scroll_tab_down(self) -> None:
         if self.tabs.active_pane:
