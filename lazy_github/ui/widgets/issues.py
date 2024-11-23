@@ -7,6 +7,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import DataTable, Label, Markdown, Rule, TabPane
 from textual.widgets.data_table import CellDoesNotExist
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import get_comments, list_issues
@@ -24,9 +25,7 @@ def issue_to_cell(issue: Issue) -> tuple[str | int, ...]:
 
 
 class IssuesContainer(LazyGithubContainer):
-    BINDINGS = [
-        ("E", "edit_issue", "Edit Issue"),
-    ]
+    BINDINGS = [LazyGithubBindings.EDIT_ISSUE]
 
     issues: Dict[int, Issue] = {}
     status_column_index = -1
@@ -121,7 +120,7 @@ class IssueOverviewTabPane(TabPane):
     }
     """
 
-    BINDINGS = [("E", "edit_issue", "Edit Issue")]
+    BINDINGS = [LazyGithubBindings.EDIT_ISSUE]
 
     def __init__(self, issue: Issue) -> None:
         super().__init__("Overview", id="issue_overview_pane")
@@ -147,7 +146,7 @@ class IssueOverviewTabPane(TabPane):
 
 
 class IssueConversationTabPane(TabPane):
-    BINDINGS = [("n", "new_comment", "New comment")]
+    BINDINGS = [LazyGithubBindings.NEW_COMMENT]
 
     def __init__(self, issue: Issue) -> None:
         super().__init__("Comments", id="issue_conversation")

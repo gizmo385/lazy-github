@@ -2,8 +2,9 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, Rule, TextArea
+from textual.widgets import Button, Footer, Input, Label, Rule, TextArea
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import issues
 from lazy_github.lib.messages import IssueCreated
@@ -64,7 +65,8 @@ class NewIssueContainer(Container):
 
 
 class NewIssueModal(ModalScreen[Issue | None]):
-    BINDINGS = [("ESC, q", "cancel", "Cancel")]
+    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
+
     DEFAULT_CSS = """
     NewIssueModal {
         align: center middle;
@@ -81,6 +83,7 @@ class NewIssueModal(ModalScreen[Issue | None]):
 
     def compose(self) -> ComposeResult:
         yield NewIssueContainer()
+        yield Footer()
 
     def action_cancel(self) -> None:
         self.dismiss()

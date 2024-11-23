@@ -6,6 +6,8 @@ from textual.containers import Container, Vertical
 from textual.events import Blur
 from textual.widgets import DataTable, Input
 
+from lazy_github.lib.bindings import LazyGithubBindings
+
 TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int, ...]]]]
 
 
@@ -13,21 +15,19 @@ class _VimLikeDataTable(DataTable):
     "An data table for LazyGithub that provides some more vim-like bindings"
 
     BINDINGS = [
-        # Add space as an additional selection key
-        ("space", "select"),
-        # Add some vim bindings
-        ("j", "cursor_down"),
-        ("J", "page_down"),
-        ("k", "cursor_up"),
-        ("K", "page_up"),
-        ("l", "scroll_right"),
-        ("L", "page_right"),
-        ("h", "scroll_left"),
-        ("H", "page_left"),
-        ("g", "scroll_top"),
-        ("G", "scroll_bottom"),
-        ("^", "page_left"),
-        ("$", "page_right"),
+        LazyGithubBindings.SELECT_ENTRY,
+        LazyGithubBindings.TABLE_DOWN,
+        LazyGithubBindings.TABLE_PAGE_DOWN,
+        LazyGithubBindings.TABLE_CURSOR_UP,
+        LazyGithubBindings.TABLE_PAGE_UP,
+        LazyGithubBindings.TABLE_SCROLL_RIGHT,
+        LazyGithubBindings.TABLE_PAGE_RIGHT,
+        LazyGithubBindings.TABLE_SCROLL_LEFT,
+        LazyGithubBindings.TABLE_PAGE_LEFT,
+        LazyGithubBindings.TABLE_SCROLL_TOP,
+        LazyGithubBindings.TABLE_SCROLL_BOTTOM,
+        LazyGithubBindings.TABLE_PAGE_LEFT,
+        LazyGithubBindings.TABLE_PAGE_RIGHT,
     ]
 
 
@@ -41,7 +41,7 @@ class SearchableDataTableSearchInput(Input):
 
 
 class SearchableDataTable(Vertical):
-    BINDINGS = [("/", "focus_search", "Search")]
+    BINDINGS = [LazyGithubBindings.SEARCH_TABLE]
 
     DEFAULT_CSS = """
     SearchableDataTableSearchInput {

@@ -2,6 +2,7 @@ from textual import log
 from textual.app import App
 from textual.theme import Theme
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
 from lazy_github.lib.messages import SettingsModalDismissed
@@ -10,7 +11,11 @@ from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
 class LazyGithub(App):
-    BINDINGS = [("q", "quit", "Quit"), ("ctrl+p", "command_palette"), ("ctrl+m", "maximize", "Maximize")]
+    BINDINGS = [
+        LazyGithubBindings.QUIT_APP,
+        LazyGithubBindings.OPEN_COMMAND_PALLETE,
+        LazyGithubBindings.MAXIMIZE_WIDGET,
+    ]
 
     has_shown_maximize_toast: bool = False
 

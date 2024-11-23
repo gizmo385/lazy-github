@@ -5,6 +5,7 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Markdown, Rule, Switch, TextArea
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.branches import list_branches
 from lazy_github.lib.github.pull_requests import create_pull_request
@@ -201,7 +202,7 @@ class NewPullRequestModal(ModalScreen[FullPullRequest | None]):
     }
     """
 
-    BINDINGS = [("ESC, q", "cancel", "Cancel")]
+    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
 
     def compose(self) -> ComposeResult:
         yield NewPullRequestContainer()

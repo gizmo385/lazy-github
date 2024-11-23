@@ -13,6 +13,7 @@ from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import NOTIFICATION_REFRESH_INTERVAL
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github_cli import is_logged_in, unread_notification_count
@@ -109,8 +110,6 @@ class SelectionDetailsContainer(LazyGithubContainer):
     }
     """
 
-    BINDINGS = [("j", "scroll_tab_down"), ("k", "scroll_tab_up")]
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.tabs = TabbedContent(id="selection_detail_tabs")
@@ -122,20 +121,10 @@ class SelectionDetailsContainer(LazyGithubContainer):
     def on_mount(self) -> None:
         self.tabs.add_pane(LazyGithubInfoTabPane())
 
-    def action_scroll_tab_down(self) -> None:
-        if self.tabs.active_pane:
-            self.tabs.active_pane.scroll_down()
-
-    def action_scroll_tab_up(self) -> None:
-        if self.tabs.active_pane:
-            self.tabs.active_pane.scroll_up()
-
 
 class SelectionsPane(Container):
-    BINDINGS = [
-        ("I", "open_issue", "Open new issue"),
-        ("P", "open_pull_request", "Open new pull request"),
-    ]
+    BINDINGS = [LazyGithubBindings.OPEN_ISSUE, LazyGithubBindings.OPEN_PULL_REQUEST]
+
     DEFAULT_CSS = """
     SelectionsPane {
         height: 100%;
@@ -232,13 +221,12 @@ class SelectionDetailsPane(Container):
 
 class MainViewPane(Container):
     BINDINGS = [
-        ("1", "focus_section('#repos_table')"),
-        ("2", "focus_section('#pull_requests_table')"),
-        ("3", "focus_section('#issues_table')"),
-        # ("4", "focus_section('#actions_table')"),
-        ("4", "focus_workflow_tabs"),
-        ("5", "focus_tabs"),
-        ("6", "focus_section('LazyGithubCommandLog')"),
+        LazyGithubBindings.FOCUS_REPOSITORY_TABLE,
+        LazyGithubBindings.FOCUS_PULL_REQUEST_TABLE,
+        LazyGithubBindings.FOCUS_ISSUE_TABLE,
+        LazyGithubBindings.FOCUS_WORKFLOW_TABS,
+        LazyGithubBindings.FOCUS_DETAIL_TABS,
+        LazyGithubBindings.FOCUS_COMMAND_LOG,
     ]
 
     def action_focus_section(self, selector: str) -> None:

@@ -5,6 +5,7 @@ from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable, Label, Markdown, RichLog, Rule, TabPane
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.github.pull_requests import (
@@ -190,7 +191,7 @@ class PrDiffTabPane(TabPane):
 
 
 class PrConversationTabPane(TabPane):
-    BINDINGS = [("n", "new_comment", "New comment")]
+    BINDINGS = [LazyGithubBindings.NEW_COMMENT]
 
     def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Conversation", id="conversation_pane")

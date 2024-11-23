@@ -12,6 +12,7 @@ from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Markdown, Rule, Select, Switch
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.lib.context import LazyGithubContext
 
@@ -113,10 +114,7 @@ class SettingsContainer(Container):
     }
     """
 
-    BINDINGS = [
-        ("shift+enter", "save_settings", "Save settings"),
-        ("q", "exit_settings", "Exit settings"),
-    ]
+    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG, LazyGithubBindings.CANCEL_DIALOG]
 
     def __init__(self) -> None:
         super().__init__()
@@ -161,15 +159,15 @@ class SettingsContainer(Container):
         self._update_settings()
         self.post_message(SettingsModalDismissed(True))
 
-    async def action_save_settings(self) -> None:
-        self._update_settings()
-        self.post_message(SettingsModalDismissed(True))
-
     @on(Button.Pressed, "#cancel_settings")
     async def cancel_settings(self, _: Button.Pressed) -> None:
         self.post_message(SettingsModalDismissed(False))
 
-    async def action_exit_settings(self) -> None:
+    async def action_submit(self) -> None:
+        self._update_settings()
+        self.post_message(SettingsModalDismissed(True))
+
+    async def action_cancel(self) -> None:
         self.post_message(SettingsModalDismissed(False))
 
 

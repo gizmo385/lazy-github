@@ -3,6 +3,7 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Collapsible, Label, Markdown
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.github.pull_requests import ReviewCommentNode
 from lazy_github.lib.messages import NewCommentCreated
 from lazy_github.models.github import FullPullRequest, Issue, IssueComment, Review, ReviewComment, ReviewState
@@ -36,7 +37,7 @@ class IssueCommentContainer(Container, can_focus=True):
 
     """
 
-    BINDINGS = [("r", "reply_to_individual_comment", "Reply to comment")]
+    BINDINGS = [LazyGithubBindings.REPLY_TO_COMMENT]
 
     def __init__(self, issue: Issue, comment: IssueComment) -> None:
         super().__init__()
@@ -94,7 +95,7 @@ class ReviewContainer(Collapsible, can_focus=True):
         border: solid $success-lighten-3;
     }
     """
-    BINDINGS = [("r", "reply_to_review", "Reply to review")]
+    BINDINGS = [LazyGithubBindings.REPLY_TO_REVIEW]
 
     def __init__(self, pr: FullPullRequest, review: Review, hierarchy: dict[int, ReviewCommentNode]) -> None:
         super().__init__()
