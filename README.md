@@ -1,32 +1,31 @@
 # LazyGithub
 
-This is a **WIP** terminal UI client for interacting with [GitHub](https://github.com). It draws heavy
-inspiration from the [lazygit](https://github.com/jesseduffield/lazygit) project and uses
-[Textual](https://textual.textualize.io/) to drive the terminal UI interactions.
-
+This is a **WIP** terminal UI client for interacting with [GitHub](https://github.com). It draws heavy inspiration from the
+[lazygit](https://github.com/jesseduffield/lazygit) project and uses [Textual](https://textual.textualize.io/) to drive the terminal UI interactions.
 
 ![Example screenshot](https://raw.githubusercontent.com/gizmo385/lazy-github/main/images/lazy-github-conversation-ui.svg)
 
+## How to Use It
+
+You can run the [most recently built version](https://pypi.org/project/lazy-github/) by installing it from PyPI. If you have [uv installed](https://github.com/astral-sh/uv), you can do that easily with `uvx lazy-github`.
+
+When you first start LazyGithub, you will be prompted with a device login code and a link to GitHub
+where you will be able to authenticate the app against your account. This allows the app to act on
+your behalf and is necessary for LazyGithub to function.
 
 Currently, it supports the following:
 
-
 - Listing the repositories associated with your account 
-- Listing the issues and pull requests on those repositories
+- Listing the issues, pull requests, and actions on your repositories
 - Listing the details, diff, and reviews on any of those pull requests
-- Detailed issue views, including conversation participation
+- Detailed issue and pull request views, including conversation participation
 
-Planned features:
-- Local caching, improving reload times and making it easier to use within a terminal or editor
-  environment.
-- A more wholeistic summary view for the currently selected repository
-- The ability to list, view, and trigger actions on a repository
-- More fleshed out PR interactions, including commenting and eventually submitting full PR reviews
-  from within your terminal.
+If you wish to run it from a local clone of the repository, you can do so by running the `./start.sh` located in the root of the repo.
 
+## Customization
 
-## Running Locally
+LazyGithub supports a number of customization options, all of which are stored in `$HOME/.config/lazy-github/config.json`.
+These can be edited manually via changing the config or by opening the settings management UI within LazyGithub. That UI
+can be accessed via the command pallete (`CMD+p`) and then searching for settings.
 
-If you have [uv](https://github.com/astral-sh/uv) installed, then you can try LazyGithub by running
-`uvx lazy-github`. Alternatively, you can pull the repo and run it locally by running the
-`./start.sh` script in the root of the repo.
+![Settings screenshot](https://raw.githubusercontent.com/gizmo385/lazy-github/main/images/lazy-github-settings-ui.png)
