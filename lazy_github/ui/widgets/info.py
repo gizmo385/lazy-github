@@ -13,15 +13,19 @@ retrieved and displayed below it.
 
 ## Pull Requests
 
-TODO
+You can interact with a PR by viewing its details, viewing the PR diff, and participating in any active conversations
+happening on the PR. You can also create a new PR for the currently selected repo. It doesn't currently support merging
+a PR from within LazyGithub.
 
 ## Issues
 
-TODO
+You can interact with an issue by viewing its details, partipcating in any activate conversations happening on the
+issue, and by editing the issue itself. This means that you can close an issue from within LazyGithub.
 
 ## Actions
 
-WIP
+Github action and workflow support is pretty limited. It currently only supports listing the workflows and the most
+recent runs across all actions on the currently selected repo.
 """.strip()
 
 
