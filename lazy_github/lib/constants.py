@@ -15,6 +15,8 @@ IS_NOT_FAVORITED = "☆"
 IS_PRIVATE = "✔"
 IS_PUBLIC = "✘"
 
+NOTIFICATION_REFRESH_INTERVAL = 60
+
 CONFIG_FOLDER = Path.home() / ".config/lazy-github"
 
 

@@ -26,7 +26,7 @@ class LazyGithub(App):
     async def on_ready(self):
         await self.authenticate_with_github()
 
-    def on_settings_modal_dismissed(self, message: SettingsModalDismissed) -> None:
+    async def on_settings_modal_dismissed(self, message: SettingsModalDismissed) -> None:
         if not message.changed:
             return
 

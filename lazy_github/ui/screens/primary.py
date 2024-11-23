@@ -6,13 +6,16 @@ from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
+from textual.timer import Timer
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
 
+from lazy_github.lib.constants import NOTIFICATION_REFRESH_INTERVAL
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github_cli import is_logged_in, unread_notification_count
 from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
@@ -57,6 +60,8 @@ class UnreadNotifications(Widget):
     def render(self):
         if self.notification_count is None:
             return ""
+        elif self.notification_count == 0:
+            return "[green]No unread notifications[/green]"
         else:
             count = f"{self.notification_count}+" if self.notification_count >= 30 else str(self.notification_count)
             return f"[red]• Unread Notifications: {count}[/red]"
@@ -155,7 +160,6 @@ class SelectionsPane(Container):
         yield workflows
 
     def update_displayed_sections(self) -> None:
-        lg.debug("Updating displayed UI components after settings update")
         self.pull_requests.display = LazyGithubContext.config.appearance.show_pull_requests
         self.issues.display = LazyGithubContext.config.appearance.show_issues
         self.workflows.display = LazyGithubContext.config.appearance.show_workflows
@@ -306,6 +310,16 @@ class MainScreenCommandProvider(Provider):
             ),
             LazyGithubCommand("Change Settings", self.screen.action_show_settings_modal, "Adjust LazyGithub settings"),
         ]
+
+        if LazyGithubContext.config.notifications.enabled:
+            _commands.append(
+                LazyGithubCommand(
+                    "Refresh notifications",
+                    self.screen.action_refresh_notifications,
+                    "Refresh the unread notifications count",
+                )
+            )
+
         return tuple(_commands)
 
     async def search(self, query: str) -> Hits:
@@ -322,12 +336,40 @@ class MainScreenCommandProvider(Provider):
 
 class LazyGithubMainScreen(Screen):
     COMMANDS = {MainScreenCommandProvider}
+    notification_refresh_timer: Timer | None = None
 
     def compose(self):
         with Container():
             yield LazyGithubStatusSummary()
             yield MainViewPane()
             yield Footer()
+
+    async def on_mount(self) -> None:
+        if LazyGithubContext.config.notifications.enabled:
+            self.refresh_notification_count()
+            if self.notification_refresh_timer is None:
+                self.notification_refresh_timer = self.set_interval(
+                    NOTIFICATION_REFRESH_INTERVAL, self.refresh_notification_count
+                )
+
+    @work
+    async def refresh_notification_count(self) -> None:
+        widget = self.query_one("#unread_notifications", UnreadNotifications)
+        if LazyGithubContext.config.notifications.enabled:
+            if not await is_logged_in():
+                error_message = "Cannot load notifications - please login to the gh CLI: gh auth login"
+                self.notify(error_message, title="Failed to Load Notifiations", severity="error")
+                lg.error(error_message)
+                return
+
+            unread_count = await unread_notification_count()
+            widget.notification_count = unread_count
+        else:
+            widget.notification_count = None
+
+    async def action_refresh_notifications(self) -> None:
+        """Action handler that retriggers the notification loading"""
+        self.refresh_notification_count()
 
     async def action_toggle_ui(self, ui_to_hide: str):
         widget = self.query_one(f"#{ui_to_hide}", Widget)
@@ -338,6 +380,12 @@ class LazyGithubMainScreen(Screen):
 
     def handle_settings_update(self) -> None:
         self.query_one("#selections_pane", SelectionsPane).update_displayed_sections()
+
+        self.refresh_notification_count()
+        if self.notification_refresh_timer is None:
+            self.notification_refresh_timer = self.set_interval(
+                NOTIFICATION_REFRESH_INTERVAL, self.refresh_notification_count
+            )
 
     def on_repo_selected(self, message: RepoSelected) -> None:
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name
