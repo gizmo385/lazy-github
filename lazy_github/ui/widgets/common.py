@@ -31,7 +31,7 @@ class _VimLikeDataTable(DataTable):
     ]
 
 
-class SearchableDataTableSearchInput(Input):
+class ToggleableSearchInput(Input):
     def _on_blur(self, event: Blur) -> None:
         if not self.value.strip():
             # If we lose focus and the content is empty, hide it
@@ -44,7 +44,7 @@ class SearchableDataTable(Vertical):
     BINDINGS = [LazyGithubBindings.SEARCH_TABLE]
 
     DEFAULT_CSS = """
-    SearchableDataTableSearchInput {
+    ToggleableSearchInput {
         margin-bottom: 1;
     }
     """
@@ -54,7 +54,7 @@ class SearchableDataTable(Vertical):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.table = _VimLikeDataTable(id=table_id)
-        self.search_input = SearchableDataTableSearchInput(placeholder="Search...", id=search_input_id)
+        self.search_input = ToggleableSearchInput(placeholder="Search...", id=search_input_id)
         self.search_input.display = False
         self.search_input.can_focus = False
         self.sort_key = sort_key

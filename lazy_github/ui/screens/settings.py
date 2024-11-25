@@ -1,20 +1,22 @@
 import enum
 from typing import Any
 
-from pydantic import Base64Str, BaseModel
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
+from textual.fuzzy import Matcher
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
-from textual.widgets import Button, Input, Label, Markdown, Rule, Select, Switch
+from textual.widgets import Button, Collapsible, Input, Label, Markdown, Rule, Select, Static, Switch
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.messages import SettingsModalDismissed
+from lazy_github.ui.widgets.common import ToggleableSearchInput
 
 # There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
 # through more obvious means elsewhere
@@ -78,7 +80,7 @@ class SettingsSection(Vertical):
         height: auto;
     }
 
-    Markdown {
+    Static {
         margin-bottom: 1;
     }
     """
@@ -89,14 +91,31 @@ class SettingsSection(Vertical):
         self.model = model
         self.fields = model.model_fields
 
+        self.field_settings_widgets: list[FieldSetting] = []
+
+    def filter_field_settings(self, matcher: Matcher | None) -> None:
+        at_least_one_displayed = False
+        for field_setting in self.field_settings_widgets:
+            if matcher is None or matcher.match(field_setting.field_name):
+                at_least_one_displayed = True
+                field_setting.display = True
+            else:
+                field_setting.display = False
+
+        self.query_one(Collapsible).display = at_least_one_displayed
+
     def compose(self) -> ComposeResult:
         setting_description = self.model.__doc__ or ""
-        yield Markdown(f"## {_field_name_to_readable_name(self.parent_field_name)}\n{setting_description}".strip())
-        for field_name, field_info in self.fields.items():
-            if field_info.exclude:
-                continue
-            current_value = getattr(self.model, field_name)
-            yield FieldSetting(field_name, field_info, current_value)
+        field_name = f"[bold]{_field_name_to_readable_name(self.parent_field_name)}[/bold]"
+        with Collapsible(collapsed=False, title=field_name):
+            yield Static(f"{setting_description}".strip())
+            for field_name, field_info in self.fields.items():
+                if field_info.exclude:
+                    continue
+                current_value = getattr(self.model, field_name)
+                new_field_setting = FieldSetting(field_name, field_info, current_value)
+                self.field_settings_widgets.append(new_field_setting)
+                yield new_field_setting
 
 
 class BindingsSettingsSection(Container):
@@ -111,6 +130,11 @@ class SettingsContainer(Container):
         align: center middle;
     }
 
+    #settings_search_input {
+        margin-bottom: 1;
+        margin-top: 1;
+    }
+
     #settings_buttons {
         width: auto;
         height: auto;
@@ -118,24 +142,49 @@ class SettingsContainer(Container):
     }
     """
 
-    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG, LazyGithubBindings.CANCEL_DIALOG]
+    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG, LazyGithubBindings.CANCEL_DIALOG, LazyGithubBindings.SEARCH_DIALOG]
 
     def __init__(self) -> None:
         super().__init__()
+        self.search_input = ToggleableSearchInput(placeholder="Search settings...", id="settings_search_input")
+        self.search_input.display = False
+        self.search_input.can_focus = False
+
+        self.settings_sections: list[SettingsSection] = []
 
     def compose(self) -> ComposeResult:
         yield Markdown("# LazyGithub Settings")
+        yield self.search_input
         with ScrollableContainer(id="settings_adjustment"):
             for field, value in LazyGithubContext.config:
                 if field in _SECTIONS_TO_SKIP:
                     continue
-                yield SettingsSection(field, value)
+
+                new_section = SettingsSection(field, value)
+                self.settings_sections.append(new_section)
+                yield new_section
 
         yield Rule()
 
         with Horizontal(id="settings_buttons"):
             yield Button("Save", id="save_settings", variant="success")
             yield Button("Cancel", id="cancel_settings", variant="error")
+
+    async def action_search(self) -> None:
+        self.search_input.can_focus = True
+        self.search_input.display = True
+        self.search_input.focus()
+
+    async def change_displayed_settings(self, query: str) -> None:
+        all_sections = self.query(SettingsSection)
+        matcher = Matcher(query) if query else None
+        for section in all_sections:
+            section.filter_field_settings(matcher)
+
+    @on(Input.Submitted, "#settings_search_input")
+    async def handle_submitted_search(self) -> None:
+        search_query = self.search_input.value.strip().lower()
+        await self.change_displayed_settings(search_query)
 
     def _update_settings(self):
         with LazyGithubContext.config.to_edit() as updated_config:

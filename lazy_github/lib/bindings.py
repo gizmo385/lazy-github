@@ -39,6 +39,7 @@ class LazyGithubBindings:
     # Dialog bindings
     SUBMIT_DIALOG = Binding("shift+enter", "submit", "Submit", id="modal.submit")
     CANCEL_DIALOG = Binding("q, ESC", "cancel", "Cancel", id="modal.cancel")
+    SEARCH_DIALOG = Binding("/", "search", "Search", id="modal.search")
 
     # Focusing different UI elements
     FOCUS_REPOSITORY_TABLE = Binding(
