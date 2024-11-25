@@ -2,7 +2,7 @@
 name = "lazy-github"
 description = "A terminal UI for interacting with Github"
 readme = "README.md"
-version = "0.2.2"
+dynamic = ["version"]
 authors = [
 	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
 ]
@@ -33,6 +33,9 @@ lazy-github = "lazy_github.cli:cli"
 
 [tool.hatch.envs.default]
 installer = "uv"
+
+[tool.hatch.version]
+path = "lazy_github/version.py"
 
 [tool.setuptools.packages.find]
 include = ["lazy_github*"]
