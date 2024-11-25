@@ -9,8 +9,8 @@ from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import get_comments, list_issues
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
 from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest

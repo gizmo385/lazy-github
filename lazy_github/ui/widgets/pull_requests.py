@@ -13,12 +13,12 @@ from lazy_github.lib.github.pull_requests import (
     get_reviews,
     reconstruct_review_conversation_hierarchy,
 )
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import FullPullRequest, PartialPullRequest
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
-from lazy_github.lib.logging import lg
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
 
 

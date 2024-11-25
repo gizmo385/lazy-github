@@ -3,9 +3,9 @@ from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Generator, Literal, Optional
-from textual.theme import BUILTIN_THEMES, Theme
 
 from pydantic import BaseModel, field_serializer, field_validator
+from textual.theme import BUILTIN_THEMES, Theme
 
 from lazy_github.lib.constants import CONFIG_FOLDER, IssueOwnerFilter, IssueStateFilter
 

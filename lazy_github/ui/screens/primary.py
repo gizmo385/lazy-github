@@ -6,9 +6,9 @@ from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
-from textual.timer import Timer
 from textual.reactive import reactive
 from textual.screen import Screen
+from textual.timer import Timer
 from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
 from textual.widgets import Footer, TabbedContent
@@ -16,10 +16,10 @@ from textual.widgets import Footer, TabbedContent
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import NOTIFICATION_REFRESH_INTERVAL
 from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.github_cli import is_logged_in, unread_notification_count
-from lazy_github.lib.logging import lg
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.pull_requests import get_full_pull_request
+from lazy_github.lib.github_cli import is_logged_in, unread_notification_count
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import (
     IssuesAndPullRequestsFetched,
     IssueSelected,

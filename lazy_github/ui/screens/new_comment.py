@@ -7,9 +7,9 @@ from textual.widgets import Button, Footer, Label, Markdown, Rule, TextArea
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.github import issues, pull_requests
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import NewCommentCreated
 from lazy_github.models.github import Issue, IssueComment, Repository, Review, ReviewComment
-from lazy_github.lib.logging import lg
 
 CommmentReplyTarget = ReviewComment | Review | IssueComment
 

@@ -1,6 +1,6 @@
 import asyncio
-from asyncio.subprocess import Process, PIPE
 import json
+from asyncio.subprocess import PIPE, Process
 
 NOTIFICATIONS_PAGE_COUNT = 30
 

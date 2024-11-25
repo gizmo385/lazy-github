@@ -1,12 +1,12 @@
-from logging import Handler, LogRecord
 import logging
+from logging import Handler, LogRecord
 from typing import Optional
 
 from textual.app import ComposeResult
 from textual.widgets import Log
 
+from lazy_github.lib.logging import LazyGithubLogFormatter, lg
 from lazy_github.ui.widgets.common import LazyGithubContainer
-from lazy_github.lib.logging import lg, LazyGithubLogFormatter
 
 
 class CommandLogLoggingHandler(Handler):

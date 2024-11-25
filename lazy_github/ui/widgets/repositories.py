@@ -6,13 +6,13 @@ from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable
 
-from lazy_github.lib.bindings import LazyGithubBindings
 import lazy_github.lib.github.repositories as repos_api
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
-from lazy_github.lib.logging import lg
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
 
 

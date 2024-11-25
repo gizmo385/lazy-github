@@ -1,6 +1,6 @@
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
-from lazy_github.models.github import Branch, Repository
 from lazy_github.lib.context import LazyGithubContext, github_headers
+from lazy_github.models.github import Branch, Repository
 
 
 async def list_branches(repo: Repository, per_page: int = 30, page: int = 1) -> list[Branch]:

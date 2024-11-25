@@ -1,6 +1,7 @@
+import shutil
+
 import click
 import rich
-import shutil
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
 from lazy_github.lib.context import LazyGithubContext

@@ -1,6 +1,7 @@
 from httpx import HTTPError
-from lazy_github.lib.logging import lg
+
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
 
 
