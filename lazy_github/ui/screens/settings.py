@@ -1,7 +1,7 @@
 import enum
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import Base64Str, BaseModel
 from pydantic.fields import FieldInfo
 from textual import on
 from textual.app import ComposeResult
@@ -18,7 +18,7 @@ from lazy_github.lib.context import LazyGithubContext
 
 # There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
 # through more obvious means elsewhere
-_SECTIONS_TO_SKIP = {"repositories"}
+_SECTIONS_TO_SKIP = {"repositories", "bindings"}
 
 
 def _field_name_to_readable_name(name: str) -> str:
@@ -97,6 +97,10 @@ class SettingsSection(Vertical):
                 continue
             current_value = getattr(self.model, field_name)
             yield FieldSetting(field_name, field_info, current_value)
+
+
+class BindingsSettingsSection(Container):
+    pass
 
 
 class SettingsContainer(Container):

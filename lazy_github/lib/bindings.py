@@ -1,5 +1,7 @@
 from textual.binding import Binding
 
+from lazy_github.lib.utils import classproperty
+
 
 class LazyGithubBindings:
     # Global App Bindings
@@ -55,3 +57,7 @@ class LazyGithubBindings:
     FOCUS_COMMAND_LOG = Binding(
         "6", "focus_section('LazyGithubCommandLog')", "Focus command log", show=False, id="main.command_log.focus"
     )
+
+    @classproperty
+    def all(cls) -> list[Binding]:
+        return [v for v in cls.__dict__.values() if isinstance(v, Binding)]

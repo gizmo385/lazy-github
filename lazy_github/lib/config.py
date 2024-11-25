@@ -15,41 +15,6 @@ ISSUE_STATE_FILTER = Literal["all"] | Literal["open"] | Literal["closed"]
 ISSUE_OWNER_FILTER = Literal["mine"] | Literal["all"]
 
 
-class ApiConfig(BaseModel):
-    """Controlling how the GitHub API is accessed in LazyGithub"""
-
-    base_url: str = "https://api.github.com"
-
-
-class PullRequestSettings(BaseModel):
-    """Changes how pull requests are retrieved from the Github API"""
-
-    state_filter: IssueStateFilter = IssueStateFilter.ALL
-    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
-
-
-class IssueSettings(BaseModel):
-    """Changes how issues are retrieved from the Github API"""
-
-    state_filter: IssueStateFilter = IssueStateFilter.ALL
-    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
-
-
-class RepositorySettings(BaseModel):
-    """Repository-specific settings"""
-
-    favorites: list[str] = []
-
-
-class CacheSettings(BaseModel):
-    """Settings that control how long data will be cached from the GitHub API"""
-
-    cache_directory: Path = CONFIG_FOLDER / ".cache"
-    default_ttl: int = int(timedelta(minutes=10).total_seconds())
-    list_repos_ttl: int = int(timedelta(days=1).total_seconds())
-    list_issues_ttl: int = int(timedelta(hours=1).total_seconds())
-
-
 class AppearanceSettings(BaseModel):
     """Settings focused on altering the appearance of LazyGithub, including hiding or showing different sections."""
 
@@ -71,15 +36,56 @@ class AppearanceSettings(BaseModel):
         return BUILTIN_THEMES.get(theme_name, BUILTIN_THEMES["textual-dark"])
 
 
-class CoreConfig(BaseModel):
-    logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
-
-
 class NotificationSettings(BaseModel):
     """Controls the settings for the optional notification feature, which relies on the standard GitHub CLI."""
 
     enabled: bool = False
     show_all_notifications: bool = True
+
+
+class BindingsSettings(BaseModel):
+    """Contains any overrides to the default bindings for LazyGithub"""
+
+    overrides: dict[str, str] = {}
+
+
+class RepositorySettings(BaseModel):
+    """Repository-specific settings"""
+
+    favorites: list[str] = []
+
+
+class PullRequestSettings(BaseModel):
+    """Changes how pull requests are retrieved from the Github API"""
+
+    state_filter: IssueStateFilter = IssueStateFilter.ALL
+    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
+
+
+class IssueSettings(BaseModel):
+    """Changes how issues are retrieved from the Github API"""
+
+    state_filter: IssueStateFilter = IssueStateFilter.ALL
+    owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
+
+
+class CacheSettings(BaseModel):
+    """Settings that control how long data will be cached from the GitHub API"""
+
+    cache_directory: Path = CONFIG_FOLDER / ".cache"
+    default_ttl: int = int(timedelta(minutes=10).total_seconds())
+    list_repos_ttl: int = int(timedelta(days=1).total_seconds())
+    list_issues_ttl: int = int(timedelta(hours=1).total_seconds())
+
+
+class CoreConfig(BaseModel):
+    logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
+
+
+class ApiConfig(BaseModel):
+    """Controlling how the GitHub API is accessed in LazyGithub"""
+
+    base_url: str = "https://api.github.com"
 
 
 _CONFIG_INSTANCE: Optional["Config"] = None
@@ -88,6 +94,7 @@ _CONFIG_INSTANCE: Optional["Config"] = None
 class Config(BaseModel):
     appearance: AppearanceSettings = AppearanceSettings()
     notifications: NotificationSettings = NotificationSettings()
+    bindings: BindingsSettings = BindingsSettings()
     repositories: RepositorySettings = RepositorySettings()
     pull_requests: PullRequestSettings = PullRequestSettings()
     issues: IssueSettings = IssueSettings()
