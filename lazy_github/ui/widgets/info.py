@@ -2,16 +2,15 @@ from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Markdown, TabPane
 
-from lazy_github.version import VERSION
+from lazy_github.version import version
 
 LAZY_GITHUB_INFO = f"""
-# LazyGithub: A Terminal UI For GitHub
+# LazyGithub: A Terminal UI For GitHub ({version})
 
 LazyGithub is a terminal UI for interacting with GitHub. You can get started by selecting one of the repositories listed
 in the table on the left. Once you have selected a repository, any issues, pull requests, and action workflows will be
 retrieved and displayed below it.
 
-Current version: **{VERSION}**
 
 **Issues, pull requests, and action lists can also be interacted with!**
 

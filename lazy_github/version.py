@@ -1,1 +1,3 @@
-VERSION = "0.2.3"
+from importlib import metadata
+
+version = metadata.version("lazy_github")

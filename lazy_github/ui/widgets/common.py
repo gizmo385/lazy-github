@@ -13,7 +13,7 @@ TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int,
 
 class LazyGithubFooter(Footer):
     def __init__(self) -> None:
-        return super().__init__(show_command_palette=False)
+        super().__init__(show_command_palette=False)
 
 
 class _VimLikeDataTable(DataTable):

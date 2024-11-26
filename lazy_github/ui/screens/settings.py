@@ -4,8 +4,8 @@ from typing import Any
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from textual import on
-from textual.binding import Binding
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
 from textual.events import Key
@@ -13,7 +13,7 @@ from textual.fuzzy import Matcher
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
-from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch
+from textual.widgets import Button, Collapsible, Input, Label, Markdown, RichLog, Rule, Select, Static, Switch
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext

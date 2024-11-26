@@ -8,8 +8,8 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 
 import lazy_github.lib.github.auth as auth
-from lazy_github.ui.widgets.common import LazyGithubFooter
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
+from lazy_github.ui.widgets.common import LazyGithubFooter
 
 
 class UserTokenDisplay(Widget):
