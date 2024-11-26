@@ -41,10 +41,13 @@ class LazyGithub(App):
         else:
             self.theme = LazyGithubContext.config.appearance.theme
 
+        self.set_keymap(LazyGithubContext.config.bindings.overrides)
+
         self.query_one("#main-screen", LazyGithubMainScreen).handle_settings_update()
 
     def on_mount(self) -> None:
         self.theme = LazyGithubContext.config.appearance.theme.name
+        self.set_keymap(LazyGithubContext.config.bindings.overrides)
 
     def action_maximize(self) -> None:
         if self.screen.is_maximized:
