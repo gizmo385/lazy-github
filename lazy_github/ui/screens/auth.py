@@ -6,9 +6,9 @@ from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Footer
 
 import lazy_github.lib.github.auth as auth
+from lazy_github.ui.widgets.common import LazyGithubFooter
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 
 
@@ -42,7 +42,7 @@ class AuthenticationModal(ModalScreen):
         self.border_title = "GitHub Authentication"
         with Container():
             yield UserTokenDisplay()
-            yield Footer()
+            yield LazyGithubFooter()
 
     @work
     async def check_access_token(self, device_code: auth.DeviceCodeResponse):

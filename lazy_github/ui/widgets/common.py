@@ -4,11 +4,16 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.events import Blur
-from textual.widgets import DataTable, Input
+from textual.widgets import DataTable, Input, Footer
 
 from lazy_github.lib.bindings import LazyGithubBindings
 
 TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int, ...]]]]
+
+
+class LazyGithubFooter(Footer):
+    def __init__(self) -> None:
+        return super().__init__(show_command_palette=False)
 
 
 class _VimLikeDataTable(DataTable):

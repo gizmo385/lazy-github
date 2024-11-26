@@ -11,7 +11,7 @@ from textual.screen import Screen
 from textual.timer import Timer
 from textual.types import IgnoreReturnCallbackType
 from textual.widget import Widget
-from textual.widgets import Footer, TabbedContent
+from textual.widgets import TabbedContent
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import NOTIFICATION_REFRESH_INTERVAL
@@ -31,7 +31,7 @@ from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.command_log import CommandLogSection
-from lazy_github.ui.widgets.common import LazyGithubContainer
+from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubFooter
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
 from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer, issue_to_cell
 from lazy_github.ui.widgets.pull_requests import (
@@ -329,7 +329,7 @@ class LazyGithubMainScreen(Screen):
         with Container():
             yield LazyGithubStatusSummary()
             yield MainViewPane()
-            yield Footer()
+            yield LazyGithubFooter()
 
     async def on_mount(self) -> None:
         if LazyGithubContext.config.notifications.enabled:

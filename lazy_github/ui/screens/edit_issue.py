@@ -2,11 +2,12 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Input, Label, Rule, Select, TextArea
+from textual.widgets import Button, Input, Label, Rule, Select, TextArea
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.github import issues
 from lazy_github.models.github import Issue, IssueState
+from lazy_github.ui.widgets.common import LazyGithubFooter
 
 
 class EditIssueContainer(Container):
@@ -86,7 +87,7 @@ class EditIssueModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield EditIssueContainer(self.issue)
-        yield Footer()
+        yield LazyGithubFooter()
 
     def action_cancel(self) -> None:
         self.app.pop_screen()

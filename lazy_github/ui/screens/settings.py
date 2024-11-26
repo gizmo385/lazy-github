@@ -13,12 +13,12 @@ from textual.fuzzy import Matcher
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
-from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch, Footer
+from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.messages import SettingsModalDismissed
-from lazy_github.ui.widgets.common import ToggleableSearchInput
+from lazy_github.ui.widgets.common import LazyGithubFooter, ToggleableSearchInput
 
 
 def _field_name_to_readable_name(name: str) -> str:
@@ -317,4 +317,4 @@ class SettingsModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield SettingsContainer()
-        yield Footer()
+        yield LazyGithubFooter()
