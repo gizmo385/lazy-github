@@ -15,7 +15,6 @@ from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
 from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch, Footer
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.messages import SettingsModalDismissed
