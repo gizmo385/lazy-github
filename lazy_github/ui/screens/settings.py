@@ -4,14 +4,16 @@ from typing import Any
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from textual import on
+from textual.binding import Binding
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.css.query import NoMatches
+from textual.events import Key
 from textual.fuzzy import Matcher
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
-from textual.widgets import Button, Collapsible, Input, Label, Markdown, Rule, Select, Static, Switch
+from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch, Footer
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
@@ -118,8 +120,52 @@ class SettingsSection(Vertical):
                 yield new_field_setting
 
 
-class BindingsSettingsSection(Container):
-    pass
+class KeySelectionInput(Container):
+    DEFAULT_CSS = """
+    KeySelectionInput {
+        height: 4;
+        width: auto;
+    }
+
+    KeySelectionInput:focus-within {
+        border: solid $accent;
+    }
+    """
+
+    def __init__(self, binding: Binding) -> None:
+        super().__init__()
+        self.binding = binding
+
+        self.key_input = RichLog()
+        if binding.id and binding.id in LazyGithubContext.config.bindings.overrides:
+            self.key_input.write(LazyGithubContext.config.bindings.overrides[binding.id])
+        else:
+            self.key_input.write(binding.key)
+
+    def compose(self) -> ComposeResult:
+        with Horizontal():
+            yield Label(f"[bold]{self.binding.id}[/bold]: ")
+            yield self.key_input
+
+    @property
+    def value(self) -> str:
+        return self.key_input.value
+
+    async def on_key(self, key_event: Key) -> None:
+        if key_event.key not in ["tab", "shift+tab"]:
+            key_event.stop()
+            self.key_input.clear()
+            self.key_input.write(self.binding.key if key_event.key == "escape" else key_event.key)
+
+
+class BindingsSettingsSection(SettingsSection):
+    def __init__(self) -> None:
+        super().__init__("bindings", LazyGithubContext.config.bindings)
+
+    def compose(self) -> ComposeResult:
+        with Collapsible(collapsed=False, title="[bold]Keybinding Overrides[/bold]"):
+            yield Static(LazyGithubContext.config.bindings.__doc__)
+            yield KeySelectionInput(LazyGithubBindings.MAXIMIZE_WIDGET)
 
 
 class SettingsContainer(Container):
@@ -163,6 +209,7 @@ class SettingsContainer(Container):
                 new_section = SettingsSection(field, value)
                 self.settings_sections.append(new_section)
                 yield new_section
+            yield BindingsSettingsSection()
 
         yield Rule()
 
@@ -243,3 +290,4 @@ class SettingsModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield SettingsContainer()
+        yield Footer()
