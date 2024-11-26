@@ -15,14 +15,11 @@ from textual.theme import BUILTIN_THEMES, Theme
 from textual.widget import Widget
 from textual.widgets import Button, Collapsible, Input, RichLog, Label, Markdown, Rule, Select, Static, Switch, Footer
 
+from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.ui.widgets.common import ToggleableSearchInput
-
-# There are certain fields that we don't actually want to expose through this settings UI, because it is modifiable
-# through more obvious means elsewhere
-_SECTIONS_TO_SKIP = {"repositories", "bindings"}
 
 
 def _field_name_to_readable_name(name: str) -> str:
@@ -104,7 +101,7 @@ class SettingsSection(Vertical):
             else:
                 field_setting.display = False
 
-        self.query_one(Collapsible).display = at_least_one_displayed
+        self.query_one(Collapsible).collapsed = not at_least_one_displayed
 
     def compose(self) -> ComposeResult:
         setting_description = self.model.__doc__ or ""
@@ -123,11 +120,12 @@ class SettingsSection(Vertical):
 class KeySelectionInput(Container):
     DEFAULT_CSS = """
     KeySelectionInput {
-        height: 4;
+        height: 2;
         width: auto;
     }
 
     KeySelectionInput:focus-within {
+        height: 3;
         border: solid $accent;
     }
     """
@@ -135,37 +133,57 @@ class KeySelectionInput(Container):
     def __init__(self, binding: Binding) -> None:
         super().__init__()
         self.binding = binding
-
         self.key_input = RichLog()
+
         if binding.id and binding.id in LazyGithubContext.config.bindings.overrides:
             self.key_input.write(LazyGithubContext.config.bindings.overrides[binding.id])
+            self.value = LazyGithubContext.config.bindings.overrides[binding.id]
         else:
             self.key_input.write(binding.key)
+            self.value = binding.key
 
     def compose(self) -> ComposeResult:
         with Horizontal():
-            yield Label(f"[bold]{self.binding.id}[/bold]: ")
+            yield Label(f"[bold]{self.binding.description or self.binding.id}[/bold]: ")
             yield self.key_input
-
-    @property
-    def value(self) -> str:
-        return self.key_input.value
 
     async def on_key(self, key_event: Key) -> None:
         if key_event.key not in ["tab", "shift+tab"]:
             key_event.stop()
             self.key_input.clear()
-            self.key_input.write(self.binding.key if key_event.key == "escape" else key_event.key)
+            updated_key = self.binding.key if key_event.key == "escape" else key_event.key
+            self.key_input.write(updated_key)
+            self.value = updated_key
 
 
 class BindingsSettingsSection(SettingsSection):
     def __init__(self) -> None:
         super().__init__("bindings", LazyGithubContext.config.bindings)
 
+    def filter_field_settings(self, matcher: Matcher | None) -> None:
+        """Overridden filter handler for the bindings settings"""
+        at_least_one_displayed = False
+        key_selection_inputs = self.query(KeySelectionInput)
+        for ksi in key_selection_inputs:
+            if (
+                # We'll show the binding if there is no query or if the query matches the description/id
+                matcher is None
+                or (ksi.binding.description and matcher.match(ksi.binding.description))
+                or (ksi.binding.id and matcher.match(ksi.binding.id))
+            ):
+                at_least_one_displayed = True
+                ksi.display = True
+            else:
+                ksi.display = False
+
+        self.query_one(Collapsible).collapsed = not at_least_one_displayed
+
     def compose(self) -> ComposeResult:
         with Collapsible(collapsed=False, title="[bold]Keybinding Overrides[/bold]"):
             yield Static(LazyGithubContext.config.bindings.__doc__)
-            yield KeySelectionInput(LazyGithubBindings.MAXIMIZE_WIDGET)
+            sorted_binding_keys = sorted(LazyGithubBindings.all_by_id.keys())
+            for key in sorted_binding_keys:
+                yield KeySelectionInput(LazyGithubBindings.all_by_id[key])
 
 
 class SettingsContainer(Container):
@@ -203,13 +221,15 @@ class SettingsContainer(Container):
         yield self.search_input
         with ScrollableContainer(id="settings_adjustment"):
             for field, value in LazyGithubContext.config:
-                if field in _SECTIONS_TO_SKIP:
+                if field == "bindings":
+                    yield BindingsSettingsSection()
+                elif field == "repositories":
+                    # These settings aren't manually adjusted
                     continue
-
-                new_section = SettingsSection(field, value)
-                self.settings_sections.append(new_section)
-                yield new_section
-            yield BindingsSettingsSection()
+                else:
+                    new_section = SettingsSection(field, value)
+                    self.settings_sections.append(new_section)
+                    yield new_section
 
         yield Rule()
 
@@ -235,8 +255,8 @@ class SettingsContainer(Container):
 
     def _update_settings(self):
         with LazyGithubContext.config.to_edit() as updated_config:
-            for _, model in updated_config:
-                if not isinstance(model, BaseModel):
+            for section_setting_name, model in updated_config:
+                if not isinstance(model, BaseModel) or section_setting_name == "bindings":
                     continue
 
                 for field_name, _ in model:
@@ -254,18 +274,26 @@ class SettingsContainer(Container):
 
                     setattr(model, field_name, updated_value_input.value)
 
+            # We want to handle the binding settings update differently
+            keybinding_adjustments = self.query(KeySelectionInput)
+            for adjustment in keybinding_adjustments:
+                if adjustment.value != adjustment.binding.key:
+                    LazyGithubContext.config.bindings.overrides[adjustment.binding.id] = adjustment.value
+                elif adjustment.binding.id in LazyGithubContext.config.bindings.overrides:
+                    del LazyGithubContext.config.bindings.overrides[adjustment.binding.id]
+
     @on(Button.Pressed, "#save_settings")
     async def save_settings(self, _: Button.Pressed) -> None:
+        self._update_settings()
+        self.post_message(SettingsModalDismissed(True))
+
+    async def action_submit(self) -> None:
         self._update_settings()
         self.post_message(SettingsModalDismissed(True))
 
     @on(Button.Pressed, "#cancel_settings")
     async def cancel_settings(self, _: Button.Pressed) -> None:
         self.post_message(SettingsModalDismissed(False))
-
-    async def action_submit(self) -> None:
-        self._update_settings()
-        self.post_message(SettingsModalDismissed(True))
 
     async def action_cancel(self) -> None:
         self.post_message(SettingsModalDismissed(False))
