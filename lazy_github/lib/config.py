@@ -44,7 +44,7 @@ class NotificationSettings(BaseModel):
 
 
 class BindingsSettings(BaseModel):
-    """Contains any overrides to the default bindings for LazyGithub"""
+    """Custom keybinding overrides for LazyGithub. When rebinding, pressing ESCAPE will reset to the default binding."""
 
     overrides: dict[str, str] = {}
 
