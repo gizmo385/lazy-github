@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
@@ -171,3 +171,20 @@ class WorkflowRun(BaseModel):
     repository: Repository
     created_at: datetime
     updated_at: datetime
+
+
+class NotificationSubject(BaseModel):
+    title: str
+    url: str
+    latest_comment_url: str
+    subject_type: str = Field(alias="type")
+
+
+class Notification(BaseModel):
+    id: int
+    repository: Repository
+    subject: NotificationSubject
+    reason: str
+    unread: bool
+    updated_at: datetime
+    last_read_at: datetime | None
