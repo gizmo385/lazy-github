@@ -12,8 +12,8 @@ DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 # Symbols used in various UI tables
 IS_FAVORITED = "[green]★[/green]"
 IS_NOT_FAVORITED = "☆"
-IS_PRIVATE = "✔"
-IS_PUBLIC = "✘"
+CHECKMARK = "✔"
+X_MARK = "✘"
 
 NOTIFICATION_REFRESH_INTERVAL = 60
 
@@ -27,7 +27,7 @@ def favorite_string(favorite: bool) -> str:
 
 def private_string(private: bool) -> str:
     """Helper function to return the right string to indicate if something is private"""
-    return IS_PRIVATE if private else IS_PUBLIC
+    return CHECKMARK if private else X_MARK
 
 
 class IssueStateFilter(StrEnum):

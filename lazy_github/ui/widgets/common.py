@@ -186,7 +186,7 @@ class LazyGithubContainer(Container):
     }
 
     LazyGithubContainer:focus-within {
-        height: 40%;
+        min-height: 40%;
         border: solid $success;
     }
     """
