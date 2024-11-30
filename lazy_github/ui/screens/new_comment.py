@@ -119,7 +119,7 @@ class NewCommentModal(ModalScreen[IssueComment | None]):
     }
     """
 
-    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
+    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG]
 
     def __init__(
         self,
@@ -142,5 +142,5 @@ class NewCommentModal(ModalScreen[IssueComment | None]):
     def on_comment_created(self, message: NewCommentCreated) -> None:
         self.dismiss(message.comment)
 
-    def action_cancel(self) -> None:
+    def action_close(self) -> None:
         self.dismiss(None)

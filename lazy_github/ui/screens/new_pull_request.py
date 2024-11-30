@@ -202,12 +202,12 @@ class NewPullRequestModal(ModalScreen[FullPullRequest | None]):
     }
     """
 
-    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
+    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG]
 
     def compose(self) -> ComposeResult:
         yield NewPullRequestContainer()
 
-    def action_cancel(self) -> None:
+    def action_close(self) -> None:
         self.dismiss(None)
 
     @on(PullRequestCreated)

@@ -205,7 +205,7 @@ class SettingsContainer(Container):
     }
     """
 
-    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG, LazyGithubBindings.CANCEL_DIALOG, LazyGithubBindings.SEARCH_DIALOG]
+    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG, LazyGithubBindings.CLOSE_DIALOG, LazyGithubBindings.SEARCH_DIALOG]
 
     def __init__(self) -> None:
         super().__init__()
@@ -294,7 +294,7 @@ class SettingsContainer(Container):
     async def cancel_settings(self, _: Button.Pressed) -> None:
         self.post_message(SettingsModalDismissed(False))
 
-    async def action_cancel(self) -> None:
+    async def action_close(self) -> None:
         self.post_message(SettingsModalDismissed(False))
 
 

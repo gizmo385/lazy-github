@@ -66,7 +66,7 @@ class NewIssueContainer(Container):
 
 
 class NewIssueModal(ModalScreen[Issue | None]):
-    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
+    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG]
 
     DEFAULT_CSS = """
     NewIssueModal {
@@ -86,7 +86,7 @@ class NewIssueModal(ModalScreen[Issue | None]):
         yield NewIssueContainer()
         yield LazyGithubFooter()
 
-    def action_cancel(self) -> None:
+    def action_close(self) -> None:
         self.dismiss()
 
     @on(IssueCreated)

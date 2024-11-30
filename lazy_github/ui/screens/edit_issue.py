@@ -66,7 +66,7 @@ class EditIssueContainer(Container):
 
 
 class EditIssueModal(ModalScreen):
-    BINDINGS = [LazyGithubBindings.CANCEL_DIALOG]
+    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG]
     DEFAULT_CSS = """
     EditIssueModal {
         align: center middle;
@@ -89,5 +89,5 @@ class EditIssueModal(ModalScreen):
         yield EditIssueContainer(self.issue)
         yield LazyGithubFooter()
 
-    def action_cancel(self) -> None:
+    def action_close(self) -> None:
         self.app.pop_screen()
