@@ -2,6 +2,8 @@ import asyncio
 import json
 from asyncio.subprocess import PIPE, Process
 
+from lazy_github.models.github import Notification
+
 NOTIFICATIONS_PAGE_COUNT = 30
 
 
@@ -20,16 +22,21 @@ async def is_logged_in() -> bool:
         return False
 
 
-async def fetch_notifications(all: bool) -> list[str]:
+async def fetch_notifications(all: bool) -> list[Notification]:
     """Fetches notifications on GitHub. If all=True, then previously read notifications will also be returned"""
     result = await _run_gh_cli_command(f'api "/notifications?all={str(all).lower()}"')
     await result.wait()
-    notifications: list[str] = []
+    notifications: list[Notification] = []
     if result.stdout:
         stdout = await result.stdout.read()
         parsed = json.loads(stdout.decode())
-        notifications = [n["subject"]["title"] for n in parsed]
+        notifications = [Notification(**n) for n in parsed]
     return notifications
+
+
+async def mark_notification_as_read(notification: Notification) -> None:
+    result = await _run_gh_cli_command(f"--method PATCH api /notifications/threads/{notification.id}")
+    await result.wait()
 
 
 async def unread_notification_count() -> int:

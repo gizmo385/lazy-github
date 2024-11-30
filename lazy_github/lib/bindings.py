@@ -1,6 +1,7 @@
 from textual.binding import Binding
 
 from lazy_github.lib.utils import classproperty
+from lazy_github.lib.context import LazyGithubContext
 
 
 class LazyGithubBindings:
@@ -37,6 +38,18 @@ class LazyGithubBindings:
     )
     TABLE_PAGE_LEFT = Binding("^", "page_left", "Table page left", show=False, id="common.table.page_left")
     TABLE_PAGE_RIGHT = Binding("$", "page_right", "Table page right", show=False, id="common.table.page_right")
+
+    # Notifications
+    OPEN_NOTIFICATIONS_MODAL = Binding(
+        "ctrl+n",
+        "view_notifications",
+        "View Notifications",
+        id="notifications.open",
+        show=LazyGithubContext.config.notifications.enabled,
+    )
+    MARK_NOTIFICATION_READ = Binding("R", "mark_read", "Mark as Read", id="notifications.mark_read")
+    VIEW_READ_NOTIFICATIONS = Binding("r", "view_read", "View Read Notifications", id="notifications.view_read")
+    VIEW_UNREAD_NOTIFICATIONS = Binding("u", "view_unread", "View Unread Notifications", id="notifications.view_unread")
 
     # Dialog bindings
     SUBMIT_DIALOG = Binding("shift+enter", "submit", "Submit", id="modal.submit")

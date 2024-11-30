@@ -29,6 +29,7 @@ from lazy_github.lib.messages import (
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
+from lazy_github.ui.screens.notifications import NotificationsModal
 from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubFooter
@@ -322,6 +323,7 @@ class MainScreenCommandProvider(Provider):
 
 
 class LazyGithubMainScreen(Screen):
+    BINDINGS = [LazyGithubBindings.OPEN_NOTIFICATIONS_MODAL]
     COMMANDS = {MainScreenCommandProvider}
     notification_refresh_timer: Timer | None = None
 
@@ -330,6 +332,11 @@ class LazyGithubMainScreen(Screen):
             yield LazyGithubStatusSummary()
             yield MainViewPane()
             yield LazyGithubFooter()
+
+    @work
+    async def action_view_notifications(self) -> None:
+        await self.app.push_screen_wait(NotificationsModal())
+        self.refresh_notification_count()
 
     async def on_mount(self) -> None:
         if LazyGithubContext.config.notifications.enabled:
