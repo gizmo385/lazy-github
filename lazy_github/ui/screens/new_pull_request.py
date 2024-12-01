@@ -1,7 +1,6 @@
 from textual import on, suggester, validation, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, VerticalScroll
-from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Markdown, Rule, Switch, TextArea
 
@@ -9,21 +8,8 @@ from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.branches import list_branches
 from lazy_github.lib.github.pull_requests import create_pull_request
-from lazy_github.lib.messages import PullRequestCreated
+from lazy_github.lib.messages import BranchesLoaded, PullRequestCreated
 from lazy_github.models.github import Branch, FullPullRequest
-
-
-class BranchesLoaded(Message):
-    def __init__(self, branches: list[Branch]) -> None:
-        super().__init__()
-        self.branches = branches
-
-
-class BranchesSelected(Message):
-    def __init__(self, head_ref: str, base_ref: str) -> None:
-        super().__init__()
-        self.head_ref = head_ref
-        self.base_ref = base_ref
 
 
 class BranchSelection(Horizontal):
