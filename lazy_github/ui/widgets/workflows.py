@@ -3,15 +3,19 @@ from functools import partial
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.coordinate import Coordinate
 from textual.widgets import DataTable, TabbedContent, TabPane
 
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.github.workflows import list_workflow_runs, list_workflows
+from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
+from lazy_github.ui.screens.trigger_workflow import TriggerWorkflowModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 
 
 def workflow_to_cell(workflow: Workflow) -> tuple[str | int, ...]:
-    return (workflow.name, workflow.created_at.strftime("%c"), workflow.updated_at.strftime("%c"), workflow.path)
+    return (workflow.name, workflow.created_at.strftime("%c"), workflow.updated_at.strftime("%c"), str(workflow.path))
 
 
 def workflow_run_to_cell(run: WorkflowRun) -> tuple[str | int, ...]:
@@ -19,6 +23,7 @@ def workflow_run_to_cell(run: WorkflowRun) -> tuple[str | int, ...]:
 
 
 class AvailableWorkflowsContainers(Container):
+    BINDINGS = [LazyGithubBindings.TRIGGER_WORKFLOW]
     workflows: dict[str, Workflow] = {}
 
     def compose(self) -> ComposeResult:
@@ -47,12 +52,14 @@ class AvailableWorkflowsContainers(Container):
         self.table.add_column("Updated", key="updated")
         self.table.add_column("Path", key="path")
 
+        self.path_column_id = self.table.get_column_index("path")
+
     async def fetch_more_workflows(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
     ) -> list[tuple[str | int, ...]]:
         next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
         new_workflows = [w for w in next_page if not isinstance(w, Workflow)]
-        self.workflows.update({w.number: w for w in new_workflows})
+        self.workflows.update({w.path: w for w in new_workflows})
 
         return [workflow_to_cell(w) for w in new_workflows]
 
@@ -61,13 +68,24 @@ class AvailableWorkflowsContainers(Container):
         self.workflows = {}
         rows = []
         for workflow in workflows:
-            self.workflows[workflow.name] = workflow
+            self.workflows[workflow.path] = workflow
             rows.append(workflow_to_cell(workflow))
 
         self.searchable_table.set_rows(rows)
         self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
+
+    def get_selected_workflow(self) -> Workflow:
+        workflow_path_coord = Coordinate(self.table.cursor_row, self.path_column_id)
+        return self.workflows[self.table.get_cell_at(workflow_path_coord)]
+
+    @work
+    async def action_trigger_workflow(self) -> None:
+        workflow = self.get_selected_workflow()
+        lg.info(f"Triggering workflow {workflow.name}")
+        if await self.app.push_screen_wait(TriggerWorkflowModal(workflow)):
+            self.notify("Successfully triggered workflow")
 
 
 class WorkflowRunsContainer(Container):
