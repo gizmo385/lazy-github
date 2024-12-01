@@ -25,7 +25,7 @@ async def _run_gh_cli_command(command: list[str]) -> _FinishedCommand:
             raw_stdout, raw_stderr = proc.communicate()
             return _FinishedCommand(proc.returncode, raw_stdout.decode(), raw_stderr.decode())
         else:
-            await sleep(0.3)
+            await sleep(0.5)
 
 
 async def is_logged_in() -> bool:

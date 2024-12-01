@@ -346,7 +346,7 @@ class LazyGithubMainScreen(Screen):
                     NOTIFICATION_REFRESH_INTERVAL, self.refresh_notification_count
                 )
 
-    @work
+    @work(thread=True)
     async def refresh_notification_count(self) -> None:
         widget = self.query_one("#unread_notifications", UnreadNotifications)
         if LazyGithubContext.config.notifications.enabled:
