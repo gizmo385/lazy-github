@@ -40,7 +40,7 @@ class _NotificationsTableTabPane(TabPane):
         self.searchable_table.table.add_row(
             notification.updated_at.strftime("%c"),
             notification.subject.subject_type,
-            notification.subject.title,
+            notification.subject.title.strip(),
             notification.reason.replace("_", " ").title(),
             notification.id,
             key=str(notification.id),
@@ -135,9 +135,6 @@ class NotificationsContainer(Container):
             self.action_view_read()
 
     def on_mount(self) -> None:
-        self.read_tab.searchable_table.loading = True
-        self.unread_tab.searchable_table.loading = True
-
         self.load_notifications()
 
 
@@ -148,7 +145,8 @@ class NotificationsModal(ModalScreen[None]):
     }
 
     NotificationsContainer {
-        width: 100;
+        min-width: 100;
+        max-width: 80%;
         max-height: 50;
         border: thick $background 80%;
         background: $surface-lighten-3;
