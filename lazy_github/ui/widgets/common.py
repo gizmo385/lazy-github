@@ -4,7 +4,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.events import Blur
-from textual.widgets import DataTable, Input, Footer
+from textual.widgets import DataTable, Footer, Input
 
 from lazy_github.lib.bindings import LazyGithubBindings
 

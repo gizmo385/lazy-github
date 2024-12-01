@@ -4,8 +4,7 @@ from textual.containers import Container
 from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.screen import ModalScreen
-from textual.widgets import Markdown, TabPane, TabbedContent
-
+from textual.widgets import Markdown, TabbedContent, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
