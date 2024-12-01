@@ -48,7 +48,7 @@ class _NotificationsTableTabPane(TabPane):
         )
 
     def on_mount(self) -> None:
-        # self.searchable_table.loading = True
+        self.searchable_table.loading = True
         self.searchable_table.table.cursor_type = "row"
         self.searchable_table.table.add_column("Updated At", key="updated_at")
         self.searchable_table.table.add_column("Subject", key="subject")
@@ -131,10 +131,8 @@ class NotificationsContainer(Container):
             else:
                 self.read_tab.add_notification(notification)
 
-        lg.info(f"Loaded {total_count} notifications")
-
-        # self.unread_tab.searchable_table.loading = False
-        # self.read_tab.searchable_table.loading = False
+        self.unread_tab.searchable_table.loading = False
+        self.read_tab.searchable_table.loading = False
 
         if unread_count:
             self.action_view_unread()
@@ -142,9 +140,6 @@ class NotificationsContainer(Container):
             self.action_view_read()
 
     def on_mount(self) -> None:
-        # self.read_tab.searchable_table.loading = True
-        # self.unread_tab.searchable_table.loading = True
-
         self.load_notifications()
 
 
