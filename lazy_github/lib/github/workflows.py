@@ -1,6 +1,6 @@
 from httpx import HTTPError
 
-from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
 
@@ -40,3 +40,18 @@ async def list_workflow_runs(repository: Repository, page: int = 1, per_page: in
             return [WorkflowRun(**w) for w in workflows]
         else:
             return []
+
+
+async def create_dispatch_event(repository: Repository, workflow: Workflow, branch: str) -> bool:
+    """
+    Creates a workflow dispatch event for the specified workflow. For properly configured workflows, this will trigger
+    a new one against the specified branch
+    """
+    url = f"/repos/{repository.owner.login}/{repository.name}/actions/workflows/{workflow.id}/dispatches"
+    body = {"ref": branch}
+    response = await LazyGithubContext.client.post(url, headers=github_headers(), json=body)
+    try:
+        response.raise_for_status()
+    except HTTPError:
+        lg.exception("Error creating workflow dispatch event!")
+    return response.is_success
