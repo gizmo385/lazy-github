@@ -6,7 +6,6 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Markdown, TabbedContent, TabPane
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
 from lazy_github.lib.github_cli import fetch_notifications, mark_notification_as_read
