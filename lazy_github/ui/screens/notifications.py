@@ -118,14 +118,21 @@ class NotificationsContainer(Container):
     async def load_notifications(self) -> None:
         notifications = await fetch_notifications(True)
 
+        unread_count = 0
         for notification in notifications:
             if notification.unread:
+                unread_count += 1
                 self.unread_tab.add_notification(notification)
             else:
                 self.read_tab.add_notification(notification)
 
         self.unread_tab.searchable_table.loading = False
         self.read_tab.searchable_table.loading = False
+
+        if unread_count:
+            self.action_view_unread()
+        else:
+            self.action_view_read()
 
     def on_mount(self) -> None:
         self.read_tab.searchable_table.loading = True
