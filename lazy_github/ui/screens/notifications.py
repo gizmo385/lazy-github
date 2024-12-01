@@ -41,7 +41,7 @@ class _NotificationsTableTabPane(TabPane):
             notification.updated_at.strftime("%c"),
             notification.subject.subject_type,
             notification.subject.title,
-            notification.reason.title(),
+            notification.reason.replace("_", " ").title(),
             notification.id,
             key=str(notification.id),
         )
