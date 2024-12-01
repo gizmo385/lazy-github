@@ -4,10 +4,10 @@ description = "A terminal UI for interacting with Github"
 readme = "README.md"
 version = "0.2.5"
 authors = [
-	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
+	{ name = "Chris (Gizmo)", email = "gizmo385@users.noreply.github.com" },
 ]
 maintainers = [
-	{ name = "Chris Chapline", email = "gizmo385@users.noreply.github.com" },
+	{ name = "Chris (Gizmo)", email = "gizmo385@users.noreply.github.com" },
 ]
 license = { file = "LICENSE"}
 
