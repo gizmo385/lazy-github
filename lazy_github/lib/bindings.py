@@ -7,19 +7,19 @@ from lazy_github.lib.utils import classproperty
 class LazyGithubBindings:
     # Global App Bindings
     QUIT_APP = Binding("q", "quit", "Quit", id="app.quit")
-    OPEN_COMMAND_PALLETE = Binding("ctrl+p", "command_palette", "Open command pallete", id="app.command_palette")
+    OPEN_COMMAND_PALLETE = Binding("ctrl+p", "command_palette", "Commands", id="app.command_palette")
     MAXIMIZE_WIDGET = Binding("ctrl+m", "maximize", "Maximize", id="app.maximize_widget")
 
     # Triggering creation flows
-    OPEN_ISSUE = Binding("I", "open_issue", "Open new issue", id="issue.new")
-    EDIT_ISSUE = Binding("E", "edit_issue", "Edit issue", id="issue.edit")
-    OPEN_PULL_REQUEST = Binding("P", "open_pull_request", "Open new pull request", id="pull_request.new")
-    NEW_COMMENT = Binding("n", "new_comment", "New comment", id="conversation.comment.new")
-    REPLY_TO_REVIEW = Binding("r", "reply_to_review", "Reply to review", id="conversation.review.reply")
-    REPLY_TO_COMMENT = Binding("r", "reply_to_individual_comment", "Reply to comment", id="conversation.comment.reply")
+    OPEN_ISSUE = Binding("I", "open_issue", "New Issue", id="issue.new")
+    EDIT_ISSUE = Binding("E", "edit_issue", "Edit Issue", id="issue.edit")
+    OPEN_PULL_REQUEST = Binding("P", "open_pull_request", "New PR", id="pull_request.new")
+    NEW_COMMENT = Binding("n", "new_comment", "New Comment", id="conversation.comment.new")
+    REPLY_TO_REVIEW = Binding("r", "reply_to_review", "Reply to Review", id="conversation.review.reply")
+    REPLY_TO_COMMENT = Binding("r", "reply_to_individual_comment", "Reply to Comment", id="conversation.comment.reply")
 
     # Repository actions
-    TOGGLE_FAVORITE_REPO = Binding("ctrl+f", "toggle_favorite_repo", "Toggle favorite", id="repositories.favorite")
+    TOGGLE_FAVORITE_REPO = Binding("ctrl+f", "toggle_favorite_repo", "Toggle Favorite", id="repositories.favorite")
 
     # Common widget bindings
     SELECT_ENTRY = Binding("enter,space", "select_cursor", "Select table entry", id="common.table.select", show=False)
@@ -39,11 +39,14 @@ class LazyGithubBindings:
     TABLE_PAGE_LEFT = Binding("^", "page_left", "Table page left", show=False, id="common.table.page_left")
     TABLE_PAGE_RIGHT = Binding("$", "page_right", "Table page right", show=False, id="common.table.page_right")
 
+    # Workflows
+    TRIGGER_WORKFLOW = Binding("T", "trigger_workflow", "Trigger Workflow", show=True, id="workflows.trigger")
+
     # Notifications
     OPEN_NOTIFICATIONS_MODAL = Binding(
         "ctrl+n",
         "view_notifications",
-        "View Notifications",
+        "Notifications",
         id="notifications.open",
         show=LazyGithubContext.config.notifications.enabled,
     )
