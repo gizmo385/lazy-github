@@ -117,14 +117,10 @@ class NotificationsContainer(Container):
 
     @work
     async def load_notifications(self) -> None:
-        lg.debug("Fetching notifications")
         notifications = await fetch_notifications(True)
-        lg.debug("Fetched notifications")
 
         unread_count = 0
-        total_count = 0
         for notification in notifications:
-            total_count += 1
             if notification.unread:
                 unread_count += 1
                 self.unread_tab.add_notification(notification)
