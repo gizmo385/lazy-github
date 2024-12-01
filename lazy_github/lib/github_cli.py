@@ -1,6 +1,5 @@
 import json
 import subprocess
-import time
 from asyncio import sleep
 from dataclasses import dataclass
 
@@ -22,7 +21,7 @@ async def _run_gh_cli_command(command: list[str]) -> _FinishedCommand:
     full_command = ["gh"] + command
     proc = subprocess.Popen(full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while True:
-        if proc.poll() is not None:
+        if proc.poll() is None:
             raw_stdout, raw_stderr = proc.communicate()
             return _FinishedCommand(proc.returncode, raw_stdout.decode(), raw_stderr.decode())
         else:
