@@ -6,6 +6,7 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Markdown, TabbedContent, TabPane
 
+from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
 from lazy_github.lib.github_cli import fetch_notifications, mark_notification_as_read
@@ -40,14 +41,14 @@ class _NotificationsTableTabPane(TabPane):
         self.searchable_table.table.add_row(
             notification.updated_at.strftime("%c"),
             notification.subject.subject_type,
-            notification.subject.title,
+            notification.subject.title.strip(),
             notification.reason.replace("_", " ").title(),
             notification.id,
             key=str(notification.id),
         )
 
     def on_mount(self) -> None:
-        self.searchable_table.loading = True
+        # self.searchable_table.loading = True
         self.searchable_table.table.cursor_type = "row"
         self.searchable_table.table.add_column("Updated At", key="updated_at")
         self.searchable_table.table.add_column("Subject", key="subject")
@@ -116,18 +117,24 @@ class NotificationsContainer(Container):
 
     @work
     async def load_notifications(self) -> None:
+        lg.debug("Fetching notifications")
         notifications = await fetch_notifications(True)
+        lg.debug("Fetched notifications")
 
         unread_count = 0
+        total_count = 0
         for notification in notifications:
+            total_count += 1
             if notification.unread:
                 unread_count += 1
                 self.unread_tab.add_notification(notification)
             else:
                 self.read_tab.add_notification(notification)
 
-        self.unread_tab.searchable_table.loading = False
-        self.read_tab.searchable_table.loading = False
+        lg.info(f"Loaded {total_count} notifications")
+
+        # self.unread_tab.searchable_table.loading = False
+        # self.read_tab.searchable_table.loading = False
 
         if unread_count:
             self.action_view_unread()
@@ -135,8 +142,8 @@ class NotificationsContainer(Container):
             self.action_view_read()
 
     def on_mount(self) -> None:
-        self.read_tab.searchable_table.loading = True
-        self.unread_tab.searchable_table.loading = True
+        # self.read_tab.searchable_table.loading = True
+        # self.unread_tab.searchable_table.loading = True
 
         self.load_notifications()
 
@@ -148,7 +155,8 @@ class NotificationsModal(ModalScreen[None]):
     }
 
     NotificationsContainer {
-        width: 100;
+        min-width: 100;
+        max-width: 80%;
         max-height: 50;
         border: thick $background 80%;
         background: $surface-lighten-3;
