@@ -149,6 +149,7 @@ class WorkflowState(StrEnum):
 
 
 class Workflow(BaseModel):
+    id: int
     name: str
     state: WorkflowState
     path: str
@@ -175,8 +176,8 @@ class WorkflowRun(BaseModel):
 
 class NotificationSubject(BaseModel):
     title: str
-    url: str
-    latest_comment_url: str
+    url: str | None
+    latest_comment_url: str | None
     subject_type: str = Field(alias="type")
 
 
