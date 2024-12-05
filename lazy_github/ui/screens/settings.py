@@ -49,10 +49,6 @@ class FieldSetting(Container):
     Input {
         width: 70;
     }
-
-    TextArea {
-        width: 70;
-    }
     """
 
     def _field_to_widget(self) -> Widget:
