@@ -1,6 +1,8 @@
 from functools import partial
 from typing import Literal
 
+from httpx import HTTPError
+
 from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.models.github import Repository
 
@@ -53,3 +55,13 @@ async def _list(
 list_all = partial(_list, repo_types="all")
 list_owned = partial(_list, repo_types="owner")
 list_member_of = partial(_list, repo_types="member")
+
+
+async def get_repository_by_name(full_name: str) -> Repository | None:
+    """Looks up a repository by full name (owner/name)"""
+    try:
+        response = await LazyGithubContext.client.get(f"/repos/{full_name}", headers=github_headers())
+        response.raise_for_status()
+        return Repository(**response.json())
+    except HTTPError:
+        return None

@@ -20,6 +20,7 @@ class LazyGithubBindings:
 
     # Repository actions
     TOGGLE_FAVORITE_REPO = Binding("ctrl+f", "toggle_favorite_repo", "Toggle Favorite", id="repositories.favorite")
+    LOOKUP_REPOSITORY = Binding("O", "lookup_repository", "Lookup Repository", id="repositories.lookup")
 
     # Common widget bindings
     SELECT_ENTRY = Binding("enter,space", "select_cursor", "Select table entry", id="common.table.select", show=False)

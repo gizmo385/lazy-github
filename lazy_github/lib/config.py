@@ -51,6 +51,22 @@ class BindingsSettings(BaseModel):
 class RepositorySettings(BaseModel):
     """Repository-specific settings"""
 
+    @field_serializer("additional_repos_to_track", "favorites")
+    @classmethod
+    def serialize_string_list(cls, string_list: str | list[str]) -> list[str]:
+        if isinstance(string_list, list):
+            return string_list
+        elif isinstance(string_list, str):
+            return [s.strip() for s in string_list.split(",") if s.strip()]
+
+    @field_validator("additional_repos_to_track", "favorites", mode="before")
+    @classmethod
+    def parse_string_list(cls, v) -> list[str]:
+        if isinstance(v, str):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v
+
+    additional_repos_to_track: list[str] = []
     favorites: list[str] = []
 
 

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, Iterable
 
 from httpx import HTTPError
@@ -14,6 +15,12 @@ from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
+
+
+def _repo_to_row(repo: Repository) -> tuple[str, ...]:
+    favorited = favorite_string(repo.full_name in LazyGithubContext.config.repositories.favorites)
+    private = private_string(repo.private)
+    return (favorited, repo.owner.login, repo.name, private)
 
 
 class ReposContainer(LazyGithubContainer):
@@ -60,10 +67,7 @@ class ReposContainer(LazyGithubContainer):
         self.name_column_index = self.table.get_column_index("name")
         self.private_column_index = self.table.get_column_index("private")
 
-        # Let the UI load, then trigger this as a callback
-        # TODO: Determine if we want this in a timer callback or not
         self.load_repos()
-        # self.set_timer(0.1, self.load_repos)
 
     async def get_selected_repo(self) -> Repository:
         current_row = self.table.cursor_row
@@ -72,15 +76,17 @@ class ReposContainer(LazyGithubContainer):
         full_name = f"{owner}/{repo_name}"
         return self.repos[full_name]
 
+    async def add_repo_to_table(self, repo: Repository) -> None:
+        self.repos[repo.full_name] = repo
+        self.searchable_table.append_rows([_repo_to_row(repo)])
+
     @work
-    async def add_repos_to_table(self, repos: Iterable[Repository]) -> None:
+    async def set_repositories(self, repos: Iterable[Repository]) -> None:
         self.repos = {}
         self.table.clear()
         rows = []
         for repo in repos:
-            favorited = favorite_string(repo.full_name in LazyGithubContext.config.repositories.favorites)
-            private = private_string(repo.private)
-            rows.append([favorited, repo.owner.login, repo.name, private])
+            rows.append(_repo_to_row(repo))
             self.repos[repo.full_name] = repo
         self.searchable_table.set_rows(rows)
 
@@ -92,12 +98,20 @@ class ReposContainer(LazyGithubContainer):
 
     @work
     async def load_repos(self) -> None:
+        # Loading the repos associated with the current account
+        repos: list[Repository] = []
         try:
             repos = await repos_api.list_all()
         except HTTPError:
             lg.exception("Error fetching repositories from Github API")
-        else:
-            self.add_repos_to_table(repos)
+
+        # Loading any additionally tracked repos
+        additional_repos_to_fetch = LazyGithubContext.config.repositories.additional_repos_to_track
+        additional_repos = await asyncio.gather(
+            *[repos_api.get_repository_by_name(full_repo_name) for full_repo_name in additional_repos_to_fetch]
+        )
+        repos.extend(filter(None, additional_repos))
+        self.set_repositories(repos)
 
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
@@ -122,4 +136,3 @@ class ReposContainer(LazyGithubContainer):
         # Bubble a message up indicating that a repo was selected
         repo = await self.get_selected_repo()
         self.post_message(RepoSelected(repo))
-        lg.info(f"Selected repo {repo.full_name}")

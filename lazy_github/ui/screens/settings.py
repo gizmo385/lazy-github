@@ -12,6 +12,7 @@ from textual.events import Key
 from textual.fuzzy import Matcher
 from textual.screen import ModalScreen
 from textual.theme import BUILTIN_THEMES, Theme
+from textual.validation import ValidationResult, Validator
 from textual.widget import Widget
 from textual.widgets import Button, Collapsible, Input, Label, Markdown, RichLog, Rule, Select, Static, Switch
 
@@ -29,6 +30,14 @@ def _id_for_field_input(field_name: str) -> str:
     return f"adjust_{field_name}_input"
 
 
+class ListOfStringValidator(Validator):
+    def validate(self, value: str) -> ValidationResult:
+        stripped_value = value.strip()
+        if stripped_value.endswith(",") or stripped_value.startswith(","):
+            return self.failure("No trailing or preceeding commas")
+        return self.success()
+
+
 class FieldSetting(Container):
     DEFAULT_CSS = """
     FieldSetting {
@@ -38,6 +47,10 @@ class FieldSetting(Container):
     }
 
     Input {
+        width: 70;
+    }
+
+    TextArea {
         width: 70;
     }
     """
@@ -56,6 +69,8 @@ class FieldSetting(Container):
                 return Select(options=theme_options, value=self.value.name, id=id)
             else:
                 return Select(options=theme_options, value=self.value, id=id)
+        elif self.field.annotation == list[str]:
+            return Input(value=str(", ".join(self.value)), id=id, validators=[ListOfStringValidator()])
         else:
             # If no other input mechanism fits, then we'll fallback to just a raw string input field
             return Input(value=str(self.value), id=id)
@@ -222,9 +237,9 @@ class SettingsContainer(Container):
             for field, value in LazyGithubContext.config:
                 if field == "bindings":
                     yield BindingsSettingsSection()
-                elif field == "repositories":
-                    # These settings aren't manually adjusted
-                    continue
+                # elif field == "repositories":
+                # These settings aren't manually adjusted
+                # continue
                 else:
                     new_section = SettingsSection(field, value)
                     self.settings_sections.append(new_section)

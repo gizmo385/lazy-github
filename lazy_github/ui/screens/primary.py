@@ -27,6 +27,7 @@ from lazy_github.lib.messages import (
     RepoSelected,
 )
 from lazy_github.models.github import Repository
+from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.notifications import NotificationsModal
@@ -180,6 +181,10 @@ class SelectionsPane(Container):
             self.pull_requests.pull_requests[new_pr.number] = new_pr
 
     @property
+    def repositories(self) -> ReposContainer:
+        return self.query_one("#repos", ReposContainer)
+
+    @property
     def pull_requests(self) -> PullRequestsContainer:
         return self.query_one("#pull_requests", PullRequestsContainer)
 
@@ -205,6 +210,7 @@ class SelectionsPane(Container):
             self.issues.post_message(issue_and_pr_message)
 
     async def on_repo_selected(self, message: RepoSelected) -> None:
+        lg.info(f"Selected repo {message.repo.full_name}")
         LazyGithubContext.current_repo = message.repo
         if self.pull_requests.display or self.issues.display:
             self.fetch_issues_and_pull_requests(message.repo)
@@ -228,10 +234,17 @@ class MainViewPane(Container):
         LazyGithubBindings.FOCUS_WORKFLOW_TABS,
         LazyGithubBindings.FOCUS_DETAIL_TABS,
         LazyGithubBindings.FOCUS_COMMAND_LOG,
+        LazyGithubBindings.LOOKUP_REPOSITORY,
     ]
 
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
+
+    @work
+    async def action_lookup_repository(self) -> None:
+        if repository := await self.app.push_screen_wait(LookupRepositoryModal()):
+            await self.selections.repositories.add_repo_to_table(repository)
+            self.selections.post_message(RepoSelected(repository))
 
     def action_focus_workflow_tabs(self) -> None:
         tabs = self.query_one("#workflow_tabs", TabbedContent)
@@ -246,6 +259,10 @@ class MainViewPane(Container):
     def compose(self) -> ComposeResult:
         yield SelectionsPane(id="selections_pane")
         yield SelectionDetailsPane(id="details_pane")
+
+    @property
+    def selections(self) -> SelectionsPane:
+        return self.query_one("#selections_pane", SelectionsPane)
 
     @property
     def details(self) -> SelectionDetailsContainer:
