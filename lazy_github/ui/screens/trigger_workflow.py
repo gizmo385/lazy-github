@@ -43,7 +43,7 @@ class TriggerWorkflowContainer(Container):
         self.workflow = workflow
 
     def compose(self) -> ComposeResult:
-        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in new PR modal"
+        assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in trigger workflow modal"
         yield Markdown(f"# Triggering workflow: {self.workflow.name}")
         yield Label("[bold]Branch[/bold]")
         yield Input(
