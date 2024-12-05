@@ -233,9 +233,6 @@ class SettingsContainer(Container):
             for field, value in LazyGithubContext.config:
                 if field == "bindings":
                     yield BindingsSettingsSection()
-                # elif field == "repositories":
-                # These settings aren't manually adjusted
-                # continue
                 else:
                     new_section = SettingsSection(field, value)
                     self.settings_sections.append(new_section)
