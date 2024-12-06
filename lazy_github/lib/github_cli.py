@@ -15,7 +15,7 @@ class _FinishedCommand:
     stderr: str
 
 
-async def _run_gh_cli_command(command: list[str]) -> _FinishedCommand:
+async def run_gh_cli_command(command: list[str]) -> _FinishedCommand:
     """Simple wrapper around running a Github CLI command"""
     proc = await asyncio.create_subprocess_exec(
         "gh", *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -33,7 +33,7 @@ async def _run_gh_cli_command(command: list[str]) -> _FinishedCommand:
 async def is_logged_in() -> bool:
     """Checks to see if the user is currently logged into the GitHub CLI"""
     try:
-        result = await _run_gh_cli_command(["auth", "status"])
+        result = await run_gh_cli_command(["auth", "status"])
         return result.returncode == 0
     except Exception:
         lg.exception("Error checking if github CLI is authenticated")
@@ -42,7 +42,7 @@ async def is_logged_in() -> bool:
 
 async def fetch_notifications(all: bool) -> list[Notification]:
     """Fetches notifications on GitHub. If all=True, then previously read notifications will also be returned"""
-    result = await _run_gh_cli_command(["api", f"/notifications?all={str(all).lower()}"])
+    result = await run_gh_cli_command(["api", f"/notifications?all={str(all).lower()}"])
     notifications: list[Notification] = []
     if result.stdout:
         parsed = json.loads(result.stdout)
@@ -51,7 +51,7 @@ async def fetch_notifications(all: bool) -> list[Notification]:
 
 
 async def mark_notification_as_read(notification: Notification) -> None:
-    await _run_gh_cli_command(["--method", "PATCH", "api", f"/notifications/threads/{notification.id}"])
+    await run_gh_cli_command(["--method", "PATCH", "api", f"/notifications/threads/{notification.id}"])
 
 
 async def unread_notification_count() -> int:
