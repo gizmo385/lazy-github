@@ -54,4 +54,6 @@ async def create_dispatch_event(repository: Repository, workflow: Workflow, bran
         response.raise_for_status()
     except HTTPError:
         lg.exception("Error creating workflow dispatch event!")
+    if not response.is_success:
+        lg.error(f"Error creating workflow dispatch event: {response}")
     return response.is_success

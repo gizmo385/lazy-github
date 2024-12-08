@@ -26,7 +26,7 @@ async def _list_for_page(
     query_params = {"type": repo_types, "direction": direction, "sort": sort, "page": page, "per_page": per_page}
 
     response = await LazyGithubContext.client.get("/user/repos", headers=headers, params=query_params)
-    response.raise_for_status()
+    # response.raise_for_status()
 
     link_header = response.headers.get("link")
     more_pages_remaining = bool(link_header) and 'rel="next"' in link_header

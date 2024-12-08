@@ -30,7 +30,12 @@ class LazyGithubContext:
     def client(cls) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
         if not isinstance(cls._client, GithubClient):
-            cls._client = GithubClient(cls.config, token())
+            if cls.config.api.client_type == "cli":
+                cls._client = GithubClient.cli(cls.config)
+            elif cls.config.api.client_type == "hishel":
+                cls._client = GithubClient.hishel(cls.config, token())
+            else:
+                raise ValueError("Invalid client type: cls.config.api.client_type")
         return cls._client
 
     @classproperty

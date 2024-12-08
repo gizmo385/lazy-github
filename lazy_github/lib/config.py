@@ -14,6 +14,8 @@ _CONFIG_FILE_LOCATION = CONFIG_FOLDER / "config.json"
 ISSUE_STATE_FILTER = Literal["all"] | Literal["open"] | Literal["closed"]
 ISSUE_OWNER_FILTER = Literal["mine"] | Literal["all"]
 
+CLIENT_TYPE = Literal["hishel"] | Literal["cli"]
+
 
 class AppearanceSettings(BaseModel):
     """Settings focused on altering the appearance of LazyGithub, including hiding or showing different sections."""
@@ -101,6 +103,7 @@ class ApiConfig(BaseModel):
     """Controlling how the GitHub API is accessed in LazyGithub"""
 
     base_url: str = "https://api.github.com"
+    client_type: CLIENT_TYPE = "hishel"
 
 
 _CONFIG_INSTANCE: Optional["Config"] = None

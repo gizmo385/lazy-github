@@ -1,4 +1,23 @@
-from typing import Protocol
+from typing import Any, Protocol
+
+from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.models.github import User
+
+
+class GithubApiRequestFailed(Exception):
+    pass
+
+
+class GithubApiResponse(Protocol):
+    def is_success(self) -> bool: ...
+    def json(self) -> Any: ...
+    def raise_for_status(self) -> None: ...
+
+    @property
+    def text(self) -> str: ...
+
+    @property
+    def headers(self) -> dict[str, str]: ...
 
 
 class GithubApiBackend(Protocol):
@@ -6,19 +25,25 @@ class GithubApiBackend(Protocol):
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        query_params: dict[str, str] | None = None,
-    ) -> dict[str, str]: ...
+        params: dict[str, str] | None = None,
+    ) -> GithubApiResponse: ...
 
     async def post(
         self,
         url: str,
         headers: dict[str, str] | None = None,
         body: dict[str, str] | None = None,
-    ) -> dict[str, str]: ...
+    ) -> GithubApiResponse: ...
 
     async def patch(
         self,
         url: str,
         headers: dict[str, str] | None = None,
         body: dict[str, str] | None = None,
+    ) -> GithubApiResponse: ...
+
+    async def get_user(self) -> User: ...
+
+    def github_headers(
+        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
     ) -> dict[str, str]: ...
