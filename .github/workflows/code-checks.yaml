@@ -23,12 +23,12 @@ jobs:
     - run: uv sync
     - run: .venv/bin/ruff check
 
-  notify-on-failure:
-    if: ${{ failure() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify on build failure
-        uses: nobrayner/discord-webhook@v1
-        with:
-          github-token: ${{ secrets.github_token }}
-          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+    notify-on-failure:
+      if: ${{ failure() }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Notify on build failure
+          uses: nobrayner/discord-webhook@v1
+          with:
+            github-token: ${{ secrets.github_token }}
+            discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
