@@ -34,3 +34,5 @@ jobs:
         with:
           github-token: ${{ secrets.github_token }}
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: 'LazyGithub Code Quality Checks Failed'
+          description: 'There are linter errors on main!'
