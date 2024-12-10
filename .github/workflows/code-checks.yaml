@@ -22,3 +22,12 @@ jobs:
     - uses: yezz123/setup-uv@v4
     - run: uv sync
     - run: .venv/bin/ruff check
+
+  notify-on-failure:
+    if: ${{ always() }}
+    steps:
+      - name: Notify on build failure
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.github_token }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
