@@ -25,6 +25,7 @@ jobs:
 
   notify-on-failure:
     if: ${{ always() }}
+    runs-on: ubuntu-latest
     steps:
       - name: Notify on build failure
         uses: nobrayner/discord-webhook@v1
