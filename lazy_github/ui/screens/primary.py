@@ -247,9 +247,13 @@ class MainViewPane(Container):
             self.selections.post_message(RepoSelected(repository))
 
     def action_focus_workflow_tabs(self) -> None:
-        tabs = self.query_one("#workflow_tabs", TabbedContent)
-        if tabs.children and tabs.tab_count > 0:
-            tabs.children[0].focus()
+        tabbed_content = self.query_one("#workflow_tabs", TabbedContent)
+        if tabbed_content.children and tabbed_content.tab_count > 0:
+            if tabbed_content.has_focus_within:
+                tabs = tabbed_content.query_one(Tabs)
+                tabs.action_next_tab()
+            else:
+                tabbed_content.children[0].focus()
 
     def action_focus_tabs(self) -> None:
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
