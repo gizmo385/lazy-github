@@ -22,3 +22,15 @@ jobs:
     - uses: yezz123/setup-uv@v4
     - run: uv sync
     - run: .venv/bin/ruff check
+
+  notify-on-failure:
+    name: Notify on Code Quality Failures
+    if: ${{ failure() }}
+    needs:
+      - code-quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.github_token }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
