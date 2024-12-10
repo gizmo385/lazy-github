@@ -24,8 +24,7 @@ jobs:
     - run: .venv/bin/ruff check
 
   notify-on-failure:
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
+    if: ${{ failure() }}
     steps:
       - name: Notify on build failure
         uses: nobrayner/discord-webhook@v1
