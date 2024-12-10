@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 from httpx import HTTPError
 from textual import work
-from textual.app import ComposeResult
+from textual.app import ComposeResult, ScreenType
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
