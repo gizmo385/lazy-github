@@ -25,7 +25,7 @@ jobs:
 
   notify-on-failure:
     name: Notify on Code Quality Failures
-    if: ${{ failure() }}
+    if: ${{ failure() && github.ref == 'refs/heads/main' }}
     needs:
       - code-quality
     runs-on: ubuntu-latest
