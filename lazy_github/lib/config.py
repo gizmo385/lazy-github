@@ -20,7 +20,7 @@ class AppearanceSettings(BaseModel):
 
     theme: Theme = BUILTIN_THEMES["textual-dark"]
     # Settings to configure which UI elements to display by default
-    show_command_log: bool = True
+    show_command_log: bool = False
     show_workflows: bool = True
     show_issues: bool = True
     show_pull_requests: bool = True
