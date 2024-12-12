@@ -119,9 +119,10 @@ class NewPullRequestContainer(VerticalScroll):
         margin-bottom: 1;
     }
     """
+    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG]
 
     def compose(self) -> ComposeResult:
-        yield Markdown("# New Pull Request (WIP)")
+        yield Markdown("# New Pull Request")
         yield BranchSelection()
         yield Rule()
         yield Label("[bold]Pull Request Title[/bold]")
@@ -134,8 +135,7 @@ class NewPullRequestContainer(VerticalScroll):
     def cancel_pull_request(self, _: Button.Pressed):
         self.app.pop_screen()
 
-    @on(Button.Pressed, "#submit_new_pr")
-    async def submit_pull_request(self, _: Button.Pressed):
+    async def _create_pr(self) -> None:
         assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo in new PR modal"
         title_field = self.query_one("#pr_title", Input)
         title_field.validate(title_field.value)
@@ -169,6 +169,13 @@ class NewPullRequestContainer(VerticalScroll):
         else:
             self.notify("Successfully created PR!")
             self.post_message(PullRequestCreated(created_pr))
+
+    async def action_submit(self) -> None:
+        await self._create_pr()
+
+    @on(Button.Pressed, "#submit_new_pr")
+    async def submit_new_pr(self, _: Button.Pressed):
+        await self._create_pr()
 
 
 class NewPullRequestModal(ModalScreen[FullPullRequest | None]):
