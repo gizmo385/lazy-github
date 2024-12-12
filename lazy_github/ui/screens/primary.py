@@ -313,7 +313,7 @@ class MainScreenCommandProvider(Provider):
                 "Toggle Command Log", partial(toggle_ui, "command_log"), "Toggle showing or hiding the command log"
             ),
             LazyGithubCommand(
-                "Toggle Workflows", partial(toggle_ui, "actions"), "Toggle showing or hiding repo actions"
+                "Toggle Workflows", partial(toggle_ui, "workflows"), "Toggle showing or hiding repo actions"
             ),
             LazyGithubCommand("Toggle Issues", partial(toggle_ui, "issues"), "Toggle showing or hiding repo issues"),
             LazyGithubCommand(
