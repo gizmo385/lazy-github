@@ -2,7 +2,7 @@
 name = "lazy-github"
 description = "A terminal UI for interacting with Github"
 readme = "README.md"
-version = "0.2.6"
+version = "0.2.7"
 authors = [
 	{ name = "Chris (Gizmo)", email = "gizmo385@users.noreply.github.com" },
 ]
