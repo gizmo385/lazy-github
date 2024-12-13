@@ -1,6 +1,5 @@
+import asyncio
 import json
-import subprocess
-from asyncio import sleep
 from dataclasses import dataclass
 
 from lazy_github.lib.logging import lg
@@ -18,14 +17,17 @@ class _FinishedCommand:
 
 async def _run_gh_cli_command(command: list[str]) -> _FinishedCommand:
     """Simple wrapper around running a Github CLI command"""
-    full_command = ["gh"] + command
-    proc = subprocess.Popen(full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    while True:
-        if proc.poll() is not None:
-            raw_stdout, raw_stderr = proc.communicate()
-            return _FinishedCommand(proc.returncode, raw_stdout.decode(), raw_stderr.decode())
-        else:
-            await sleep(0.5)
+    proc = await asyncio.create_subprocess_exec(
+        "gh", *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+    try:
+        raw_stdout, raw_stderr = await proc.communicate()
+    except Exception:
+        lg.exception("Couldn't communicate with gh cli proc")
+        return _FinishedCommand(255, "", "")
+    else:
+        return_code = proc.returncode if proc.returncode is not None else 255
+        return _FinishedCommand(return_code, raw_stdout.decode(), raw_stderr.decode())
 
 
 async def is_logged_in() -> bool:
