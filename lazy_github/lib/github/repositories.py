@@ -1,9 +1,8 @@
 from functools import partial
 from typing import Literal
 
-from httpx import HTTPError
-
 from lazy_github.lib.context import LazyGithubContext, github_headers
+from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.models.github import Repository
 
 RepoTypeFilter = Literal["all"] | Literal["owner"] | Literal["member"]
@@ -63,5 +62,5 @@ async def get_repository_by_name(full_name: str) -> Repository | None:
         response = await LazyGithubContext.client.get(f"/repos/{full_name}", headers=github_headers())
         response.raise_for_status()
         return Repository(**response.json())
-    except HTTPError:
+    except GithubApiRequestFailed:
         return None

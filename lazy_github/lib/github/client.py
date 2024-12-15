@@ -1,32 +1,49 @@
-from typing import Optional
-
-import hishel
+from typing import Any
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.github.backends.cli import GithubCliBackend
+from lazy_github.lib.github.backends.hishel import HishelGithubApiBackend
+from lazy_github.lib.github.backends.protocol import GithubApiBackend
 from lazy_github.models.github import User
 
 
-class GithubClient(hishel.AsyncCacheClient):
-    def __init__(self, config: Config, access_token: str) -> None:
-        storage = hishel.AsyncFileStorage(base_path=config.cache.cache_directory)
-        super().__init__(storage=storage, base_url=config.api.base_url)
+class GithubClient(GithubApiBackend):
+    def __init__(self, config: Config, backend: GithubApiBackend) -> None:
         self.config = config
-        self.access_token = access_token
+        self.backend = backend
         self._user: User | None = None
 
-    def github_headers(
-        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None
-    ) -> dict[str, str]:
-        """Helper function to build a request with specific headers"""
-        headers = {"Accept": accept, "Authorization": f"Bearer {self.access_token}"}
-        max_age = cache_duration or self.config.cache.default_ttl
-        headers["Cache-Control"] = f"max-age={max_age}"
-        return headers
+    @classmethod
+    def cli(cls, config: Config) -> "GithubClient":
+        backend = GithubCliBackend(config)
+        return GithubClient(config, backend)
+
+    @classmethod
+    def hishel(cls, config: Config, access_token: str) -> "GithubClient":
+        backend = HishelGithubApiBackend(config, access_token)
+        return GithubClient(config, backend)
 
     async def user(self) -> User:
         """Returns the authed user for this client"""
         if self._user is None:
-            response = await self.get("/user", headers=self.github_headers())
-            self._user = User(**response.json())
+            self._user = await self.get_user()
         return self._user
+
+    def github_headers(
+        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
+    ) -> dict[str, str]:
+        """Helper function to build a request with specific headers"""
+        return self.backend.github_headers(accept=accept, cache_duration=cache_duration)
+
+    async def get(self, url: str, headers: dict[str, str] | None = None, params: dict[str, str] | None = None) -> Any:
+        return await self.backend.get(url, headers, params)
+
+    async def post(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+        return await self.backend.post(url, headers, json)
+
+    async def patch(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+        return await self.backend.patch(url, headers, json)
+
+    async def get_user(self) -> User:
+        return await self.backend.get_user()

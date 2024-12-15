@@ -8,7 +8,7 @@ from textual.widgets import Markdown, TabbedContent, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
-from lazy_github.lib.github_cli import fetch_notifications, mark_notification_as_read
+from lazy_github.lib.github.notifications import fetch_notifications, mark_notification_as_read
 from lazy_github.models.github import Notification
 from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable
 
