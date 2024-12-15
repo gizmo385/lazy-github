@@ -1,7 +1,6 @@
 from functools import partial
 from typing import NamedTuple
 
-from httpx import HTTPError
 from textual import work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
@@ -17,6 +16,7 @@ from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import NOTIFICATION_REFRESH_INTERVAL
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.auth import is_logged_in_to_cli
+from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.lib.github.notifications import unread_notification_count
 from lazy_github.lib.github.pull_requests import get_full_pull_request
@@ -203,7 +203,7 @@ class SelectionsPane(Container):
         owner_filter = LazyGithubContext.config.issues.owner_filter
         try:
             issues_and_pull_requests = await list_issues(repo, state_filter, owner_filter)
-        except HTTPError:
+        except GithubApiRequestFailed:
             lg.exception("Error fetching issues and PRs from Github API")
         else:
             issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)

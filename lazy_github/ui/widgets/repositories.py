@@ -1,12 +1,12 @@
 import asyncio
 from typing import Dict, Iterable
 
-from httpx import HTTPError
 from textual import on, work
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable
 
+from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
@@ -102,7 +102,7 @@ class ReposContainer(LazyGithubContainer):
         repos: list[Repository] = []
         try:
             repos = await repos_api.list_all()
-        except HTTPError:
+        except GithubApiRequestFailed:
             lg.exception("Error fetching repositories from Github API")
 
         # Loading any additionally tracked repos

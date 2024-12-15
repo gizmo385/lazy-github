@@ -1,8 +1,6 @@
 from functools import partial
 from typing import Literal
 
-from httpx import HTTPError
-
 from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.models.github import Repository
