@@ -4,9 +4,6 @@ import click
 import rich
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
-from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.github.backends.protocol import BackendType
-from lazy_github.lib.logging import lg
 from lazy_github.ui.app import app
 
 _CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -21,28 +18,9 @@ def cli(ctx: click.Context) -> None:
 
 
 @cli.command
-@click.option(
-    "--backend-type",
-    type=click.Choice(list(BackendType)),
-    default=None,
-    help="Override the client used for communicating with Github. Value will be reverted on exit",
-)
-def run(backend_type: BackendType | None):
+def run():
     """Run LazyGithub"""
-    current_backend_type = LazyGithubContext.config.api.client_type
-
-    try:
-        # If we overrode the backend type, revert it
-        if backend_type:
-            with Config.to_edit() as config:
-                lg.info(f"Overriding client type to: {backend_type}")
-                config.api.client_type = backend_type
-        app.run()
-    finally:
-        # If we overrode the backend type, revert it
-        if backend_type:
-            with Config.to_edit() as config:
-                config.api.client_type = current_backend_type
+    app.run()
 
 
 @cli.command
