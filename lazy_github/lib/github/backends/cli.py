@@ -161,19 +161,3 @@ class GithubCliBackend(GithubApiBackend):
         """Helper function to build a request with specific headers"""
         max_age = cache_duration or self.config.cache.default_ttl
         return {"Accept": accept, "Cache-Control": f"max-age={max_age}"}
-
-
-async def main():
-    client = GithubCliBackend(Config.load_config())
-    query_params = {"type": "all", "direction": "asc", "sort": "full_name", "page": 1, "per_page": 20}
-    breakpoint()
-    response = await client.get("/user/repos", params=query_params)
-    print(response)
-    print(response.return_code)
-    print(response.json())
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
