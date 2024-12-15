@@ -1,20 +1,20 @@
 import json
+from pathlib import Path
 import re
-import subprocess
 import tempfile
-from asyncio import sleep
+import asyncio
 from typing import Any
-from urllib.parse import urlencode
 
-from textual.dom import QueryOneCacheKey
+from textual.theme import ThemeProvider
 
 from lazy_github.lib.config import Config
-from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.constants import CONFIG_FOLDER, JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse
 from lazy_github.models.github import User
 
 
 _HEADER_RE = re.compile(r"^([a-zA-Z-]+)\:(.+)$")
+TEMPORARY_JSON_BODY_DIRECTORY = CONFIG_FOLDER / "request_bodies"
 
 
 class CliApiResponse(GithubApiResponse):
@@ -61,47 +61,60 @@ def _parse_cli_api_response(return_code: int, stdout: str, stderr: str) -> CliAp
     return CliApiResponse(return_code, http_status, "\n".join(response_content), stderr, headers)
 
 
+def _clear_temporary_bodies() -> None:
+    for filepath in TEMPORARY_JSON_BODY_DIRECTORY.glob("*"):
+        Path(filepath).unlink(missing_ok=True)
+
+
 async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
     """Simple wrapper around running a Github CLI command"""
     from lazy_github.lib.logging import lg
 
-    full_command = ["gh"] + command
-    lg.debug(" ".join(full_command))
-    print(" ".join(full_command))
-    proc = subprocess.Popen(full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    while True:
-        if proc.poll() is not None:
-            raw_stdout, raw_stderr = proc.communicate()
-            return _parse_cli_api_response(proc.returncode, raw_stdout.decode(), raw_stderr.decode())
-        else:
-            await sleep(0.5)
+    proc = await asyncio.create_subprocess_exec(
+        "gh", *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+
+    lg.info(f"Command: gh {' '.join(command)}")
+
+    try:
+        raw_stdout, raw_stderr = await proc.communicate()
+        lg.info(f"Error output from {command}: {raw_stderr}")
+    except Exception:
+        lg.exception("Couldn't communicate with gh cli proc")
+        response = _parse_cli_api_response(255, "", "")
+    else:
+        return_code = proc.returncode if proc.returncode is not None else 255
+        response = _parse_cli_api_response(return_code, raw_stdout.decode(), raw_stderr.decode())
+
+    _clear_temporary_bodies()
+
+    return response
 
 
 def _build_command(
     base_url: str,
-    method: str | None = None,
+    method: str = "GET",
     headers: dict[str, str] | None = None,
     query_params: dict[str, str] | None = None,
     body: dict[str, str] | None = None,
 ) -> list[str]:
-    command = ["api", "-i"]
-    if method:
-        command.append(f"--{method.lower()}")
+    command = ["api", "-i", "-X", method]
 
     if headers:
         for header_name, header_value in headers.items():
-            command.extend(["-H", f'"{header_name}: {header_value}"'])
+            command.extend(["-H", f"{header_name}: {header_value}"])
 
     if query_params:
-        encoded_params = urlencode(tuple(query_params.items()))
-        command.append(f'"{base_url}?{encoded_params}"')
-    else:
-        command.append(base_url)
+        for param_name, param_value in query_params.items():
+            command.extend(["-F", f"{param_name}={param_value}"])
 
     if body:
-        temp = tempfile.TemporaryFile()
+        TEMPORARY_JSON_BODY_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        temp = tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, dir=TEMPORARY_JSON_BODY_DIRECTORY)
         temp.write(json.dumps(body).encode())
-        command.extend(["--input", temp.name])
+        command.extend(["--input", str(temp.name)])
+
+    command.append(base_url)
 
     return command
 
@@ -123,18 +136,18 @@ class GithubCliBackend(GithubApiBackend):
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, body=body, method="POST")
+        command = _build_command(url, headers=headers, body=json, method="POST")
         return await run_gh_cli_command(command)
 
     async def patch(
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, body=body, method="PATCH")
+        command = _build_command(url, headers=headers, body=json, method="PATCH")
         return await run_gh_cli_command(command)
 
     async def get_user(self) -> User:
@@ -151,8 +164,9 @@ class GithubCliBackend(GithubApiBackend):
 
 async def main():
     client = GithubCliBackend(Config.load_config())
-    response = await client.get("/user/repos")
-    # response = _parse_cli_api_response(0, test_response, "")
+    query_params = {"type": "all", "direction": "asc", "sort": "full_name", "page": 1, "per_page": 20}
+    breakpoint()
+    response = await client.get("/user/repos", params=query_params)
     print(response)
     print(response.return_code)
     print(response.json())

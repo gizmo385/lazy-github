@@ -39,11 +39,11 @@ class GithubClient(GithubApiBackend):
     async def get(self, url: str, headers: dict[str, str] | None = None, params: dict[str, str] | None = None) -> Any:
         return await self.backend.get(url, headers, params)
 
-    async def post(self, url: str, headers: dict[str, str] | None = None, body: dict[str, str] | None = None) -> Any:
-        return await self.backend.post(url, headers, body)
+    async def post(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+        return await self.backend.post(url, headers, json)
 
-    async def patch(self, url: str, headers: dict[str, str] | None = None, body: dict[str, str] | None = None) -> Any:
-        return await self.backend.patch(url, headers, body)
+    async def patch(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+        return await self.backend.patch(url, headers, json)
 
     async def get_user(self) -> User:
         return await self.backend.get_user()

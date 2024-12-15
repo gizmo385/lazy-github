@@ -32,14 +32,14 @@ class GithubApiBackend(Protocol):
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> GithubApiResponse: ...
 
     async def patch(
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> GithubApiResponse: ...
 
     async def get_user(self) -> User: ...

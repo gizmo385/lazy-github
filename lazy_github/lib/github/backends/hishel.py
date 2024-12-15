@@ -53,18 +53,18 @@ class HishelGithubApiBackend(GithubApiBackend):
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> HishelApiResponse:
-        response = await self.api_client.post(url, headers=headers, json=body)
+        response = await self.api_client.post(url, headers=headers, json=json)
         return HishelApiResponse(response)
 
     async def patch(
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        body: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
     ) -> HishelApiResponse:
-        response = await self.api_client.patch(url, headers=headers, json=body)
+        response = await self.api_client.patch(url, headers=headers, json=json)
         return HishelApiResponse(response)
 
     def github_headers(
