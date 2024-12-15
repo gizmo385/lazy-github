@@ -80,7 +80,6 @@ async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
             lg.debug(f"Error output from Github CLI: {stderr}")
     except Exception:
         lg.exception("Couldn't communicate with gh cli proc")
-        # TODO: Is this actually how we want to handle an exception case here?
         response = _parse_cli_api_response(255, "", "")
     else:
         return_code = proc.returncode if proc.returncode is not None else 255
