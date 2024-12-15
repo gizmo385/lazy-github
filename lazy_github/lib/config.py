@@ -8,6 +8,7 @@ from pydantic import BaseModel, field_serializer, field_validator
 from textual.theme import BUILTIN_THEMES, Theme
 
 from lazy_github.lib.constants import CONFIG_FOLDER, IssueOwnerFilter, IssueStateFilter
+from lazy_github.lib.github.backends.protocol import BackendType
 
 _CONFIG_FILE_LOCATION = CONFIG_FOLDER / "config.json"
 
@@ -103,7 +104,7 @@ class ApiConfig(BaseModel):
     """Controlling how the GitHub API is accessed in LazyGithub"""
 
     base_url: str = "https://api.github.com"
-    client_type: CLIENT_TYPE = "hishel"
+    client_type: BackendType = BackendType.RAW_HTTP
 
 
 _CONFIG_INSTANCE: Optional["Config"] = None

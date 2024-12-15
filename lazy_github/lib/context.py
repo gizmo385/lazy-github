@@ -4,6 +4,7 @@ from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.git_cli import current_local_repo_full_name
 from lazy_github.lib.github.auth import token
+from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.utils import classproperty
 from lazy_github.models.github import Repository
@@ -30,9 +31,9 @@ class LazyGithubContext:
     def client(cls) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
         if not isinstance(cls._client, GithubClient):
-            if cls.config.api.client_type == "cli":
+            if cls.config.api.client_type == BackendType.GITHUB_CLI:
                 cls._client = GithubClient.cli(cls.config)
-            elif cls.config.api.client_type == "hishel":
+            elif cls.config.api.client_type == BackendType.RAW_HTTP:
                 cls._client = GithubClient.hishel(cls.config, token())
             else:
                 raise ValueError("Invalid client type: cls.config.api.client_type")

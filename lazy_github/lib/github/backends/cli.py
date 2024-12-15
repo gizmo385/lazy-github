@@ -72,17 +72,20 @@ async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
         "gh", *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
 
-    lg.info(f"Command: gh {' '.join(command)}")
+    lg.debug(f"Running Github CLI command: gh {' '.join(command)}")
 
     try:
         raw_stdout, raw_stderr = await proc.communicate()
-        lg.info(f"Error output from {command}: {raw_stderr}")
+        stderr = raw_stderr.decode()
+        if raw_stderr:
+            lg.debug(f"Error output from Github CLI: {stderr}")
     except Exception:
         lg.exception("Couldn't communicate with gh cli proc")
+        # TODO: Is this actually how we want to handle an exception case here?
         response = _parse_cli_api_response(255, "", "")
     else:
         return_code = proc.returncode if proc.returncode is not None else 255
-        response = _parse_cli_api_response(return_code, raw_stdout.decode(), raw_stderr.decode())
+        response = _parse_cli_api_response(return_code, raw_stdout.decode(), stderr)
 
     _clear_temporary_bodies()
 
