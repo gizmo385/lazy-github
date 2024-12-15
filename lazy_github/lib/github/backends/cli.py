@@ -5,8 +5,6 @@ import tempfile
 import asyncio
 from typing import Any
 
-from textual.theme import ThemeProvider
-
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import CONFIG_FOLDER, JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse

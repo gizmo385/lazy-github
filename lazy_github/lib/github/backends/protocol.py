@@ -1,7 +1,13 @@
+from enum import StrEnum
 from typing import Any, Protocol
 
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.models.github import User
+
+
+class BackendType(StrEnum):
+    RAW_HTTP = "RAW_HTTP"
+    GITHUB_CLI = "GITHUB_CLI"
 
 
 class GithubApiRequestFailed(Exception):

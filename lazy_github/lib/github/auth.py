@@ -98,3 +98,17 @@ def token() -> str:
         raise GithubAuthenticationRequired()
     _AUTH_TOKEN = _AUTHENTICATION_CACHE_LOCATION.read_text().strip()
     return _AUTH_TOKEN
+
+
+async def is_logged_in_to_cli() -> bool:
+    """Checks to see if the user is currently logged into the GitHub CLI"""
+    # Avoiding circular imports
+    from lazy_github.lib.github.backends.cli import run_gh_cli_command
+    from lazy_github.lib.logging import lg
+
+    try:
+        result = await run_gh_cli_command(["auth", "status"])
+        return result.return_code == 0
+    except Exception:
+        lg.exception("Error checking if github CLI is authenticated")
+        return False
