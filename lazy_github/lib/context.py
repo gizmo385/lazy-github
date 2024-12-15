@@ -3,7 +3,6 @@ from typing import Optional
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.git_cli import current_local_repo_full_name
-from lazy_github.lib.github.auth import token
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.utils import classproperty
@@ -39,7 +38,9 @@ class LazyGithubContext:
                 case BackendType.GITHUB_CLI:
                     cls._client = GithubClient.cli(cls.config)
                 case BackendType.RAW_HTTP:
-                    cls._client = GithubClient.hishel(cls.config, token())
+                    from lazy_github.lib.github.auth import get_api_token
+
+                    cls._client = GithubClient.hishel(cls.config, get_api_token())
                 case _:
                     raise TypeError(f"Invalid client type in config: {cls.client_type}")
         return cls._client

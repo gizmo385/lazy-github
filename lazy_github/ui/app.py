@@ -1,9 +1,12 @@
+from collections.abc import Container
 from textual import log
-from textual.app import App
+from textual.app import App, ComposeResult
 from textual.theme import Theme
+from textual.widgets import Markdown
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github import auth
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
 from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.ui.screens.auth import AuthenticationModal
@@ -22,7 +25,7 @@ class LazyGithub(App):
     async def authenticate_with_github(self):
         try:
             # We pull the user here to validate auth
-            _ = await LazyGithubContext.client.user()
+            await auth.assert_is_logged_in()
             self.push_screen(LazyGithubMainScreen(id="main-screen"))
         except GithubAuthenticationRequired:
             log("Triggering auth with github")

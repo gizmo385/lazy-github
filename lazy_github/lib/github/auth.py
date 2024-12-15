@@ -5,6 +5,9 @@ from typing import Optional
 import httpx
 
 from lazy_github.lib.constants import CONFIG_FOLDER, DEVICE_CODE_GRANT_TYPE, LAZY_GITHUB_CLIENT_ID
+from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github.backends.protocol import BackendType
+from lazy_github.ui.widgets.command_log import LazyGithubCommandLog
 
 # Auth and client globals
 _AUTHENTICATION_CACHE_LOCATION = CONFIG_FOLDER / "auth.text"
@@ -85,7 +88,7 @@ def save_access_token(access_token: AccessTokenResponse) -> None:
     _AUTHENTICATION_CACHE_LOCATION.write_text(access_token.token)
 
 
-def token() -> str:
+def get_api_token() -> str:
     """
     Helper function which loads the token from the file on disk. If the file does not exist, it raises a
     GithubAuthenticationRequired exception that the caller should handle by triggering the auth flow
@@ -112,3 +115,16 @@ async def is_logged_in_to_cli() -> bool:
     except Exception:
         lg.exception("Error checking if github CLI is authenticated")
         return False
+
+
+async def assert_is_logged_in() -> None:
+    """
+    Abstraction over the login checks we perform for the different backend implementations. Returns True if the user is
+    logged in and can send requests via their selected backend
+    """
+    match LazyGithubContext.client_type:
+        case BackendType.RAW_HTTP:
+            get_api_token()
+        case BackendType.GITHUB_CLI:
+            if not await is_logged_in_to_cli():
+                raise GithubAuthenticationRequired()
