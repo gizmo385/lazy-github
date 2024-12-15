@@ -1,8 +1,6 @@
-from collections.abc import Container
 from textual import log
-from textual.app import App, ComposeResult
+from textual.app import App
 from textual.theme import Theme
-from textual.widgets import Markdown
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext

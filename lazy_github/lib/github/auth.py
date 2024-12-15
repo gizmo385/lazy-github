@@ -7,7 +7,6 @@ import httpx
 from lazy_github.lib.constants import CONFIG_FOLDER, DEVICE_CODE_GRANT_TYPE, LAZY_GITHUB_CLIENT_ID
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import BackendType
-from lazy_github.ui.widgets.command_log import LazyGithubCommandLog
 
 # Auth and client globals
 _AUTHENTICATION_CACHE_LOCATION = CONFIG_FOLDER / "auth.text"

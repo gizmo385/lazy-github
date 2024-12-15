@@ -8,11 +8,11 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Markdown, Rule, Static
 
-from lazy_github.lib.bindings import LazyGithubBindings
 import lazy_github.lib.github.auth as auth
-from lazy_github.lib.logging import lg
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import BackendType
+from lazy_github.lib.logging import lg
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
 from lazy_github.ui.widgets.common import LazyGithubFooter
 from lazy_github.ui.widgets.info import LAZY_GITHUB_INFO

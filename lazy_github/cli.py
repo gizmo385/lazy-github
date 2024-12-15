@@ -49,6 +49,8 @@ def clear_config():
 @click.option("--no-confirm", is_flag=True, default=False, help="Don't ask for confirmation")
 def clear_cache(no_confirm: bool):
     """Reset the lazy-github cache"""
+    from lazy_github.lib.context import LazyGithubContext
+
     cache_directory = LazyGithubContext.config.cache.cache_directory
     if no_confirm or click.confirm(f"Confirm deletion of everything in {cache_directory}"):
         if cache_directory.exists():
