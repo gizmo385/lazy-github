@@ -11,7 +11,7 @@ from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApi
 from lazy_github.models.github import User
 
 _HEADER_RE = re.compile(r"^([a-zA-Z-]+)\:(.+)$")
-TEMPORARY_JSON_BODY_DIRECTORY = CONFIG_FOLDER / "request_bodies"
+_TEMPORARY_JSON_BODY_DIRECTORY = CONFIG_FOLDER / "request_bodies"
 
 
 class CliApiResponse(GithubApiResponse):
@@ -59,7 +59,7 @@ def _parse_cli_api_response(return_code: int, stdout: str, stderr: str) -> CliAp
 
 
 def _clear_temporary_bodies() -> None:
-    for filepath in TEMPORARY_JSON_BODY_DIRECTORY.glob("*"):
+    for filepath in _TEMPORARY_JSON_BODY_DIRECTORY.glob("*"):
         Path(filepath).unlink(missing_ok=True)
 
 
@@ -109,8 +109,8 @@ def _build_command(
             command.extend(["-F", f"{param_name}={param_value}"])
 
     if body:
-        TEMPORARY_JSON_BODY_DIRECTORY.mkdir(parents=True, exist_ok=True)
-        temp = tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, dir=TEMPORARY_JSON_BODY_DIRECTORY)
+        _TEMPORARY_JSON_BODY_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        temp = tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, dir=_TEMPORARY_JSON_BODY_DIRECTORY)
         temp.write(json.dumps(body).encode())
         command.extend(["--input", str(temp.name)])
 
