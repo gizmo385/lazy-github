@@ -28,15 +28,20 @@ class LazyGithubContext:
         return cls._config
 
     @classproperty
+    def client_type(cls) -> BackendType:
+        return cls.config.api.client_type
+
+    @classproperty
     def client(cls) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
         if not isinstance(cls._client, GithubClient):
-            if cls.config.api.client_type == BackendType.GITHUB_CLI:
-                cls._client = GithubClient.cli(cls.config)
-            elif cls.config.api.client_type == BackendType.RAW_HTTP:
-                cls._client = GithubClient.hishel(cls.config, token())
-            else:
-                raise ValueError("Invalid client type: cls.config.api.client_type")
+            match cls.client_type:
+                case BackendType.GITHUB_CLI:
+                    cls._client = GithubClient.cli(cls.config)
+                case BackendType.RAW_HTTP:
+                    cls._client = GithubClient.hishel(cls.config, token())
+                case _:
+                    raise TypeError(f"Invalid client type in config: {cls.client_type}")
         return cls._client
 
     @classproperty

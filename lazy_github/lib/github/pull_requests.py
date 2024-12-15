@@ -1,5 +1,8 @@
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.context import LazyGithubContext, github_headers
+from lazy_github.lib.github.backends.cli import GithubCliBackend, run_gh_cli_command
+from lazy_github.lib.github.backends.hishel import HishelGithubApiBackend
+from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
@@ -47,8 +50,15 @@ async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullReque
 
 async def get_diff(pr: FullPullRequest) -> str:
     """Fetches the raw diff for an individual pull request"""
-    headers = github_headers(DIFF_CONTENT_ACCEPT_TYPE)
-    response = await LazyGithubContext.client.get(pr.diff_url, headers=headers)
+    match LazyGithubContext.client_type:
+        case BackendType.GITHUB_CLI:
+            response = await run_gh_cli_command(["pr", "diff", "-R", pr.repo.full_name, str(pr.number)])
+        case BackendType.RAW_HTTP:
+            headers = github_headers(DIFF_CONTENT_ACCEPT_TYPE)
+            response = await LazyGithubContext.client.get(pr.diff_url, headers=headers)
+        case _:
+            raise TypeError("Unexpected github client: How did you even get here")
+
     response.raise_for_status()
     return response.text
 
