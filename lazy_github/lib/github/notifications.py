@@ -1,4 +1,5 @@
 import json
+
 from lazy_github.lib.github.backends.cli import run_gh_cli_command
 from lazy_github.models.github import Notification
 

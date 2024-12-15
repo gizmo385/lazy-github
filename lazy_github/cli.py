@@ -3,10 +3,10 @@ import shutil
 import click
 import rich
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import BackendType
+from lazy_github.lib.logging import lg
 from lazy_github.ui.app import app
 
 _CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

@@ -1,15 +1,14 @@
+import asyncio
 import json
-from pathlib import Path
 import re
 import tempfile
-import asyncio
+from pathlib import Path
 from typing import Any
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import CONFIG_FOLDER, JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse
 from lazy_github.models.github import User
-
 
 _HEADER_RE = re.compile(r"^([a-zA-Z-]+)\:(.+)$")
 TEMPORARY_JSON_BODY_DIRECTORY = CONFIG_FOLDER / "request_bodies"
