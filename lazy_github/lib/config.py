@@ -58,13 +58,13 @@ class RepositorySettings(BaseModel):
         if isinstance(string_list, list):
             return string_list
         elif isinstance(string_list, str):
-            return [s.strip() for s in string_list.split(",") if s.strip()]
+            return list(set(s.strip() for s in string_list.split(",") if s.strip()))
 
     @field_validator("additional_repos_to_track", "favorites", mode="before")
     @classmethod
     def parse_string_list(cls, v) -> list[str]:
         if isinstance(v, str):
-            return [s.strip() for s in v.split(",") if s.strip()]
+            return list(set(s.strip() for s in v.split(",") if s.strip()))
         return v
 
     additional_repos_to_track: list[str] = []

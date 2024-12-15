@@ -229,7 +229,7 @@ class SettingsContainer(Container):
     def compose(self) -> ComposeResult:
         yield Markdown("# LazyGithub Settings")
         yield self.search_input
-        with ScrollableContainer(id="settings_adjustment"):
+        with ScrollableContainer():
             for field, value in LazyGithubContext.config:
                 if field == "bindings":
                     yield BindingsSettingsSection()
