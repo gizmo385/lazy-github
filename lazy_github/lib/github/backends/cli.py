@@ -77,7 +77,7 @@ async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
         raw_stdout, raw_stderr = await proc.communicate()
         stderr = raw_stderr.decode()
         if raw_stderr:
-            lg.debug(f"Error output from Github CLI: {stderr}")
+            lg.debug(f"Error output from Github CLI: {stderr.strip()}")
     except Exception:
         lg.exception("Couldn't communicate with gh cli proc")
         response = _parse_cli_api_response(255, "", "")
