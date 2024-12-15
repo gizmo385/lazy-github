@@ -1,7 +1,6 @@
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.context import LazyGithubContext, github_headers
-from lazy_github.lib.github.backends.cli import GithubCliBackend, run_gh_cli_command
-from lazy_github.lib.github.backends.hishel import HishelGithubApiBackend
+from lazy_github.lib.github.backends.cli import run_gh_cli_command
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
