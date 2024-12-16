@@ -232,6 +232,7 @@ class PrConversationTabPane(TabPane):
         self.loading = True
         self.fetch_conversation()
 
+    @work
     async def action_new_comment(self) -> None:
         await self.app.push_screen_wait(NewCommentModal(self.pr.repo, self.pr, None))
         self.fetch_conversation()
