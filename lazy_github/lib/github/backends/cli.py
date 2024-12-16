@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -90,6 +91,16 @@ async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
     return response
 
 
+def _create_request_body_tempfile(body: bytes) -> tempfile.NamedTemporaryFile:
+    _TEMPORARY_JSON_BODY_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    if sys.version_info.minor > 11:
+        temp = tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, dir=_TEMPORARY_JSON_BODY_DIRECTORY)
+    else:
+        temp = tempfile.NamedTemporaryFile(delete=False, dir=_TEMPORARY_JSON_BODY_DIRECTORY)
+    temp.write(body)
+    return temp
+
+
 def _build_command(
     base_url: str,
     method: str = "GET",
@@ -108,9 +119,7 @@ def _build_command(
             command.extend(["-F", f"{param_name}={param_value}"])
 
     if body:
-        _TEMPORARY_JSON_BODY_DIRECTORY.mkdir(parents=True, exist_ok=True)
-        temp = tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, dir=_TEMPORARY_JSON_BODY_DIRECTORY)
-        temp.write(json.dumps(body).encode())
+        temp = _create_request_body_tempfile(json.dumps(body).encode())
         command.extend(["--input", str(temp.name)])
 
     command.append(base_url)
