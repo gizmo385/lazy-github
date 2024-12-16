@@ -16,6 +16,10 @@ class EditIssueContainer(Container):
         align: center middle;
     }
 
+    #updated_issue_title {
+        height: auto;
+    }
+
     ScrollableContainer {
         height: 80%;
     }
@@ -52,10 +56,7 @@ class EditIssueContainer(Container):
     def cancel_updated_issue(self, _: Button) -> None:
         self.app.pop_screen()
 
-    @on(Button.Pressed, "#save_updated_issue")
-    async def submit_updated_issue(self, save_button: Button) -> None:
-        save_button.label = "Saving..."
-        save_button.disabled = True
+    async def submit_updated_issue(self) -> None:
         updated_title = self.query_one("#updated_issue_title", Input).value
         updated_body = self.query_one("#updated_issue_body", TextArea).text
         updated_state = self.query_one("#updated_issue_state", Select).value
@@ -64,9 +65,15 @@ class EditIssueContainer(Container):
         self.notify(f"Successfully updated issue #{self.issue.number}")
         self.app.pop_screen()
 
+    @on(Button.Pressed, "#save_updated_issue")
+    async def handle_submit_button(self, save_button: Button) -> None:
+        save_button.label = "Saving..."
+        save_button.disabled = True
+        await self.submit_updated_issue()
+
 
 class EditIssueModal(ModalScreen):
-    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG]
+    BINDINGS = [LazyGithubBindings.CLOSE_DIALOG, LazyGithubBindings.SUBMIT_DIALOG]
     DEFAULT_CSS = """
     EditIssueModal {
         align: center middle;
@@ -88,6 +95,9 @@ class EditIssueModal(ModalScreen):
     def compose(self) -> ComposeResult:
         yield EditIssueContainer(self.issue)
         yield LazyGithubFooter()
+
+    async def action_submit(self) -> None:
+        await self.query_one(EditIssueContainer).submit_updated_issue()
 
     def action_close(self) -> None:
         self.app.pop_screen()
