@@ -18,6 +18,9 @@ class LazyGithubBindings:
     REPLY_TO_REVIEW = Binding("r", "reply_to_review", "Reply to Review", id="conversation.review.reply")
     REPLY_TO_COMMENT = Binding("r", "reply_to_individual_comment", "Reply to Comment", id="conversation.comment.reply")
 
+    # Pull request actions
+    MERGE_PULL_REQUEST = Binding("M", "merge_pull_request", "Merge PR", id="pull_request.merge")
+
     # Repository actions
     TOGGLE_FAVORITE_REPO = Binding("ctrl+f", "toggle_favorite_repo", "Toggle Favorite", id="repositories.favorite")
     LOOKUP_REPOSITORY = Binding("O", "lookup_repository", "Lookup Repository", id="repositories.lookup")
