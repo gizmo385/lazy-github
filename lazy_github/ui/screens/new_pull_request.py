@@ -8,6 +8,7 @@ from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.branches import list_branches
 from lazy_github.lib.github.pull_requests import create_pull_request
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import BranchesLoaded, PullRequestCreated
 from lazy_github.models.github import Branch, FullPullRequest
 
@@ -161,6 +162,7 @@ class NewPullRequestContainer(VerticalScroll):
                 draft=draft_field.value,
             )
         except Exception:
+            lg.exception("Error while attempting to create new pull request")
             self.notify(
                 "Check that your branches are valid and that a PR does not already exist",
                 title="Error creating pull request",
