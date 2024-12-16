@@ -81,7 +81,6 @@ class UnreadNotificationTabPane(_NotificationsTableTabPane):
 class NotificationsContainer(Container):
     DEFAULT_CSS = """
     NotificationsContainer {
-        dock: top;
         max-height: 80%;
         align: center middle;
     }
@@ -142,6 +141,8 @@ class NotificationsModal(ModalScreen[None]):
     DEFAULT_CSS = """
     NotificationsModal {
         height: 80%;
+        align: center middle;
+        content-align: center middle;
     }
 
     NotificationsContainer {
