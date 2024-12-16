@@ -329,7 +329,6 @@ dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "textual" },
-    { name = "textual-dev" },
 ]
 
 [package.dev-dependencies]
@@ -337,6 +336,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "ruff" },
+    { name = "textual-dev" },
 ]
 
 [package.metadata]
@@ -346,14 +346,14 @@ requires-dist = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "textual" },
-    { name = "textual-dev" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit" },
-    { name = "pyright", specifier = ">=1.1.377" },
-    { name = "ruff", specifier = ">=0.6.1" },
+    { name = "pyright" },
+    { name = "ruff" },
+    { name = "textual-dev" },
 ]
 
 [[package]]

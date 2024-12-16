@@ -24,7 +24,6 @@ dependencies = [
 	"hishel",
 	"pydantic",
 	"textual",
-	"textual-dev",
 	"click>=8.1.7",
 ]
 
@@ -42,7 +41,8 @@ line-length = 120
 
 [tool.uv]
 dev-dependencies = [
-    "pyright>=1.1.377",
-    "ruff>=0.6.1",
+    "pyright",
+    "ruff",
 	"pre-commit",
+	"textual-dev",
 ]
