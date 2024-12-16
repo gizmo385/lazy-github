@@ -38,11 +38,11 @@ installer = "uv"
 include = ["lazy_github*"]
 
 [tool.ruff]
-
 line-length = 120
 
 [tool.uv]
 dev-dependencies = [
     "pyright>=1.1.377",
     "ruff>=0.6.1",
+	"pre-commit",
 ]
