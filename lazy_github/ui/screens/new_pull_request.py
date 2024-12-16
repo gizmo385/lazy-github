@@ -181,7 +181,6 @@ class NewPullRequestContainer(VerticalScroll):
 class NewPullRequestModal(ModalScreen[FullPullRequest | None]):
     DEFAULT_CSS = """
     NewPullRequestModal {
-        border: ascii green;
         align: center middle;
         content-align: center middle;
     }
