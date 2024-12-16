@@ -14,6 +14,7 @@ from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
+from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
 
 
@@ -26,6 +27,7 @@ def _repo_to_row(repo: Repository) -> tuple[str, ...]:
 class ReposContainer(LazyGithubContainer):
     BINDINGS = [
         LazyGithubBindings.TOGGLE_FAVORITE_REPO,
+        LazyGithubBindings.LOOKUP_REPOSITORY,
         # ("enter", "select"),
     ]
 
@@ -79,6 +81,12 @@ class ReposContainer(LazyGithubContainer):
     async def add_repo_to_table(self, repo: Repository) -> None:
         self.repos[repo.full_name] = repo
         self.searchable_table.append_rows([_repo_to_row(repo)])
+
+    @work
+    async def action_lookup_repository(self) -> None:
+        if repository := await self.app.push_screen_wait(LookupRepositoryModal()):
+            await self.add_repo_to_table(repository)
+            self.post_message(RepoSelected(repository))
 
     @work
     async def set_repositories(self, repos: Iterable[Repository]) -> None:

@@ -28,7 +28,6 @@ from lazy_github.lib.messages import (
     RepoSelected,
 )
 from lazy_github.models.github import Repository
-from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.notifications import NotificationsModal
@@ -235,17 +234,10 @@ class MainViewPane(Container):
         LazyGithubBindings.FOCUS_WORKFLOW_TABS,
         LazyGithubBindings.FOCUS_DETAIL_TABS,
         LazyGithubBindings.FOCUS_COMMAND_LOG,
-        LazyGithubBindings.LOOKUP_REPOSITORY,
     ]
 
     def action_focus_section(self, selector: str) -> None:
         self.query_one(selector).focus()
-
-    @work
-    async def action_lookup_repository(self) -> None:
-        if repository := await self.app.push_screen_wait(LookupRepositoryModal()):
-            await self.selections.repositories.add_repo_to_table(repository)
-            self.selections.post_message(RepoSelected(repository))
 
     def action_focus_workflow_tabs(self) -> None:
         tabbed_content = self.query_one("#workflow_tabs", TabbedContent)
