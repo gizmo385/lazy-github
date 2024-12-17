@@ -32,7 +32,7 @@ jobs:
 
     - name: Create tag
       run: |
-        tag_name="v${{ steps.calculate-version.outputs.version}"
+        tag_name="v${{ steps.calculate-version.outputs.version }}"
         git tag $tag_name && git push origin $tag_name
 
     - name: Notify when this workflow completes (regardless of success or failure)
