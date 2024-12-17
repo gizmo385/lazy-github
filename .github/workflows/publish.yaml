@@ -42,7 +42,6 @@ jobs:
           })
 
     - name: Notify when this workflow completes (regardless of success or failure)
-      runs-on: ubuntu-latest
       uses: nobrayner/discord-webhook@v1
       with:
         title: "Version ${{ steps.calculate-version.outputs.version }} published to PyPi"
