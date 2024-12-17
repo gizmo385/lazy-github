@@ -3,7 +3,7 @@ from typing import Optional
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.git_cli import current_local_repo_full_name
+from lazy_github.lib.git_cli import current_local_branch_name, current_local_repo_full_name
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.logging import LazyGithubLogFormatter, lg
@@ -18,6 +18,7 @@ class LazyGithubContext:
     _config: Config | None = None
     _client: GithubClient | None = None
     _current_directory_repo: str | None = None
+    _current_directory_branch: str | None = None
 
     # Directly assigned attributes
     current_repo: Repository | None = None
@@ -64,6 +65,13 @@ class LazyGithubContext:
         if not cls._current_directory_repo:
             cls._current_directory_repo = current_local_repo_full_name()
         return cls._current_directory_repo
+
+    @classproperty
+    def current_directory_branch(cls) -> str | None:
+        """The owner/name of the repo associated with the current working directory (if one exists)"""
+        if not cls._current_directory_branch:
+            cls._current_directory_branch = current_local_branch_name()
+        return cls._current_directory_branch
 
 
 def github_headers(accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None) -> dict[str, str]:
