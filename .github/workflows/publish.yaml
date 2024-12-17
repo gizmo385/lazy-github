@@ -31,15 +31,9 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
 
     - name: Create tag
-      uses: actions/github-script@v5
-      with:
-        script: |
-          github.rest.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: 'refs/tags/v${{ steps.calculate-version.outputs.version }}',
-            sha: context.sha
-          })
+      run: |
+        tag_name="v${{ steps.calculate-version.outputs.version}"
+        git tag $tag_name && git push origin $tag_name
 
     - name: Notify when this workflow completes (regardless of success or failure)
       uses: nobrayner/discord-webhook@v1
