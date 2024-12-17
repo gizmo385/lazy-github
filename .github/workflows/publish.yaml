@@ -20,7 +20,7 @@ jobs:
     - name: Calculate version
       id: calculate-version
       run: |
-        new_version=$((uvx hatch version))
+        new_version=$(uvx hatch version)
         echo "version=${new_version}" >> $GITHUB_OUTPUT
 
       # Build the distribution
