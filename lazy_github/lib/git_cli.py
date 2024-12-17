@@ -7,7 +7,7 @@ from subprocess import DEVNULL, SubprocessError, check_output
 # "\/"          Match the forward slash
 # "([^.]+)"     Match everything until the period, which should be the repo name
 # ".git"        Match the .git suffix
-_SSH_GIT_REMOTE_REGEX = re.compile(r".+:([^\/]+)\/([^.]+)(.git)?")
+_SSH_GIT_REMOTE_REGEX = re.compile(r".+:([^\/]+)\/([^.]+)(?:.git)?")
 _HTTPS_GIT_REMOTE_REGEX = re.compile(r"^https:\/\/[^.]+[^\/]+\/([^\/]+)\/([^\/]+)$")
 
 
