@@ -1,14 +1,56 @@
-from textual import log
-from textual.app import App
+from textual import log, on
+from textual.app import App, ComposeResult
+from textual.containers import Horizontal
+from textual.screen import Screen
 from textual.theme import Theme
+from textual.widgets import Button, Markdown, RadioButton, RadioSet
 
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.config import Config
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import auth
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
+from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.ui.screens.auth import AuthenticationModal
 from lazy_github.ui.screens.primary import LazyGithubMainScreen
+from lazy_github.ui.widgets.common import LazyGithubFooter
+
+
+class FirstStartScreen(Screen[BackendType | None]):
+    DEFAULT_CSS = """
+    RadioSet {
+        margin: 1;
+    }
+    Static {
+        margin: 1;
+    }
+    Button {
+        margin: 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Markdown("# Welcome to LazyGithub! How would you like to authenticate with the Github API?")
+        with RadioSet(id="auth-select"):
+            yield RadioButton("Directly via HTTPS", value=True, id=str(BackendType.RAW_HTTP))
+            yield RadioButton("Via the Github CLI", id=str(BackendType.GITHUB_CLI))
+        with Horizontal():
+            yield Button("Continue", id="continue", variant="success")
+            yield Button("Cancel", id="cancel", variant="error")
+        yield LazyGithubFooter()
+
+    @on(Button.Pressed, "#continue")
+    def handle_submit(self, _: Button) -> None:
+        radio_set = self.query_one("#auth-select", RadioSet)
+        if radio_set.pressed_button:
+            self.dismiss(BackendType(radio_set.pressed_button.id))
+        else:
+            self.dismiss(None)
+
+    @on(Button.Pressed, "#cancel")
+    async def handle_cancel(self, _: Button) -> None:
+        await self.app.action_quit()
 
 
 class LazyGithub(App):
@@ -29,8 +71,18 @@ class LazyGithub(App):
             log("Triggering auth with github")
             self.push_screen(AuthenticationModal(id="auth-modal"))
 
-    async def on_ready(self):
+    async def handle_first_start_screen_dismiss(self, selected_backend_type: BackendType | None) -> None:
+        if selected_backend_type:
+            with LazyGithubContext.config.to_edit() as config:
+                config.api.client_type = selected_backend_type
+                config.core.first_start = False
         await self.authenticate_with_github()
+
+    async def on_ready(self):
+        if LazyGithubContext.config.core.first_start:
+            self.push_screen(FirstStartScreen(), self.handle_first_start_screen_dismiss)
+        else:
+            await self.authenticate_with_github()
 
     async def on_settings_modal_dismissed(self, message: SettingsModalDismissed) -> None:
         if not message.changed:

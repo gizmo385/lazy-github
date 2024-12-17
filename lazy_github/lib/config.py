@@ -95,6 +95,7 @@ class CacheSettings(BaseModel):
 
 
 class CoreConfig(BaseModel):
+    first_start: bool = True
     logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
 
 
