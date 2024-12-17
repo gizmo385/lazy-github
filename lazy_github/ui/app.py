@@ -6,7 +6,6 @@ from textual.theme import Theme
 from textual.widgets import Button, Markdown, RadioButton, RadioSet
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.config import Config
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import auth
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
