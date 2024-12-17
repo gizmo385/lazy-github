@@ -22,6 +22,10 @@ class NewIssueContainer(Container):
         height: 80%;
     }
 
+    #new_issue_title {
+        height: auto;
+    }
+
     #new_issue_body {
         height: 15;
     }
