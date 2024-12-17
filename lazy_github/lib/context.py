@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from lazy_github.lib.config import Config
@@ -5,6 +6,7 @@ from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.git_cli import current_local_repo_full_name
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
+from lazy_github.lib.logging import LazyGithubLogFormatter, lg
 from lazy_github.lib.utils import classproperty
 from lazy_github.models.github import Repository
 
@@ -20,10 +22,21 @@ class LazyGithubContext:
     # Directly assigned attributes
     current_repo: Repository | None = None
 
+    def _setup_logging_handler(cls) -> None:
+        """Setup the file logger for LazyGithub"""
+        try:
+            cls._config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
+            lg_file_handler = logging.FileHandler(filename=cls._config.core.logfile_path)
+            lg_file_handler.setFormatter(LazyGithubLogFormatter())
+            lg.addHandler(lg_file_handler)
+        except Exception:
+            lg.exception("Failed to setup file logger for LazyGithub")
+
     @classproperty
     def config(cls) -> Config:
         if cls._config is None:
             cls._config = Config.load_config()
+            cls._setup_logging_handler(cls)
         return cls._config
 
     @classproperty

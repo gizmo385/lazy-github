@@ -1,7 +1,5 @@
 import logging
 
-from lazy_github.lib.context import LazyGithubContext
-
 
 # A universal logging format that we can use
 class LazyGithubLogFormatter(logging.Formatter):
@@ -16,11 +14,7 @@ class LazyGithubLogFormatter(logging.Formatter):
         return super().format(record)
 
 
-LazyGithubContext.config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
 lg = logging.Logger("lazy_github", level=logging.DEBUG)
-_lg_file_handler = logging.FileHandler(filename=LazyGithubContext.config.core.logfile_path)
-_lg_file_handler.setFormatter(LazyGithubLogFormatter())
-lg.addHandler(_lg_file_handler)
 
 
 # Override the logging level for a bunch of noisy library loggers

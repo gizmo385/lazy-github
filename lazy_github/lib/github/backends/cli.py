@@ -9,6 +9,7 @@ from typing import Any
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import CONFIG_FOLDER, JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse
+from lazy_github.lib.logging import lg
 from lazy_github.models.github import User
 
 _HEADER_RE = re.compile(r"^([a-zA-Z-]+)\:(.+)$")
@@ -66,7 +67,6 @@ def _clear_temporary_bodies() -> None:
 
 async def run_gh_cli_command(command: list[str]) -> CliApiResponse:
     """Simple wrapper around running a Github CLI command"""
-    from lazy_github.lib.logging import lg
 
     proc = await asyncio.create_subprocess_exec(
         "gh", *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -147,7 +147,13 @@ class GithubCliBackend(GithubApiBackend):
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="POST")
-        return await run_gh_cli_command(command)
+        try:
+            response = await run_gh_cli_command(command)
+        except Exception:
+            lg.debug(f"Failed request body: {json}")
+            raise
+        else:
+            return response
 
     async def patch(
         self,
@@ -156,7 +162,13 @@ class GithubCliBackend(GithubApiBackend):
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="PATCH")
-        return await run_gh_cli_command(command)
+        try:
+            response = await run_gh_cli_command(command)
+        except Exception:
+            lg.debug(f"Failed request body: {json}")
+            raise
+        else:
+            return response
 
     async def get_user(self) -> User:
         response = await self.get("/user")
