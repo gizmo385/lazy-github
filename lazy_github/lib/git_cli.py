@@ -7,7 +7,8 @@ from subprocess import DEVNULL, SubprocessError, check_output
 # "\/"          Match the forward slash
 # "([^.]+)"     Match everything until the period, which should be the repo name
 # ".git"        Match the .git suffix
-_GIT_REMOTE_REGEX = re.compile(r".+:([^\/]+)\/([^.]+).git")
+_SSH_GIT_REMOTE_REGEX = re.compile(r".+:([^\/]+)\/([^.]+)(.git)?")
+_HTTPS_GIT_REMOTE_REGEX = re.compile(r"^https:\/\/[^.]+[^\/]+\/([^\/]+)\/([^\/]+)$")
 
 
 def current_local_repo_full_name(remote: str = "origin") -> str | None:
@@ -17,7 +18,7 @@ def current_local_repo_full_name(remote: str = "origin") -> str | None:
     except SubprocessError:
         return None
 
-    if matches := re.match(_GIT_REMOTE_REGEX, output):
+    if matches := re.match(_SSH_GIT_REMOTE_REGEX, output) or re.match(_HTTPS_GIT_REMOTE_REGEX, output):
         owner, name = matches.groups()
         return f"{owner}/{name}"
 
