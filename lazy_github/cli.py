@@ -4,6 +4,7 @@ import click
 import rich
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
+from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.ui.app import app
 
 _CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -18,8 +19,17 @@ def cli(ctx: click.Context) -> None:
 
 
 @cli.command
-def run():
+@click.option(
+    "--auth-backend",
+    help="Specifies which authentication backend to use",
+    envvar="AUTH_BACKEND",
+    type=click.Choice(list(BackendType)),
+)
+def run(auth_backend: BackendType | None):
     """Run LazyGithub"""
+    if auth_backend:
+        with Config.to_edit() as config:
+            config.api.client_type = auth_backend
     app.run()
 
 
