@@ -2,7 +2,6 @@
 name = "lazy-github"
 description = "A terminal UI for interacting with Github"
 readme = "README.md"
-version = "0.2.8"
 authors = [
 	{ name = "Chris (Gizmo)", email = "gizmo385@users.noreply.github.com" },
 ]
@@ -10,6 +9,8 @@ maintainers = [
 	{ name = "Chris (Gizmo)", email = "gizmo385@users.noreply.github.com" },
 ]
 license = { file = "LICENSE"}
+
+dynamic = ["version"]
 
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -30,10 +31,17 @@ dependencies = [
 [project.scripts]
 lazy-github = "lazy_github.cli:cli"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.hatch.envs.default]
 installer = "uv"
 
-[tool.setuptools.packages.find]
+[tool.hatch.version]
+path = "lazy_github/version.py"
+
+[tool.hatch.build.targets.wheel]
 include = ["lazy_github*"]
 
 [tool.ruff]
