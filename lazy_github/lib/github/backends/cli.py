@@ -147,13 +147,7 @@ class GithubCliBackend(GithubApiBackend):
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="POST")
-        try:
-            response = await run_gh_cli_command(command)
-        except Exception:
-            lg.debug(f"Failed request body: {json}")
-            raise
-        else:
-            return response
+        return await run_gh_cli_command(command)
 
     async def patch(
         self,
@@ -162,13 +156,7 @@ class GithubCliBackend(GithubApiBackend):
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="PATCH")
-        try:
-            response = await run_gh_cli_command(command)
-        except Exception:
-            lg.debug(f"Failed request body: {json}")
-            raise
-        else:
-            return response
+        return await run_gh_cli_command(command)
 
     async def get_user(self) -> User:
         response = await self.get("/user")

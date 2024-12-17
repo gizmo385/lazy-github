@@ -24,13 +24,13 @@ async def list_for_repo(repo: Repository) -> list[PartialPullRequest]:
 async def create_pull_request(
     repo: Repository, title: str, body: str, base_ref: str, head_ref: str, draft: bool = False
 ) -> FullPullRequest:
-    user = await LazyGithubContext.client.user()
     url = f"/repos/{repo.owner.login}/{repo.name}/pulls"
     request_body = {
         "title": title,
         "draft": draft,
         "base": base_ref,
-        "head": f"{user.login}:{head_ref}",
+        # TODO: This prevents it from working with forks, but means it'll work for same-repo PRs. Issue
+        "head": f"{repo.owner.login}:{head_ref}",
     }
     if body:
         request_body["body"] = body
