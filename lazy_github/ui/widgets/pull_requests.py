@@ -3,10 +3,12 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer, VerticalScroll
 from textual.coordinate import Coordinate
-from textual.widgets import DataTable, Label, Markdown, RichLog, Rule, TabPane
+from textual.widgets import Collapsible, DataTable, Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.constants import CHECKMARK, X_MARK
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github.checks import combined_check_status_for_ref
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.github.pull_requests import (
     get_diff,
@@ -16,7 +18,12 @@ from lazy_github.lib.github.pull_requests import (
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
 from lazy_github.lib.utils import bold, link, pluralize
-from lazy_github.models.github import FullPullRequest, PartialPullRequest
+from lazy_github.models.github import (
+    CheckStatus,
+    CheckStatusState,
+    FullPullRequest,
+    PartialPullRequest,
+)
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
@@ -117,11 +124,30 @@ class PrOverviewTabPane(TabPane):
     PrOverviewTabPane {
         overflow-y: auto;
     }
+
+    Collapsible {
+        height: auto;
+    }
+
+    ListView {
+        height: auto;
+    }
     """
 
     def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Overview", id="overview_pane")
         self.pr = pr
+
+    def _status_check_to_label(self, status: CheckStatus) -> Label:
+        match status.state:
+            case CheckStatusState.SUCCESS:
+                return Label(f"[green]{CHECKMARK} Passed[/green] {status.description}")
+            case CheckStatusState.PENDING:
+                return Label(f"[yellow]... Pending[/yellow] {status.description}")
+            case CheckStatusState.FAILURE:
+                return Label(f"[red]{X_MARK} Failed[/red] {status.description}")
+            case CheckStatusState.ERROR:
+                return Label(f"[red]{X_MARK} Errored[/red] {status.description}")
 
     def compose(self) -> ComposeResult:
         pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
@@ -157,9 +183,33 @@ class PrOverviewTabPane(TabPane):
             if self.pr.merged_at:
                 date = self.pr.merged_at.strftime("%c")
                 yield Label(f"\nMerged on {date}")
+            yield Rule()
+
+            # This is where we'll store information about the status checks being run on the PR
+            with Collapsible(title="Status Checks: ...", id="collapsible_status_checks") as c:
+                c.loading = True
+                yield ListView(id="status_checks_list")
 
             yield Rule()
             yield Markdown(self.pr.body)
+
+    @work
+    async def load_checks(self) -> None:
+        # TODO: This should probably check normal check runs as well? Unsure if the combined check status includes all
+        # of those
+        combined_check_status = await combined_check_status_for_ref(self.pr.repo, self.pr.head.sha)
+        status_checks_list = self.query_one("#status_checks_list", ListView)
+        if statuses := combined_check_status.statuses:
+            status_checks_list.extend(ListItem(self._status_check_to_label(c)) for c in statuses)
+        else:
+            status_checks_list.append(ListItem(Label("Not status checks available")))
+
+        collapse_container = self.query_one("#collapsible_status_checks", Collapsible)
+        collapse_container.title = f"Status checks: {combined_check_status.state.value.title()}"
+        collapse_container.loading = False
+
+    async def on_mount(self) -> None:
+        _ = self.load_checks()
 
 
 class PrDiffTabPane(TabPane):
@@ -172,7 +222,7 @@ class PrDiffTabPane(TabPane):
             yield RichLog(id="diff_contents", highlight=True)
 
     @work
-    async def fetch_diff(self):
+    async def fetch_diff(self) -> None:
         diff_contents = self.query_one("#diff_contents", RichLog)
         try:
             diff = await get_diff(self.pr)
@@ -185,9 +235,9 @@ class PrDiffTabPane(TabPane):
             diff_contents.write(diff)
         self.loading = False
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         self.loading = True
-        self.fetch_diff()
+        _ = self.fetch_diff()
 
 
 class PrConversationTabPane(TabPane):

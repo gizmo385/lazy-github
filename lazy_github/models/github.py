@@ -61,6 +61,7 @@ class Issue(BaseModel):
 class Ref(BaseModel):
     user: User
     ref: str
+    sha: str
 
 
 class PartialPullRequest(Issue):
@@ -189,3 +190,24 @@ class Notification(BaseModel):
     unread: bool
     updated_at: datetime
     last_read_at: datetime | None
+
+
+class CheckStatusState(StrEnum):
+    SUCCESS = "success"
+    PENDING = "pending"
+    ERROR = "error"
+    FAILURE = "failure"
+
+
+class CheckStatus(BaseModel):
+    description: str
+    context: str
+    state: CheckStatusState
+    target_url: str | None
+    updated_at: datetime | None
+    created_at: datetime | None
+
+
+class CombinedCheckStatus(BaseModel):
+    state: CheckStatusState
+    statuses: list[CheckStatus]
