@@ -12,7 +12,7 @@ DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 # Symbols used in various UI tables
 IS_FAVORITED = "[green]★[/green]"
 IS_NOT_FAVORITED = "☆"
-CHECKMARK = "✔"
+CHECKMARK = "✓"
 X_MARK = "✘"
 BULLET_POINT = "•"
 
