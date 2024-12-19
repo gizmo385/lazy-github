@@ -54,11 +54,11 @@ class LookupRepositoryContainer(Container):
 class LookupRepositoryModal(ModalScreen[Repository | None]):
     DEFAULT_CSS = """
     LookupRepositoryModal {
-        height: 80%;
+        align: center middle;
+        content-align: center middle;
     }
 
     LookupRepositoryContainer {
-        dock: top;
         width: 60;
         max-height: 25;
         border: thick $background 80%;
@@ -78,7 +78,7 @@ class LookupRepositoryModal(ModalScreen[Repository | None]):
                 # If we haven't tracked this repo already, we will do so
                 config.repositories.additional_repos_to_track.append(repo_name)
 
-    @on(Button.Pressed, "#submit")
+    @on(Button.Pressed, "#lookup")
     async def action_submit(self) -> None:
         repo_input = self.query_one("#repo_to_lookup", Input)
         continue_tracking_input = self.query_one("#continue_tracking", Switch)
