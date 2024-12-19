@@ -138,16 +138,18 @@ class PrOverviewTabPane(TabPane):
         super().__init__("Overview", id="overview_pane")
         self.pr = pr
 
-    def _status_check_to_label(self, status: CheckStatus) -> Label:
+    def _status_check_to_label(self, status: CheckStatus) -> str:
         match status.state:
             case CheckStatusState.SUCCESS:
-                return Label(f"[green]{CHECKMARK} Passed[/green] {status.description}")
+                status_summary = f"[green]{CHECKMARK} Passed[/green]"
             case CheckStatusState.PENDING:
-                return Label(f"[yellow]... Pending[/yellow] {status.description}")
+                status_summary = "[yellow]... Pending[/yellow]"
             case CheckStatusState.FAILURE:
-                return Label(f"[red]{X_MARK} Failed[/red] {status.description}")
+                status_summary = f"[red]{X_MARK} Failed[/red]"
             case CheckStatusState.ERROR:
-                return Label(f"[red]{X_MARK} Errored[/red] {status.description}")
+                status_summary = f"[red]{X_MARK} Errored[/red]"
+
+        return f"{status_summary} {status.context} - {status.description}"
 
     def compose(self) -> ComposeResult:
         pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
@@ -188,6 +190,7 @@ class PrOverviewTabPane(TabPane):
             # This is where we'll store information about the status checks being run on the PR
             with Collapsible(title="Status Checks: ...", id="collapsible_status_checks") as c:
                 c.loading = True
+                # TODO: We should probably make this a table? That would allow follow-up actions to be performed as well
                 yield ListView(id="status_checks_list")
 
             yield Rule()
@@ -200,7 +203,8 @@ class PrOverviewTabPane(TabPane):
         combined_check_status = await combined_check_status_for_ref(self.pr.repo, self.pr.head.sha)
         status_checks_list = self.query_one("#status_checks_list", ListView)
         if statuses := combined_check_status.statuses:
-            status_checks_list.extend(ListItem(self._status_check_to_label(c)) for c in statuses)
+            status_labels = sorted(self._status_check_to_label(c) for c in statuses)
+            status_checks_list.extend(ListItem(Label(status_label)) for status_label in status_labels)
         else:
             status_checks_list.append(ListItem(Label("Not status checks available")))
 
