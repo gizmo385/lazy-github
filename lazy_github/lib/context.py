@@ -23,11 +23,12 @@ class LazyGithubContext:
     # Directly assigned attributes
     current_repo: Repository | None = None
 
-    def _setup_logging_handler(cls) -> None:
+    @classmethod
+    def _setup_logging_handler(cls, config: Config) -> None:
         """Setup the file logger for LazyGithub"""
         try:
-            cls._config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
-            lg_file_handler = logging.FileHandler(filename=cls._config.core.logfile_path)
+            config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
+            lg_file_handler = logging.FileHandler(filename=config.core.logfile_path)
             lg_file_handler.setFormatter(LazyGithubLogFormatter())
             lg.addHandler(lg_file_handler)
         except Exception:
@@ -37,7 +38,7 @@ class LazyGithubContext:
     def config(cls) -> Config:
         if cls._config is None:
             cls._config = Config.load_config()
-            cls._setup_logging_handler(cls)
+            cls._setup_logging_handler(cls._config)
         return cls._config
 
     @classproperty
