@@ -11,6 +11,8 @@ jobs:
       url: https://pypi.org/p/lazy-github
     permissions:
       id-token: write
+    outputs:
+      new-version: ${{ steps.calculate-version.outputs.version }}
     steps:
       # Perform a bunch of setup
     - uses: actions/checkout@v3
@@ -30,15 +32,29 @@ jobs:
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
 
-    - name: Create tag
-      run: |
-        tag_name="v${{ steps.calculate-version.outputs.version }}"
-        git tag $tag_name && git push origin $tag_name
+  create-tag:
+    name: Create tag
+    needs: pypi-publish
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/v${{ needs.pypi-publish.outputs.new-version }}',
+              sha: context.sha
+            })
 
-    - name: Notify when this workflow completes (regardless of success or failure)
+  notify-discord:
+    name: Notify when this workflow completes (regardless of success or failure)
+    needs: pypi-publish
+    steps:
       uses: nobrayner/discord-webhook@v1
       with:
-        title: "Version ${{ steps.calculate-version.outputs.version }} published to PyPi"
-        description: "Check out the new version [here](https://pypi.org/project/lazy-github/${{ steps.calculate-version.outputs.version }}/)"
+        title: "Version ${{ needs.pypi-publish.outputs.new-version }} published to PyPi"
+        description: "Check out the new version [here](https://pypi.org/project/lazy-github/${{ needs.pypi-publish.outputs.new-version }}/)"
         github-token: ${{ secrets.github_token }}
         discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
