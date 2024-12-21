@@ -39,12 +39,12 @@ async def create_pull_request(
     return FullPullRequest(**response.json(), repo=repo)
 
 
-async def get_full_pull_request(partial_pr: PartialPullRequest) -> FullPullRequest:
+async def get_full_pull_request(repo: Repository, pr_number: int) -> FullPullRequest:
     """Converts a partial pull request into a full pull request"""
-    url = f"/repos/{partial_pr.repo.owner.login}/{partial_pr.repo.name}/pulls/{partial_pr.number}"
+    url = f"/repos/{repo.owner.login}/{repo.name}/pulls/{pr_number}"
     response = await LazyGithubContext.client.get(url, headers=github_headers())
     response.raise_for_status()
-    return FullPullRequest(**response.json(), repo=partial_pr.repo)
+    return FullPullRequest(**response.json(), repo=repo)
 
 
 async def get_diff(pr: FullPullRequest) -> str:
