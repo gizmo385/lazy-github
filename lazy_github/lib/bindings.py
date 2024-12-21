@@ -13,13 +13,14 @@ class LazyGithubBindings:
     # Triggering creation flows
     OPEN_ISSUE = Binding("I", "open_issue", "New Issue", id="issue.new")
     EDIT_ISSUE = Binding("E", "edit_issue", "Edit Issue", id="issue.edit")
-    OPEN_PULL_REQUEST = Binding("P", "open_pull_request", "New PR", id="pull_request.new")
     NEW_COMMENT = Binding("n", "new_comment", "New Comment", id="conversation.comment.new")
     REPLY_TO_REVIEW = Binding("r", "reply_to_review", "Reply to Review", id="conversation.review.reply")
     REPLY_TO_COMMENT = Binding("r", "reply_to_individual_comment", "Reply to Comment", id="conversation.comment.reply")
 
     # Pull request actions
+    OPEN_PULL_REQUEST = Binding("P", "open_pull_request", "New PR", id="pull_request.new")
     MERGE_PULL_REQUEST = Binding("M", "merge_pull_request", "Merge PR", id="pull_request.merge")
+    LOOKUP_PULL_REQUEST = Binding("O", "lookup_pull_request", "Lookup Pull Request", id="pull_request.lookup")
 
     # Repository actions
     TOGGLE_FAVORITE_REPO = Binding("ctrl+f", "toggle_favorite_repo", "Toggle Favorite", id="repositories.favorite")
