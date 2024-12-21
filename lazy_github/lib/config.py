@@ -1,6 +1,7 @@
 import json
 from contextlib import contextmanager
 from datetime import timedelta
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Generator, Literal, Optional
 
@@ -71,11 +72,18 @@ class RepositorySettings(BaseModel):
     favorites: list[str] = []
 
 
+class MergeMethod(StrEnum):
+    MERGE = "merge"
+    SQUASH = "squash"
+    REBASE = "rebase"
+
+
 class PullRequestSettings(BaseModel):
     """Changes how pull requests are retrieved from the Github API"""
 
     state_filter: IssueStateFilter = IssueStateFilter.ALL
     owner_filter: IssueOwnerFilter = IssueOwnerFilter.ALL
+    preferred_merge_method: MergeMethod = MergeMethod.SQUASH
 
 
 class IssueSettings(BaseModel):
