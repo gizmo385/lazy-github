@@ -1,3 +1,4 @@
+from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.lib.github.backends.cli import run_gh_cli_command
@@ -6,7 +7,9 @@ from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
     Issue,
+    MergeMethod,
     PartialPullRequest,
+    PullRequestMergeResult,
     Repository,
     Review,
     ReviewComment,
@@ -60,6 +63,17 @@ async def get_diff(pr: FullPullRequest) -> str:
 
     response.raise_for_status()
     return response.text
+
+
+async def merge_pull_request(pr: FullPullRequest, merge_method: MergeMethod) -> PullRequestMergeResult:
+    """
+    Attempts to merge the PR via the Github API. The head sha of the PR must match for the merge to be successful.
+    """
+    url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/merge"
+    body = {"merge_method": merge_method, "sha": pr.head.sha}
+    response = await LazyGithubContext.client.post(url, headers=github_headers(), json=body)
+    response.raise_for_status()
+    return PullRequestMergeResult(**response.json())
 
 
 async def get_review_comments(pr: FullPullRequest, review: Review) -> list[ReviewComment]:
