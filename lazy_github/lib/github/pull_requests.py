@@ -1,4 +1,4 @@
-from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.config import MergeMethod
 from lazy_github.lib.constants import DIFF_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.context import LazyGithubContext, github_headers
 from lazy_github.lib.github.backends.cli import run_gh_cli_command
@@ -7,7 +7,6 @@ from lazy_github.lib.github.issues import list_issues
 from lazy_github.models.github import (
     FullPullRequest,
     Issue,
-    MergeMethod,
     PartialPullRequest,
     PullRequestMergeResult,
     Repository,
@@ -71,7 +70,7 @@ async def merge_pull_request(pr: FullPullRequest, merge_method: MergeMethod) -> 
     """
     url = f"/repos/{pr.repo.owner.login}/{pr.repo.name}/pulls/{pr.number}/merge"
     body = {"merge_method": merge_method, "sha": pr.head.sha}
-    response = await LazyGithubContext.client.post(url, headers=github_headers(), json=body)
+    response = await LazyGithubContext.client.put(url, headers=github_headers(), json=body)
     response.raise_for_status()
     return PullRequestMergeResult(**response.json())
 
