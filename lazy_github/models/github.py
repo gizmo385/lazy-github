@@ -85,6 +85,13 @@ class FullPullRequest(PartialPullRequest):
     diff_url: str
 
 
+
+class PullRequestMergeResult(BaseModel):
+    sha: str
+    merged: bool
+    message: str
+
+
 class AuthorAssociation(StrEnum):
     COLLABORATOR = "COLLABORATOR"
     CONTRIBUTOR = "CONTRIBUTOR"

@@ -8,11 +8,13 @@ from textual.widgets import Collapsible, DataTable, Label, ListItem, ListView, M
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import CHECKMARK, X_MARK
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.checks import combined_check_status_for_ref
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.github.pull_requests import (
     get_diff,
     get_reviews,
+    merge_pull_request,
     reconstruct_review_conversation_hierarchy,
 )
 from lazy_github.lib.logging import lg
@@ -23,6 +25,7 @@ from lazy_github.models.github import (
     CheckStatusState,
     FullPullRequest,
     PartialPullRequest,
+    PullRequestMergeResult,
 )
 from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
@@ -147,6 +150,8 @@ class PrOverviewTabPane(TabPane):
     }
     """
 
+    BINDINGS = [LazyGithubBindings.MERGE_PULL_REQUEST]
+
     def __init__(self, pr: FullPullRequest) -> None:
         super().__init__("Overview", id="overview_pane")
         self.pr = pr
@@ -163,6 +168,29 @@ class PrOverviewTabPane(TabPane):
                 status_summary = f"[red]{X_MARK} Errored[/red]"
 
         return f"{status_summary} {status.context} - {status.description}"
+
+    async def action_merge_pull_request(self) -> None:
+        if self.pr.merged_at is not None:
+            self.notify("PR has already been merged!", title="Already Merged", severity="warning")
+            return
+
+        try:
+            merge_result = await merge_pull_request(
+                self.pr, LazyGithubContext.config.pull_requests.preferred_merge_method
+            )
+            if merge_result.merged:
+                lg.info(f"Merged PR {self.pr.number} in repo {self.pr.repo.full_name}")
+                self.notify(f"Pull request {self.pr.number} merged", title="PR Merged")
+            else:
+                lg.warning(f"Failed to merge PR {self.pr.number} in repo {self.pr.repo.full_name}")
+                self.notify(
+                    f"Pull request {self.pr.number} could not be merged", title="Error Merging PR", severity="error"
+                )
+        except GithubApiRequestFailed:
+            lg.exception(f"Failed to merge PR {self.pr.number} in repo {self.pr.repo.full_name}")
+            self.notify(
+                f"Pull request {self.pr.number} could not be merged", title="Error Merging PR", severity="error"
+            )
 
     def compose(self) -> ComposeResult:
         pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
