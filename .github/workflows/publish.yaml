@@ -38,7 +38,7 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
-      uses: actions/github-script@v7
+    - uses: actions/github-script@v7
       with:
         script: |
           github.rest.git.createRef({
@@ -52,7 +52,7 @@ jobs:
     name: Notify when this workflow completes (regardless of success or failure)
     needs: pypi-publish
     steps:
-      uses: nobrayner/discord-webhook@v1
+    - uses: nobrayner/discord-webhook@v1
       with:
         title: "Version ${{ needs.pypi-publish.outputs.new-version }} published to PyPi"
         description: "Check out the new version [here](https://pypi.org/project/lazy-github/${{ needs.pypi-publish.outputs.new-version }}/)"
