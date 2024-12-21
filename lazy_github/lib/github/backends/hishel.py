@@ -69,6 +69,15 @@ class HishelGithubApiBackend(GithubApiBackend):
         response = await self.api_client.patch(url, headers=headers, json=json)
         return HishelApiResponse(response)
 
+    async def put(
+        self,
+        url: str,
+        headers: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
+    ) -> HishelApiResponse:
+        response = await self.api_client.put(url, headers=headers, json=json)
+        return HishelApiResponse(response)
+
     def github_headers(
         self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
     ) -> dict[str, str]:

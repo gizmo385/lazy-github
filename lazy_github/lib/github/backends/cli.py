@@ -158,6 +158,15 @@ class GithubCliBackend(GithubApiBackend):
         command = _build_command(url, headers=headers, body=json, method="PATCH")
         return await run_gh_cli_command(command)
 
+    async def put(
+        self,
+        url: str,
+        headers: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
+    ) -> Any:
+        command = _build_command(url, headers=headers, body=json, method="PUT")
+        return await run_gh_cli_command(command)
+
     async def get_user(self) -> User:
         response = await self.get("/user")
         return User(**response.json())

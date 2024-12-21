@@ -45,5 +45,8 @@ class GithubClient(GithubApiBackend):
     async def patch(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
         return await self.backend.patch(url, headers, json)
 
+    async def put(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+        return await self.backend.put(url, headers, json)
+
     async def get_user(self) -> User:
         return await self.backend.get_user()

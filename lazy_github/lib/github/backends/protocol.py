@@ -48,6 +48,13 @@ class GithubApiBackend(Protocol):
         json: dict[str, str] | None = None,
     ) -> GithubApiResponse: ...
 
+    async def put(
+        self,
+        url: str,
+        headers: dict[str, str] | None = None,
+        json: dict[str, str] | None = None,
+    ) -> GithubApiResponse: ...
+
     async def get_user(self) -> User: ...
 
     def github_headers(
