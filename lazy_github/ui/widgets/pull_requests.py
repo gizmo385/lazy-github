@@ -24,6 +24,7 @@ from lazy_github.models.github import (
     FullPullRequest,
     PartialPullRequest,
 )
+from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
@@ -37,6 +38,8 @@ class PullRequestsContainer(LazyGithubContainer):
     """
     This container includes the primary datatable for viewing pull requests on the UI.
     """
+
+    BINDINGS = [LazyGithubBindings.LOOKUP_PULL_REQUEST]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -56,6 +59,16 @@ class PullRequestsContainer(LazyGithubContainer):
             batch_size=30,
             reverse_sort=True,
         )
+
+    @work
+    async def action_lookup_pull_request(self) -> None:
+        if pr := await self.app.push_screen_wait(LookupPullRequestModal()):
+            if pr.number not in self.pull_requests:
+                self.pull_requests[pr.number] = pr
+                self.searchable_table.append_rows([pull_request_to_cell(pr)])
+
+            self.post_message(PullRequestSelected(pr))
+            lg.info(f"Looked up PR #{pr.number}")
 
     async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> list[tuple[str | int, ...]]:
         if not LazyGithubContext.current_repo:
