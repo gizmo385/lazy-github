@@ -208,7 +208,6 @@ class PrOverviewTabPane(TabPane):
             status_checks_list.extend(ListItem(Label(status_label)) for status_label in status_labels)
             collapse_container.title = f"Status checks: {combined_check_status.state.value.title()}"
         else:
-            status_checks_list.append(ListItem(Label("No status checks available")))
             collapse_container.title = "No status checks on PR"
 
         collapse_container.loading = False
