@@ -202,14 +202,15 @@ class PrOverviewTabPane(TabPane):
         # of those
         combined_check_status = await combined_check_status_for_ref(self.pr.repo, self.pr.head.sha)
         status_checks_list = self.query_one("#status_checks_list", ListView)
+        collapse_container = self.query_one("#collapsible_status_checks", Collapsible)
         if statuses := combined_check_status.statuses:
             status_labels = sorted(self._status_check_to_label(c) for c in statuses)
             status_checks_list.extend(ListItem(Label(status_label)) for status_label in status_labels)
+            collapse_container.title = f"Status checks: {combined_check_status.state.value.title()}"
         else:
-            status_checks_list.append(ListItem(Label("Not status checks available")))
+            status_checks_list.append(ListItem(Label("No status checks available")))
+            collapse_container.title = "No status checks on PR"
 
-        collapse_container = self.query_one("#collapsible_status_checks", Collapsible)
-        collapse_container.title = f"Status checks: {combined_check_status.state.value.title()}"
         collapse_container.loading = False
 
     async def on_mount(self) -> None:
