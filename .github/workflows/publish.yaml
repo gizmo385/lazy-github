@@ -51,6 +51,7 @@ jobs:
   notify-discord:
     name: Notify when this workflow completes (regardless of success or failure)
     needs: pypi-publish
+    runs-on: ubuntu-latest
     steps:
     - uses: nobrayner/discord-webhook@v1
       with:
