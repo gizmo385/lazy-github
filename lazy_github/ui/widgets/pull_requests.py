@@ -315,8 +315,8 @@ class PrConversationTabPane(TabPane):
         for review in reviews:
             if review.body:
                 handled_comment_node_ids.extend([c.id for c in review.comments])
-                review_container = ReviewContainer(self.pr, review, review_hierarchy)
-                self.comments_and_reviews.mount(review_container)
+            review_container = ReviewContainer(self.pr, review, review_hierarchy)
+            self.comments_and_reviews.mount(review_container)
 
         for comment in comments:
             if comment.body and comment.id not in handled_comment_node_ids:

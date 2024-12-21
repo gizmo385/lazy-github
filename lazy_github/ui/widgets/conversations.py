@@ -111,10 +111,11 @@ class ReviewContainer(Collapsible, can_focus=True):
         else:
             review_state_text = self.review.state.title()
         yield Label(f"Review from {self.review.user.login} ({review_state_text})")
-        yield Markdown(self.review.body)
-        for comment in self.review.comments:
-            if comment_node := self.hierarchy[comment.id]:
-                yield ReviewConversation(self.pr, comment_node)
+        if self.review.body:
+            yield Markdown(self.review.body)
+            for comment in self.review.comments:
+                if comment_node := self.hierarchy[comment.id]:
+                    yield ReviewConversation(self.pr, comment_node)
 
     def action_reply_to_review(self) -> None:
         self.app.push_screen(NewCommentModal(self.pr.repo, self.pr, self.review))
