@@ -16,8 +16,10 @@ python311Packages.buildPythonApplication rec {
     hash = "sha256-L5s2q3n18fCvIXjrI6a4LYuvMGVmsdXzx4sDGKk+OTs=";
   };
 
-  build-system = [ python311Packages.hatchling python311Packages.hatch-vcs
-    python311Packages.poetry-core ];
+  build-system = [
+    python311Packages.hatchling
+    python311Packages.hatch-vcs
+  ];
   nativeBuildInputs = [ python311Packages.hatchling python311Packages.hatch-vcs ];
   dependencies = with python311Packages; [
     click
