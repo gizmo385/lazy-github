@@ -8,7 +8,7 @@ class LazyGithubBindings:
     # Global App Bindings
     QUIT_APP = Binding("q", "quit", "Quit", id="app.quit")
     OPEN_COMMAND_PALLETE = Binding("ctrl+p", "command_palette", "Commands", id="app.command_palette")
-    MAXIMIZE_WIDGET = Binding("ctrl+m", "maximize", "Maximize", id="app.maximize_widget")
+    MAXIMIZE_WIDGET = Binding("M", "maximize", "Maximize", id="app.maximize_widget")
 
     # Triggering creation flows
     OPEN_ISSUE = Binding("I", "open_issue", "New Issue", id="issue.new")
@@ -19,7 +19,7 @@ class LazyGithubBindings:
 
     # Pull request actions
     OPEN_PULL_REQUEST = Binding("P", "open_pull_request", "New PR", id="pull_request.new")
-    MERGE_PULL_REQUEST = Binding("M", "merge_pull_request", "Merge PR", id="pull_request.merge")
+    MERGE_PULL_REQUEST = Binding("ctrl+m", "merge_pull_request", "Merge PR", id="pull_request.merge")
     LOOKUP_PULL_REQUEST = Binding("O", "lookup_pull_request", "Lookup Pull Request", id="pull_request.lookup")
 
     # Repository actions
