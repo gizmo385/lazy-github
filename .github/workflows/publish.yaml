@@ -47,6 +47,11 @@ jobs:
               ref: 'refs/tags/v${{ needs.pypi-publish.outputs.new-version }}',
               sha: context.sha
             })
+          github.rest.git.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ needs.pypi-publish.outputs.new-version }}',
+            })
 
   notify-discord:
     name: Notify when this workflow completes (regardless of success or failure)
