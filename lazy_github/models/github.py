@@ -85,7 +85,6 @@ class FullPullRequest(PartialPullRequest):
     diff_url: str
 
 
-
 class PullRequestMergeResult(BaseModel):
     sha: str
     merged: bool

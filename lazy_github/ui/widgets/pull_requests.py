@@ -25,7 +25,6 @@ from lazy_github.models.github import (
     CheckStatusState,
     FullPullRequest,
     PartialPullRequest,
-    PullRequestMergeResult,
 )
 from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
@@ -180,7 +179,13 @@ class PrOverviewTabPane(TabPane):
             )
             if merge_result.merged:
                 lg.info(f"Merged PR {self.pr.number} in repo {self.pr.repo.full_name}")
-                self.notify(f"Pull request {self.pr.number} merged", title="PR Merged")
+                self.notify(
+                    f"Pull request {self.pr.number} merged. Note some cached information on the UI may be out of date.",
+                    title="PR Merged",
+                )
+
+                # This will force refetch the updated information about the PR for the UI
+                self.post_message(PullRequestSelected(self.pr))
             else:
                 lg.warning(f"Failed to merge PR {self.pr.number} in repo {self.pr.repo.full_name}")
                 self.notify(
