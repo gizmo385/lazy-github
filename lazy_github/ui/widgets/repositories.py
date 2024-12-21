@@ -28,7 +28,6 @@ class ReposContainer(LazyGithubContainer):
     BINDINGS = [
         LazyGithubBindings.TOGGLE_FAVORITE_REPO,
         LazyGithubBindings.LOOKUP_REPOSITORY,
-        # ("enter", "select"),
     ]
 
     def __init__(self, *args, **kwargs) -> None:
