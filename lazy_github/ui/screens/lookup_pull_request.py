@@ -1,17 +1,14 @@
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
-from textual.notifications import SeverityLevel
 from textual.screen import ModalScreen
-from textual.validation import Regex
-from textual.widgets import Button, Input, Label, Markdown, Rule, Switch
+from textual.widgets import Button, Input, Label, Markdown, Rule
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.pull_requests import get_full_pull_request
-from lazy_github.lib.github.repositories import get_repository_by_name
-from lazy_github.models.github import FullPullRequest, Repository
+from lazy_github.models.github import FullPullRequest
 from lazy_github.ui.widgets.common import LazyGithubFooter
 
 
