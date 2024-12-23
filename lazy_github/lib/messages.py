@@ -2,7 +2,15 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.models.github import Branch, FullPullRequest, Issue, IssueComment, PartialPullRequest, Repository
+from lazy_github.models.github import (
+    Branch,
+    FullPullRequest,
+    Issue,
+    IssueComment,
+    Notification,
+    PartialPullRequest,
+    Repository,
+)
 
 
 class RepoSelected(Message):
@@ -89,3 +97,15 @@ class BranchesLoaded(Message):
     def __init__(self, branches: list[Branch]) -> None:
         super().__init__()
         self.branches = branches
+
+
+class NotificationMarkedAsRead(Message):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__()
+        self.notification = notification
+
+
+class NotificationSelected(Message):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__()
+        self.notification = notification

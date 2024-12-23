@@ -353,8 +353,11 @@ class LazyGithubMainScreen(Screen):
 
     @work
     async def action_view_notifications(self) -> None:
-        await self.app.push_screen_wait(NotificationsModal())
+        notification = await self.app.push_screen_wait(NotificationsModal())
         self.refresh_notification_count()
+
+        if notification:
+            lg.info(f"Selected notification: {notification}")
 
     async def on_mount(self) -> None:
         if LazyGithubContext.config.notifications.enabled:

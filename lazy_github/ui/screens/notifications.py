@@ -2,21 +2,15 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.coordinate import Coordinate
-from textual.message import Message
 from textual.screen import ModalScreen
-from textual.widgets import Markdown, TabbedContent, TabPane
+from textual.widgets import DataTable, Markdown, TabbedContent, TabPane
 
+from lazy_github.lib.messages import NotificationMarkedAsRead, NotificationSelected
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
 from lazy_github.lib.github.notifications import fetch_notifications, mark_notification_as_read
 from lazy_github.models.github import Notification
 from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable
-
-
-class NotificationMarkedAsRead(Message):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__()
-        self.notification = notification
 
 
 class _NotificationsTableTabPane(TabPane):
@@ -45,6 +39,16 @@ class _NotificationsTableTabPane(TabPane):
             notification.id,
             key=str(notification.id),
         )
+
+    def get_selected_notification(self) -> Notification:
+        current_row = self.searchable_table.table.cursor_row
+        id = self.searchable_table.table.get_cell_at(Coordinate(current_row, self.id_column))
+        return self.notifications[int(id)]
+
+    @on(DataTable.RowSelected)
+    def notification_selected(self) -> None:
+        notification = self.get_selected_notification()
+        self.post_message(NotificationSelected(notification))
 
     def on_mount(self) -> None:
         self.searchable_table.loading = True
@@ -137,7 +141,7 @@ class NotificationsContainer(Container):
         self.load_notifications()
 
 
-class NotificationsModal(ModalScreen[None]):
+class NotificationsModal(ModalScreen[Notification | None]):
     DEFAULT_CSS = """
     NotificationsModal {
         height: 80%;
@@ -159,6 +163,10 @@ class NotificationsModal(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         yield NotificationsContainer(id="notifications")
         yield LazyGithubFooter()
+
+    @on(NotificationSelected)
+    async def handle_notification_selected(self, message: NotificationSelected) -> None:
+        self.dismiss(message.notification)
 
     async def action_close(self) -> None:
         self.dismiss()
