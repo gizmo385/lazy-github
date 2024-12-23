@@ -1,7 +1,7 @@
 from functools import partial
 from typing import NamedTuple
 
-from textual import work
+from textual import on, work
 from textual.app import ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
@@ -27,7 +27,7 @@ from lazy_github.lib.messages import (
     PullRequestSelected,
     RepoSelected,
 )
-from lazy_github.models.github import Repository
+from lazy_github.models.github import Issue, PartialPullRequest, Repository
 from lazy_github.ui.screens.new_issue import NewIssueModal
 from lazy_github.ui.screens.new_pull_request import NewPullRequestModal
 from lazy_github.ui.screens.notifications import NotificationsModal
@@ -198,6 +198,13 @@ class SelectionsPane(Container):
 
     @work
     async def fetch_issues_and_pull_requests(self, repo: Repository) -> None:
+        """
+        Fetches the combined issues and pull requests from the Github API and then adds them to the appropriate tables.
+
+        Pull Requests are technically issues in the Github data model, so they are fetched by loading issues and then
+        checking returned attributes to determine if those attributes indicate that an issue can be treated as a pull
+        request instead.
+        """
         state_filter = LazyGithubContext.config.issues.state_filter
         owner_filter = LazyGithubContext.config.issues.owner_filter
         try:
@@ -209,13 +216,16 @@ class SelectionsPane(Container):
             self.pull_requests.post_message(issue_and_pr_message)
             self.issues.post_message(issue_and_pr_message)
 
-    async def on_repo_selected(self, message: RepoSelected) -> None:
-        lg.info(f"Selected repo {message.repo.full_name}")
-        LazyGithubContext.current_repo = message.repo
+    async def load_repository(self, repo: Repository) -> None:
+        """Loads more information about the specified repository, such as the PRs, issues, and workflows"""
         if self.pull_requests.display or self.issues.display:
-            self.fetch_issues_and_pull_requests(message.repo)
+            self.fetch_issues_and_pull_requests(repo)
         if self.workflows.display:
-            self.workflows.load_repo(message.repo)
+            self.workflows.load_repo(repo)
+
+    @on(RepoSelected)
+    async def handle_repo_selection(self, message: RepoSelected) -> None:
+        await self.load_repository(message.repo)
 
 
 class SelectionDetailsPane(Container):
@@ -269,8 +279,11 @@ class MainViewPane(Container):
     def details(self) -> SelectionDetailsContainer:
         return self.query_one("#selection_details", SelectionDetailsContainer)
 
-    async def on_pull_request_selected(self, message: PullRequestSelected) -> None:
-        full_pr = await get_full_pull_request(message.pr.repo, message.pr.number)
+    async def load_repository(self, repo: Repository) -> None:
+        await self.selections.load_repository(repo)
+
+    async def load_pull_request(self, pull_request: PartialPullRequest) -> None:
+        full_pr = await get_full_pull_request(pull_request.repo, pull_request.number)
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
         await tabbed_content.add_pane(PrOverviewTabPane(full_pr))
@@ -279,13 +292,21 @@ class MainViewPane(Container):
         tabbed_content.children[0].focus()
         self.details.border_title = f"[5] PR #{full_pr.number} Details"
 
-    async def on_issue_selected(self, message: IssueSelected) -> None:
+    async def load_issue(self, issue: Issue) -> None:
         tabbed_content = self.query_one("#selection_detail_tabs", TabbedContent)
         await tabbed_content.clear_panes()
-        await tabbed_content.add_pane(IssueOverviewTabPane(message.issue))
-        await tabbed_content.add_pane(IssueConversationTabPane(message.issue))
+        await tabbed_content.add_pane(IssueOverviewTabPane(issue))
+        await tabbed_content.add_pane(IssueConversationTabPane(issue))
         tabbed_content.children[0].focus()
-        self.details.border_title = f"[5] Issue #{message.issue.number} Details"
+        self.details.border_title = f"[5] Issue #{issue.number} Details"
+
+    @on(PullRequestSelected)
+    async def handle_pull_request_selection(self, message: PullRequestSelected) -> None:
+        await self.load_pull_request(message.pr)
+
+    @on(IssueSelected)
+    async def handle_issue_selection(self, message: IssueSelected) -> None:
+        await self.load_issue(message.issue)
 
 
 class LazyGithubCommand(NamedTuple):
@@ -348,8 +369,12 @@ class LazyGithubMainScreen(Screen):
     def compose(self):
         with Container():
             yield LazyGithubStatusSummary()
-            yield MainViewPane()
+            yield MainViewPane(id="main-view-pane")
             yield LazyGithubFooter()
+
+    @property
+    def main_view_pane(self) -> MainViewPane:
+        return self.query_one("#main-view-pane", MainViewPane)
 
     @work
     async def action_view_notifications(self) -> None:
@@ -357,7 +382,14 @@ class LazyGithubMainScreen(Screen):
         self.refresh_notification_count()
 
         if notification:
-            lg.info(f"Selected notification: {notification}")
+            self.notify("Opening selected notification")
+            # The thing we'll do most immediately is swap over to the repo associated with the notification
+            await self.main_view_pane.load_repository(notification.repository)
+            self.set_currently_loaded_repo(notification.repository)
+
+            # TODO: Once that's done, we need to determine what the subject of the repo is and how to handle it. For
+            # example, if the subject of the notification is a pull request then we should swap over to viewing that
+            # pull request.
 
     async def on_mount(self) -> None:
         if LazyGithubContext.config.notifications.enabled:
@@ -402,5 +434,11 @@ class LazyGithubMainScreen(Screen):
                 NOTIFICATION_REFRESH_INTERVAL, self.refresh_notification_count
             )
 
-    def on_repo_selected(self, message: RepoSelected) -> None:
-        self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = message.repo.full_name
+    def set_currently_loaded_repo(self, repo: Repository) -> None:
+        lg.info(f"Selected repo {repo.full_name}")
+        LazyGithubContext.current_repo = repo
+        self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = repo.full_name
+
+    @on(RepoSelected)
+    def handle_repo_selection(self, message: RepoSelected) -> None:
+        self.set_currently_loaded_repo(message.repo)
