@@ -18,7 +18,7 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.auth import is_logged_in_to_cli
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.issues import list_issues
-from lazy_github.lib.github.notifications import unread_notification_count
+from lazy_github.lib.github.notifications import extract_notification_subject, unread_notification_count
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import (
@@ -381,15 +381,24 @@ class LazyGithubMainScreen(Screen):
         notification = await self.app.push_screen_wait(NotificationsModal())
         self.refresh_notification_count()
 
-        if notification:
-            self.notify("Opening selected notification")
-            # The thing we'll do most immediately is swap over to the repo associated with the notification
-            await self.main_view_pane.load_repository(notification.repository)
-            self.set_currently_loaded_repo(notification.repository)
+        if not notification:
+            return
 
-            # TODO: Once that's done, we need to determine what the subject of the repo is and how to handle it. For
-            # example, if the subject of the notification is a pull request then we should swap over to viewing that
-            # pull request.
+        # The thing we'll do most immediately is swap over to the repo associated with the notification
+        await self.main_view_pane.load_repository(notification.repository)
+        self.set_currently_loaded_repo(notification.repository)
+
+        # Try to determine the source of the notification more specifically than just the repo. If we can, then we'll
+        # load that more-specific subject (such as the pull request), otherwise we will settle for the already loaded
+        # repo.
+        subject = await extract_notification_subject(notification.subject)
+        match subject:
+            case None:
+                self.notify("Opening repository for notification")
+                return
+            case PartialPullRequest():
+                await self.main_view_pane.load_pull_request(subject)
+                self.notify("Opening pull request for notification")
 
     async def on_mount(self) -> None:
         if LazyGithubContext.config.notifications.enabled:

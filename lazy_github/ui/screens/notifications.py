@@ -4,9 +4,11 @@ from textual.containers import Container
 from textual.coordinate import Coordinate
 from textual.screen import ModalScreen
 from textual.widgets import DataTable, Markdown, TabbedContent, TabPane
+from textual.widgets.data_table import RowDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.notifications import fetch_notifications, mark_notification_as_read
 from lazy_github.lib.messages import NotificationMarkedAsRead, NotificationSelected
 from lazy_github.models.github import Notification
@@ -106,8 +108,11 @@ class NotificationsContainer(Container):
     @on(NotificationMarkedAsRead)
     async def notification_marked_read(self, message: NotificationMarkedAsRead) -> None:
         await mark_notification_as_read(message.notification)
-        self.unread_tab.remove_notification(message.notification)
-        self.read_tab.add_notification(message.notification)
+        try:
+            self.unread_tab.remove_notification(message.notification)
+            self.read_tab.add_notification(message.notification)
+        except RowDoesNotExist:
+            pass
 
     def action_view_read(self) -> None:
         self.query_one(TabbedContent).active = "read"
@@ -166,6 +171,11 @@ class NotificationsModal(ModalScreen[Notification | None]):
 
     @on(NotificationSelected)
     async def handle_notification_selected(self, message: NotificationSelected) -> None:
+        if (
+            message.notification.unread
+            and LazyGithubContext.config.notifications.mark_notification_as_read_when_selected
+        ):
+            await mark_notification_as_read(message.notification)
         self.dismiss(message.notification)
 
     async def action_close(self) -> None:

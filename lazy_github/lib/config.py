@@ -42,6 +42,7 @@ class NotificationSettings(BaseModel):
     """Controls the settings for the optional notification feature, which relies on the standard GitHub CLI."""
 
     enabled: bool = False
+    mark_notification_as_read_when_selected: bool = True
 
 
 class BindingsSettings(BaseModel):
