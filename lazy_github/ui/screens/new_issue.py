@@ -13,6 +13,8 @@ from lazy_github.ui.widgets.common import LazyGithubFooter
 
 
 class NewIssueContainer(Container):
+    BINDINGS = [LazyGithubBindings.SUBMIT_DIALOG]
+
     DEFAULT_CSS = """
     #button_holder {
         align: center middle;
@@ -50,8 +52,7 @@ class NewIssueContainer(Container):
     def cancel_new_issue(self, _: Button) -> None:
         self.app.pop_screen()
 
-    @on(Button.Pressed, "#save_new_issue")
-    async def submit_new_issue(self, _: Button) -> None:
+    async def create_issue(self) -> None:
         assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo from application context!"
 
         title = self.query_one("#new_issue_title", Input).value
@@ -67,6 +68,13 @@ class NewIssueContainer(Container):
         new_issue = await issues.create_issue(LazyGithubContext.current_repo, title, body)
         self.notify(f"Successfully created issue #{new_issue.number}")
         self.post_message(IssueCreated(new_issue))
+
+    async def action_submit(self) -> None:
+        await self.create_issue()
+
+    @on(Button.Pressed, "#save_new_issue")
+    async def handle_save_new_issue_button(self, _: Button) -> None:
+        await self.create_issue()
 
 
 class NewIssueModal(ModalScreen[Issue | None]):
