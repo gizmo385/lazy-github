@@ -88,12 +88,16 @@ class SearchableDataTable(Vertical):
         self._rows_cache.append(tuple(cells))
         self.table.add_row(*cells, key=key)
 
-    def add_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
+    def add_rows(self, rows: Iterable[tuple[str | int, ...]], keys: Iterable[str] | None = None) -> None:
         """Add new rows to the currently displayed table and cache"""
         self._rows_cache.extend(rows)
         # TODO: Should this actually call handle_submitted_search so that new rows which don't match criteria aren't
         # shown?
-        self.table.add_rows(rows)
+        if keys:
+            for row, key in zip(rows, keys):
+                self.table.add_row(*row, key=key)
+        else:
+            self.table.add_rows(rows)
         self.sort()
 
     def set_rows(self, rows: list[tuple[str | int, ...]]) -> None:
