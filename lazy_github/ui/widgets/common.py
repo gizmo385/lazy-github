@@ -87,7 +87,7 @@ class SearchableDataTable(Vertical):
         self._rows_cache.append(tuple(cells))
         self.table.add_row(*cells, key=key)
 
-    def append_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
+    def add_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
         """Add new rows to the currently displayed table and cache"""
         self._rows_cache.extend(rows)
         # TODO: Should this actually call handle_submitted_search so that new rows which don't match criteria aren't
@@ -171,7 +171,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         if len(additional_data) == 0:
             self.can_load_more = False
 
-        self.append_rows(additional_data)
+        self.add_rows(additional_data)
 
     @on(DataTable.RowHighlighted)
     async def check_highlighted_row_boundary(self, row_highlighted: DataTable.RowHighlighted) -> None:

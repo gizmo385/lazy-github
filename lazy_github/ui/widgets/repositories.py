@@ -79,7 +79,7 @@ class ReposContainer(LazyGithubContainer):
 
     async def add_repo_to_table(self, repo: Repository) -> None:
         self.repos[repo.full_name] = repo
-        self.searchable_table.append_rows([_repo_to_row(repo)])
+        self.searchable_table.add_rows([_repo_to_row(repo)])
 
     @work
     async def action_lookup_repository(self) -> None:

@@ -67,7 +67,7 @@ class PullRequestsContainer(LazyGithubContainer):
         if pr := await self.app.push_screen_wait(LookupPullRequestModal()):
             if pr.number not in self.pull_requests:
                 self.pull_requests[pr.number] = pr
-                self.searchable_table.append_rows([pull_request_to_cell(pr)])
+                self.searchable_table.add_rows([pull_request_to_cell(pr)])
 
             self.post_message(PullRequestSelected(pr))
             lg.info(f"Looked up PR #{pr.number}")
