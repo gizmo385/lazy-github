@@ -76,11 +76,11 @@ class TriggerWorkflowContainer(Container):
 class TriggerWorkflowModal(ModalScreen[bool]):
     DEFAULT_CSS = """
     TriggerWorkflowModal {
-        height: 80%;
+        align: center middle;
+        content-align: center middle;
     }
 
     TriggerWorkflowContainer {
-        dock: top;
         width: 60;
         max-height: 20;
         border: thick $background 80%;
@@ -98,7 +98,7 @@ class TriggerWorkflowModal(ModalScreen[bool]):
         yield TriggerWorkflowContainer(self.workflow)
         yield LazyGithubFooter()
 
-    @on(Button.Pressed, "#trigger")
+    @on(Button.Pressed, "#submit")
     async def action_submit(self) -> None:
         assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo!"
         branch_input = self.query_one("#branch_to_build", Input)
