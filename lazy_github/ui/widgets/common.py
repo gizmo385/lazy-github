@@ -1,3 +1,4 @@
+from asyncio import Lock
 from typing import Awaitable, Callable, Iterable
 
 from textual import on, work
@@ -134,6 +135,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         **kwargs,
     ) -> None:
         super().__init__(table_id, search_input_id, sort_key, *args, reverse_sort=reverse_sort, **kwargs)
+        self.fetch_lock = Lock()
         self.load_function = load_function
         self.batch_size = batch_size
         self.load_more_data_buffer = load_more_data_buffer
@@ -156,22 +158,22 @@ class LazilyLoadedDataTable(SearchableDataTable):
     def change_load_function(self, new_load_function: TABLE_POPULATION_FUNCTION | None) -> None:
         self.load_function = new_load_function
 
-    @work(exclusive=True)
+    @work
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
-        # TODO: This should probably lock instead of relying on exclusive=True
-        rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
-        if not (self.can_load_more and self.load_function):
-            return
+        async with self.fetch_lock:
+            rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
+            if not (self.can_load_more and self.load_function):
+                return
 
-        if rows_remaining > self.load_more_data_buffer:
-            return
+            if rows_remaining > self.load_more_data_buffer:
+                return
 
-        additional_data = await self.load_function(self.batch_size, self.current_batch + 1)
-        self.current_batch += 1
-        if len(additional_data) == 0:
-            self.can_load_more = False
+            additional_data = await self.load_function(self.batch_size, self.current_batch + 1)
+            self.current_batch += 1
+            if len(additional_data) == 0:
+                self.can_load_more = False
 
-        self.add_rows(additional_data)
+            self.add_rows(additional_data)
 
     @on(DataTable.RowHighlighted)
     async def check_highlighted_row_boundary(self, row_highlighted: DataTable.RowHighlighted) -> None:
