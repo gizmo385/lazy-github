@@ -17,7 +17,7 @@ class LazyGithubFooter(Footer):
         super().__init__(show_command_palette=False)
 
 
-class _VimLikeDataTable(DataTable):
+class _VimLikeDataTable(DataTable[str | int]):
     "An data table for LazyGithub that provides some more vim-like bindings"
 
     BINDINGS = [
