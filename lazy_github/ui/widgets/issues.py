@@ -12,7 +12,6 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
-from lazy_github.lib.utils import link
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
@@ -127,8 +126,8 @@ class IssueOverviewTabPane(TabPane):
         self.issue = issue
 
     def compose(self) -> ComposeResult:
-        issue_link = link(f"(#{self.issue.number})", self.issue.html_url)
-        user_link = link(self.issue.user.login, self.issue.user.html_url)
+        issue_link = f"[link={self.issue.html_url}](#{self.issue.number})[/link]"
+        user_link = f"[link={self.issue.user.html_url}]{self.issue.user.login}[/link]"
 
         if self.issue.state == IssueState.OPEN:
             issue_status = "[frame green]Open[/frame green]"

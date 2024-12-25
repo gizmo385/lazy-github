@@ -19,7 +19,6 @@ from lazy_github.lib.github.pull_requests import (
 )
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, PullRequestSelected
-from lazy_github.lib.utils import bold, link, pluralize
 from lazy_github.models.github import (
     CheckStatus,
     CheckStatusState,
@@ -198,19 +197,19 @@ class PrOverviewTabPane(TabPane):
             )
 
     def compose(self) -> ComposeResult:
-        pr_link = link(f"(#{self.pr.number})", self.pr.html_url)
-        user_link = link(self.pr.user.login, self.pr.user.html_url)
+        pr_link = f"[link={self.pr.html_url}](#{self.pr.number})[/link]"
+        user_link = f"[link={self.pr.user.html_url}]{self.pr.user.login}[/link]"
         merge_from = None
         if self.pr.head:
-            merge_from = bold(f"{self.pr.head.user.login}:{self.pr.head.ref}")
+            merge_from = f"[bold]{self.pr.head.user.login}:{self.pr.head.ref}[/bold]"
         merge_to = None
         if self.pr.base:
-            merge_to = bold(f"{self.pr.base.user.login}:{self.pr.base.ref}")
+            merge_to = f"[bold]{self.pr.base.user.login}:{self.pr.base.ref}[/bold]"
 
         change_summary = " • ".join(
             [
-                pluralize(self.pr.commits, "commit", "commits"),
-                pluralize(self.pr.changed_files, "file changed", "files changed"),
+                "1 commit" if self.pr.commits == 1 else f"{self.pr.commits} commits",
+                "1 file changed" if self.pr.changed_files == 1 else f"{self.pr.changed_files} files changed",
                 f"[green]+{self.pr.additions}[/green]",
                 f"[red]-{self.pr.deletions}[/red]",
                 f"{merge_from} :right_arrow:  {merge_to}",

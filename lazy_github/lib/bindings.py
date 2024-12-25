@@ -1,7 +1,7 @@
 from textual.binding import Binding
 
 from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.utils import classproperty
+from lazy_github.lib.decorators import classproperty
 
 
 class LazyGithubBindings:

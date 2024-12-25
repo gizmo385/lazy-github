@@ -3,11 +3,11 @@ from typing import Optional
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
+from lazy_github.lib.decorators import classproperty
 from lazy_github.lib.git_cli import current_local_branch_name, current_local_repo_full_name
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
 from lazy_github.lib.logging import LazyGithubLogFormatter, lg
-from lazy_github.lib.utils import classproperty
 from lazy_github.models.github import Repository
 
 
