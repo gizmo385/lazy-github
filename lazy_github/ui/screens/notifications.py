@@ -33,7 +33,7 @@ class _NotificationsTableTabPane(TabPane):
 
     def add_notification(self, notification: Notification) -> None:
         self.notifications[notification.id] = notification
-        self.searchable_table.table.add_row(
+        self.searchable_table.add_row(
             notification.updated_at.strftime("%c"),
             notification.subject.subject_type,
             notification.subject.title.strip(),
@@ -41,6 +41,7 @@ class _NotificationsTableTabPane(TabPane):
             notification.id,
             key=str(notification.id),
         )
+        self.searchable_table.sort()
 
     def get_selected_notification(self) -> Notification:
         current_row = self.searchable_table.table.cursor_row

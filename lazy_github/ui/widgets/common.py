@@ -83,6 +83,10 @@ class SearchableDataTable(Vertical):
         self._rows_cache = []
         self.table.clear()
 
+    def add_row(self, *cells: str | int, key: str | None = None) -> None:
+        self._rows_cache.append(tuple(cells))
+        self.table.add_row(*cells, key=key)
+
     def append_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
         """Add new rows to the currently displayed table and cache"""
         self._rows_cache.extend(rows)
