@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Dict, Iterable
 
 from textual import on, work
@@ -8,6 +9,7 @@ from textual.widgets import DataTable
 
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.cache import TABLE_CACHE_FOLDER
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
@@ -16,6 +18,8 @@ from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
+
+_REPO_CACHE_PATH = TABLE_CACHE_FOLDER / "repos.json"
 
 
 def _repo_to_row(repo: Repository) -> tuple[str, ...]:
@@ -77,26 +81,45 @@ class ReposContainer(LazyGithubContainer):
         full_name = f"{owner}/{repo_name}"
         return self.repos[full_name]
 
-    async def add_repo_to_table(self, repo: Repository) -> None:
+    def add_repo_to_table(self, repo: Repository, write_cache: bool = True) -> None:
         self.repos[repo.full_name] = repo
         self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
+
+        if write_cache:
+            self.save_repo_cache()
 
     @work
     async def action_lookup_repository(self) -> None:
         if repository := await self.app.push_screen_wait(LookupRepositoryModal()):
-            await self.add_repo_to_table(repository)
+            self.add_repo_to_table(repository)
             self.post_message(RepoSelected(repository))
 
-    @work
-    async def set_repositories(self, repos: Iterable[Repository]) -> None:
+    def save_repo_cache(self) -> None:
+        lg.debug("Writing to repo cache")
+        _REPO_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _REPO_CACHE_PATH.touch(exist_ok=True)
+        _REPO_CACHE_PATH.write_text(json.dumps([r.model_dump(mode="json") for r in self.repos.values()]))
+
+    async def load_repo_cache(self) -> None:
+        lg.debug("reading from repo cache")
+        if _REPO_CACHE_PATH.is_file():
+            raw_output = json.loads(_REPO_CACHE_PATH.read_text())
+            for raw_repo in raw_output:
+                self.add_repo_to_table(Repository(**raw_repo), write_cache=False)
+
+    def set_repositories(self, repos: Iterable[Repository]) -> None:
         self.repos = {}
         self.searchable_table.clear_rows()
         for repo in repos:
-            self.repos[repo.full_name] = repo
-            self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
+            self.add_repo_to_table(repo, write_cache=False)
 
-        # If the current user's directory is a git repo and they don't already have a git repo selected, try and mark
-        # that repo as the current repo
+        self.save_repo_cache()
+
+    def check_current_directory_repo(self) -> None:
+        """
+        If the current user's directory is a git repo and they don't already have a git repo selected, try and mark that
+        repo as the current repo.
+        """
         if LazyGithubContext.current_directory_repo and not LazyGithubContext.current_repo:
             if repo := self.repos.get(LazyGithubContext.current_directory_repo):
                 self.post_message(RepoSelected(repo))
@@ -105,6 +128,8 @@ class ReposContainer(LazyGithubContainer):
     async def load_repos(self) -> None:
         # Loading the repos associated with the current account
         repos: list[Repository] = []
+        await self.load_repo_cache()
+        self.check_current_directory_repo()
         try:
             repos = await repos_api.list_all()
         except GithubApiRequestFailed:
@@ -117,6 +142,7 @@ class ReposContainer(LazyGithubContainer):
         )
         repos.extend(filter(None, additional_repos))
         self.set_repositories(repos)
+        self.check_current_directory_repo()
 
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()

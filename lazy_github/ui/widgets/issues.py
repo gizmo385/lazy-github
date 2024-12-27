@@ -8,11 +8,12 @@ from textual.widgets import DataTable, Label, Markdown, Rule, TabPane
 from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.cache import load_repo_based_cache, save_repo_based_cache
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
-from lazy_github.models.github import Issue, IssueState, PartialPullRequest
+from lazy_github.models.github import Issue, IssueState, PartialPullRequest, Repository
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow, TableRowMap
@@ -79,14 +80,28 @@ class IssuesContainer(LazyGithubContainer):
         self.number_column_index = self.table.get_column_index("number")
         self.title_column_index = self.table.get_column_index("title")
 
+    def add_issue_to_table(self, issue: Issue, write_to_cache: bool = True) -> None:
+        self.issues[issue.number] = issue
+        self.searchable_table.add_row(issue_to_cell(issue), str(issue.number))
+
+        if write_to_cache:
+            self.save_issue_cache(issue.repo)
+
+    def save_issue_cache(self, repo: Repository) -> None:
+        save_repo_based_cache(repo, "issues", self.issues.values())
+
+    def load_cached_issues_for_repo(self, repo: Repository) -> None:
+        self.searchable_table.clear_rows()
+        for issue in load_repo_based_cache(repo, "issues", Issue):
+            self.add_issue_to_table(issue, write_to_cache=False)
+
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
-        self.searchable_table.clear_rows()
         self.issues = {}
 
         for issue in message.issues:
-            self.issues[issue.number] = issue
-            self.searchable_table.add_row(issue_to_cell(issue), key=str(issue.number))
+            self.add_issue_to_table(issue, write_to_cache=False)
+        self.save_issue_cache(message.repo)
 
         self.searchable_table.change_load_function(self.fetch_more_issues)
         self.searchable_table.can_load_more = True

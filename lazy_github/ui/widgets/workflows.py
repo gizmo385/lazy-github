@@ -7,6 +7,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import DataTable, TabbedContent, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.cache import load_repo_based_cache, save_repo_based_cache
 from lazy_github.lib.github.workflows import list_workflow_runs, list_workflows
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
@@ -54,6 +55,21 @@ class AvailableWorkflowsContainers(Container):
 
         self.path_column_id = self.table.get_column_index("path")
 
+    def add_workflow_to_table(self, repo: Repository, workflow: Workflow, write_to_cache: bool = True) -> None:
+        self.workflows[workflow.path] = workflow
+        self.searchable_table.add_row(workflow_to_cell(workflow), key=workflow.path)
+
+        if write_to_cache:
+            self.save_workflow_cache(repo)
+
+    def load_cached_workflows(self, repo: Repository) -> None:
+        self.searchable_table.clear_rows()
+        for workflow in load_repo_based_cache(repo, "workflows", Workflow):
+            self.add_workflow_to_table(repo, workflow, write_to_cache=False)
+
+    def save_workflow_cache(self, repo: Repository) -> None:
+        save_repo_based_cache(repo, "workflows", self.workflows.values())
+
     async def fetch_more_workflows(self, repo: Repository, batch_size: int, batch_to_fetch: int) -> TableRowMap:
         next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
         new_workflows = [w for w in next_page if not isinstance(w, Workflow)]
@@ -65,8 +81,8 @@ class AvailableWorkflowsContainers(Container):
         workflows = await list_workflows(repo)
         self.workflows = {}
         for workflow in workflows:
-            self.workflows[workflow.path] = workflow
-            self.searchable_table.add_row(workflow_to_cell(workflow), key=workflow.path)
+            self.add_workflow_to_table(repo, workflow, write_to_cache=False)
+        self.save_workflow_cache(repo)
 
         self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True

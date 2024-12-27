@@ -6,7 +6,8 @@ from textual.coordinate import Coordinate
 from textual.widgets import Collapsible, DataTable, Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.constants import CHECKMARK, TABLE_CACHE_FOLDER, X_MARK
+from lazy_github.lib.cache import load_repo_based_cache, save_repo_based_cache
+from lazy_github.lib.constants import CHECKMARK, X_MARK
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.checks import combined_check_status_for_ref
@@ -67,12 +68,18 @@ class PullRequestsContainer(LazyGithubContainer):
             reverse_sort=True,
         )
 
+    def add_pull_request_to_table(self, pr: PartialPullRequest, write_to_cache: bool = True) -> None:
+        self.pull_requests[pr.number] = pr
+        self.searchable_table.add_row(pull_request_to_cell(pr), str(pr.number))
+
+        if write_to_cache:
+            self.save_pr_cache(pr.repo)
+
     @work
     async def action_lookup_pull_request(self) -> None:
         if pr := await self.app.push_screen_wait(LookupPullRequestModal()):
             if pr.number not in self.pull_requests:
-                self.pull_requests[pr.number] = pr
-                self.searchable_table.add_row(pull_request_to_cell(pr), str(pr.number))
+                self.add_pull_request_to_table(pr)
 
             self.post_message(PullRequestSelected(pr))
             lg.info(f"Looked up PR #{pr.number}")
@@ -93,6 +100,14 @@ class PullRequestsContainer(LazyGithubContainer):
 
         self.pull_requests.update({i.number: i for i in new_pulls})
         return {str(i.number): pull_request_to_cell(i) for i in new_pulls}
+
+    def save_pr_cache(self, repo: Repository) -> None:
+        save_repo_based_cache(repo, "pulls", self.pull_requests.values())
+
+    def load_cached_pull_requests_for_repo(self, repo: Repository) -> None:
+        self.searchable_table.clear_rows()
+        for pull in load_repo_based_cache(repo, "pulls", PartialPullRequest):
+            self.add_pull_request_to_table(pull, write_to_cache=False)
 
     @property
     def searchable_table(self) -> LazilyLoadedDataTable:
@@ -115,11 +130,11 @@ class PullRequestsContainer(LazyGithubContainer):
 
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
-        self.searchable_table.clear_rows()
         self.pull_requests = {}
 
-        self.pull_requests = {pr.number: pr for pr in message.pull_requests}
-        self.searchable_table.add_rows({str(pr.number): pull_request_to_cell(pr) for pr in message.pull_requests})
+        for pr in message.pull_requests:
+            self.add_pull_request_to_table(pr, write_to_cache=False)
+        self.save_pr_cache(message.repo)
 
         self.searchable_table.change_load_function(self.fetch_more_pull_requests)
         self.searchable_table.can_load_more = True

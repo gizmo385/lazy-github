@@ -219,6 +219,9 @@ class SelectionsPane(Container):
     async def load_repository(self, repo: Repository) -> None:
         """Loads more information about the specified repository, such as the PRs, issues, and workflows"""
         if self.pull_requests.display or self.issues.display:
+            # Load things from the local file cache
+            self.pull_requests.load_cached_pull_requests_for_repo(repo)
+            self.issues.load_cached_issues_for_repo(repo)
             self.fetch_issues_and_pull_requests(repo)
         if self.workflows.display:
             self.workflows.load_repo(repo)
