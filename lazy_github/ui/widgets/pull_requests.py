@@ -6,7 +6,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import Collapsible, DataTable, Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.constants import CHECKMARK, TABLE_CACHE_FOLDER, X_MARK
+from lazy_github.lib.constants import CHECKMARK, X_MARK
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.checks import combined_check_status_for_ref
@@ -24,7 +24,6 @@ from lazy_github.models.github import (
     CheckStatusState,
     FullPullRequest,
     PartialPullRequest,
-    Repository,
 )
 from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
