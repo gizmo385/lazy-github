@@ -79,7 +79,7 @@ class ReposContainer(LazyGithubContainer):
 
     async def add_repo_to_table(self, repo: Repository) -> None:
         self.repos[repo.full_name] = repo
-        self.searchable_table.add_row(*_repo_to_row(repo), repo.full_name)
+        self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
 
     @work
     async def action_lookup_repository(self) -> None:
@@ -90,12 +90,10 @@ class ReposContainer(LazyGithubContainer):
     @work
     async def set_repositories(self, repos: Iterable[Repository]) -> None:
         self.repos = {}
-        self.table.clear()
-        rows = []
+        self.searchable_table.clear_rows()
         for repo in repos:
-            rows.append(_repo_to_row(repo))
             self.repos[repo.full_name] = repo
-        self.searchable_table.set_rows(rows)
+            self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
 
         # If the current user's directory is a git repo and they don't already have a git repo selected, try and mark
         # that repo as the current repo
@@ -133,10 +131,9 @@ class ReposContainer(LazyGithubContainer):
                 config.repositories.favorites.append(repo.full_name)
 
         # Flip the state of the favorited column in the UI
-        favorite_coord = Coordinate(self.table.cursor_row, self.favorite_column_index)
         updated_favorited = repo.full_name in config.repositories.favorites
-        self.table.update_cell_at(favorite_coord, favorite_string(updated_favorited))
-        self.table.sort()
+        self.table.update_cell(repo.full_name, "favorite", favorite_string(updated_favorited))
+        self.searchable_table.sort_table()
 
     @on(DataTable.RowSelected, "#repos_table")
     async def repo_selected(self):

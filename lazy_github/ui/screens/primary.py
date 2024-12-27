@@ -164,7 +164,7 @@ class SelectionsPane(Container):
             return
 
         if new_issue := await self.app.push_screen_wait(NewIssueModal()):
-            self.issues.searchable_table.add_rows([issue_to_cell(new_issue)])
+            self.issues.searchable_table.add_row(issue_to_cell(new_issue), key=str(new_issue.number))
             self.issues.issues[new_issue.number] = new_issue
 
     async def action_open_pull_request(self) -> None:
@@ -177,7 +177,7 @@ class SelectionsPane(Container):
             return
 
         if new_pr := await self.app.push_screen_wait(NewPullRequestModal()):
-            self.pull_requests.searchable_table.add_rows([pull_request_to_cell(new_pr)])
+            self.pull_requests.searchable_table.add_row(pull_request_to_cell(new_pr), key=str(new_pr.number))
             self.pull_requests.pull_requests[new_pr.number] = new_pr
 
     @property

@@ -15,6 +15,16 @@ from lazy_github.models.github import Notification
 from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable
 
 
+def _notification_to_row(notification: Notification) -> tuple[str | int, ...]:
+    return (
+        notification.updated_at.strftime("%c"),
+        notification.subject.subject_type,
+        notification.subject.title.strip(),
+        notification.reason.replace("_", " ").title(),
+        notification.id,
+    )
+
+
 class _NotificationsTableTabPane(TabPane):
     def __init__(self, prefix: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -33,15 +43,7 @@ class _NotificationsTableTabPane(TabPane):
 
     def add_notification(self, notification: Notification) -> None:
         self.notifications[notification.id] = notification
-        self.searchable_table.add_row(
-            notification.updated_at.strftime("%c"),
-            notification.subject.subject_type,
-            notification.subject.title.strip(),
-            notification.reason.replace("_", " ").title(),
-            notification.id,
-            key=str(notification.id),
-        )
-        self.searchable_table.sort()
+        self.searchable_table.add_row(_notification_to_row(notification), key=str(notification.id))
 
     def get_selected_notification(self) -> Notification:
         current_row = self.searchable_table.table.cursor_row

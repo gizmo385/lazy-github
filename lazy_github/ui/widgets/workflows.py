@@ -56,22 +56,20 @@ class AvailableWorkflowsContainers(Container):
 
     async def fetch_more_workflows(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
-    ) -> list[tuple[str | int, ...]]:
+    ) -> dict[str, tuple[str | int, ...]]:
         next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
         new_workflows = [w for w in next_page if not isinstance(w, Workflow)]
         self.workflows.update({w.path: w for w in new_workflows})
 
-        return [workflow_to_cell(w) for w in new_workflows]
+        return {w.path: workflow_to_cell(w) for w in new_workflows}
 
     async def load_repo(self, repo: Repository) -> None:
         workflows = await list_workflows(repo)
         self.workflows = {}
-        rows = []
         for workflow in workflows:
             self.workflows[workflow.path] = workflow
-            rows.append(workflow_to_cell(workflow))
+            self.searchable_table.add_row(workflow_to_cell(workflow), key=workflow.path)
 
-        self.searchable_table.set_rows(rows)
         self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
@@ -119,22 +117,21 @@ class WorkflowRunsContainer(Container):
 
     async def fetch_more_workflow_runs(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
-    ) -> list[tuple[str | int, ...]]:
+    ) -> dict[str, tuple[str | int, ...]]:
         next_page = await list_workflow_runs(repo, page=batch_to_fetch, per_page=batch_size)
         new_runs = [w for w in next_page if not isinstance(w, WorkflowRun)]
         self.workflow_runs.update({w.run_number: w for w in new_runs})
 
-        return [workflow_to_cell(w) for w in new_runs]
+        return {str(w.run_number): workflow_run_to_cell(w) for w in new_runs}
 
     async def load_repo(self, repo: Repository) -> None:
         workflow_runs = await list_workflow_runs(repo)
         self.workflow_runs = {}
-        rows = []
+
         for run in workflow_runs:
             self.workflow_runs[run.run_number] = run
-            rows.append(workflow_run_to_cell(run))
+            self.searchable_table.add_row(workflow_run_to_cell(run), key=str(run.run_number))
 
-        self.searchable_table.set_rows(rows)
         self.searchable_table.change_load_function(partial(self.fetch_more_workflow_runs, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1

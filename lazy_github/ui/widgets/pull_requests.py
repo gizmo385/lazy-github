@@ -66,14 +66,14 @@ class PullRequestsContainer(LazyGithubContainer):
         if pr := await self.app.push_screen_wait(LookupPullRequestModal()):
             if pr.number not in self.pull_requests:
                 self.pull_requests[pr.number] = pr
-                self.searchable_table.add_row(*pull_request_to_cell(pr), str(pr.number))
+                self.searchable_table.add_row(pull_request_to_cell(pr), str(pr.number))
 
             self.post_message(PullRequestSelected(pr))
             lg.info(f"Looked up PR #{pr.number}")
 
-    async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> list[tuple[str | int, ...]]:
+    async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> dict[str, tuple[str | int, ...]]:
         if not LazyGithubContext.current_repo:
-            return []
+            return {}
 
         next_page = await list_issues(
             LazyGithubContext.current_repo,
@@ -86,7 +86,7 @@ class PullRequestsContainer(LazyGithubContainer):
         new_pulls = [i for i in next_page if isinstance(i, PartialPullRequest)]
 
         self.pull_requests.update({i.number: i for i in new_pulls})
-        return [pull_request_to_cell(i) for i in new_pulls]
+        return {str(i.number): pull_request_to_cell(i) for i in new_pulls}
 
     @property
     def searchable_table(self) -> LazilyLoadedDataTable:
@@ -109,14 +109,13 @@ class PullRequestsContainer(LazyGithubContainer):
 
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
-        self.table.clear()
+        self.searchable_table.clear_rows()
         self.pull_requests = {}
 
-        rows = []
         for pr in message.pull_requests:
             self.pull_requests[pr.number] = pr
-            rows.append(pull_request_to_cell(pr))
-        self.searchable_table.set_rows(rows)
+            self.searchable_table.add_row(pull_request_to_cell(pr), key=str(pr.number))
+
         self.searchable_table.change_load_function(self.fetch_more_pull_requests)
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1

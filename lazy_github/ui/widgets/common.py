@@ -1,15 +1,16 @@
 from asyncio import Lock
-from typing import Awaitable, Callable, Iterable
+from typing import Awaitable, Callable
 
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.events import Blur
 from textual.widgets import DataTable, Footer, Input
+from textual.widgets.data_table import RowDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
 
-TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[list[tuple[str | int, ...]]]]
+TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[dict[str, tuple[str | int, ...]]]]
 
 
 class LazyGithubFooter(Footer):
@@ -65,9 +66,9 @@ class SearchableDataTable(Vertical):
         self.search_input.can_focus = False
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
-        self._rows_cache: list[tuple[str | int, ...]] = []
+        self._rows_cache: dict[str, tuple[str | int, ...]] = {}
 
-    def sort(self):
+    def sort_table(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
 
     def compose(self) -> ComposeResult:
@@ -75,51 +76,48 @@ class SearchableDataTable(Vertical):
         yield self.table
 
     async def action_focus_search(self) -> None:
+        """Focus on the search"""
         self.search_input.can_focus = True
         self.search_input.display = True
         self.search_input.focus()
 
     def clear_rows(self):
         """Removes all rows currently displayed and tracked in this table"""
-        self._rows_cache = []
+        self._rows_cache = {}
         self.table.clear()
 
-    def add_row(self, *cells: str | int, key: str | None = None) -> None:
-        self._rows_cache.append(tuple(cells))
+    def add_row(self, cells: tuple[str | int, ...], key: str) -> None:
+        """Add an individual row with the specified key to the table. The table will be sorted after the key is added"""
+        try:
+            # Before we add the row, we want to see if the key already exists
+            if key in self._rows_cache:
+                self.table.remove_row(key)
+        except RowDoesNotExist:
+            # If the row doesn't exist, then something already removed it and we can move on
+            pass
+
+        self._rows_cache[key] = cells
         self.table.add_row(*cells, key=key)
 
-    def add_rows(self, rows: Iterable[tuple[str | int, ...]], keys: Iterable[str] | None = None) -> None:
+        self.table.sort(self.sort_key, reverse=self.reverse_sort)
+
+    def add_rows(self, rows: dict[str, tuple[str | int, ...]]) -> None:
         """Add new rows to the currently displayed table and cache"""
-        self._rows_cache.extend(rows)
-        # TODO: Should this actually call handle_submitted_search so that new rows which don't match criteria aren't
-        # shown?
-        if keys:
-            for row, key in zip(rows, keys):
-                self.table.add_row(*row, key=key)
-        else:
-            self.table.add_rows(rows)
-        self.sort()
-
-    def set_rows(self, rows: list[tuple[str | int, ...]]) -> None:
-        """Override the set of rows contained in this table. This will remove any existing rows"""
-        self._rows_cache = rows
-        self.change_displayed_rows(rows)
-
-    def change_displayed_rows(self, rows: Iterable[tuple[str | int, ...]]) -> None:
-        """Change which rows are currently displayed in the table"""
-        self.table.clear()
-        self.table.add_rows(rows)
-        self.sort()
+        self._rows_cache.update(rows)
+        for key, row in rows.items():
+            self.table.add_row(*row, key=key)
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
+        """When a search is submitted, triggers the filter for the entries in the table"""
         search_query = self.search_input.value.strip().lower()
-        filtered_rows: Iterable[tuple[str | int, ...]] = []
-        for row in self._rows_cache:
+        filtered_rows: dict[str, tuple[str | int, ...]] = {}
+        for key, row in self._rows_cache.items():
             if search_query in str(row).lower() or not search_query:
-                filtered_rows.append(row)
+                filtered_rows[key] = row
 
-        self.change_displayed_rows(filtered_rows)
+        self.table.clear()
+        self.add_rows(filtered_rows)
         self.table.focus()
 
 
@@ -149,18 +147,14 @@ class LazilyLoadedDataTable(SearchableDataTable):
         # function.
         self.can_load_more = True
 
-    async def initialize(self) -> None:
-        if not self.load_function:
-            return
-
-        initial_data = await self.load_function(self.batch_size, self.current_batch)
-        self.set_rows(initial_data)
-
-        if len(initial_data) == 0:
-            self.can_load_more = False
-
     def change_load_function(self, new_load_function: TABLE_POPULATION_FUNCTION | None) -> None:
         self.load_function = new_load_function
+
+    def clear_rows(self):
+        """Removes all rows currently displayed and tracked in this table"""
+        super().clear_rows()
+        self.current_batch = 0
+        self.can_load_more = True
 
     @work
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:

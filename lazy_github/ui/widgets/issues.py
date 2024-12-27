@@ -43,9 +43,9 @@ class IssuesContainer(LazyGithubContainer):
             reverse_sort=True,
         )
 
-    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> list[tuple[str | int, ...]]:
+    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> dict[str, tuple[str | int, ...]]:
         if not LazyGithubContext.current_repo:
-            return []
+            return {}
 
         next_page = await list_issues(
             LazyGithubContext.current_repo,
@@ -58,7 +58,7 @@ class IssuesContainer(LazyGithubContainer):
         new_issues = [i for i in next_page if not isinstance(i, PartialPullRequest)]
         self.issues.update({i.number: i for i in new_issues})
 
-        return [issue_to_cell(i) for i in new_issues]
+        return {str(i.number): issue_to_cell(i) for i in new_issues}
 
     @property
     def searchable_table(self) -> LazilyLoadedDataTable:
@@ -81,14 +81,13 @@ class IssuesContainer(LazyGithubContainer):
 
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
-        self.table.clear()
+        self.searchable_table.clear_rows()
         self.issues = {}
 
-        rows = []
         for issue in message.issues:
             self.issues[issue.number] = issue
-            rows.append((issue.number, issue.state, issue.user.login, issue.title))
-        self.searchable_table.set_rows(rows)
+            self.searchable_table.add_row(issue_to_cell(issue), key=str(issue.number))
+
         self.searchable_table.change_load_function(self.fetch_more_issues)
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
