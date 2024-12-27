@@ -212,7 +212,7 @@ class SelectionsPane(Container):
         except GithubApiRequestFailed:
             lg.exception("Error fetching issues and PRs from Github API")
         else:
-            issue_and_pr_message = IssuesAndPullRequestsFetched(issues_and_pull_requests)
+            issue_and_pr_message = IssuesAndPullRequestsFetched(repo, issues_and_pull_requests)
             self.pull_requests.post_message(issue_and_pr_message)
             self.issues.post_message(issue_and_pr_message)
 

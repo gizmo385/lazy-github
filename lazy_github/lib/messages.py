@@ -2,6 +2,7 @@ from functools import cached_property
 
 from textual.message import Message
 
+from lazy_github.lib.github.repositories import RepositorySortKey
 from lazy_github.models.github import (
     Branch,
     FullPullRequest,
@@ -52,7 +53,8 @@ class IssuesAndPullRequestsFetched(Message):
     then send that message to both sections of the UI.
     """
 
-    def __init__(self, issues_and_pull_requests: list[Issue]) -> None:
+    def __init__(self, repo: Repository, issues_and_pull_requests: list[Issue]) -> None:
+        self.repo = repo
         self.issues_and_pull_requests = issues_and_pull_requests
         super().__init__()
 
