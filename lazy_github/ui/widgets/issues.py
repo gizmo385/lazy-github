@@ -15,11 +15,11 @@ from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected
 from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
-from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow, TableRowMap
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
 
-def issue_to_cell(issue: Issue) -> tuple[str | int, ...]:
+def issue_to_cell(issue: Issue) -> TableRow:
     return (issue.number, str(issue.state), issue.user.login, issue.title)
 
 
@@ -43,7 +43,7 @@ class IssuesContainer(LazyGithubContainer):
             reverse_sort=True,
         )
 
-    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> dict[str, tuple[str | int, ...]]:
+    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> TableRowMap:
         if not LazyGithubContext.current_repo:
             return {}
 

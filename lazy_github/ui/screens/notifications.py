@@ -12,10 +12,10 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.notifications import fetch_notifications, mark_notification_as_read
 from lazy_github.lib.messages import NotificationMarkedAsRead, NotificationSelected
 from lazy_github.models.github import Notification
-from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable
+from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable, TableRow
 
 
-def _notification_to_row(notification: Notification) -> tuple[str | int, ...]:
+def _notification_to_row(notification: Notification) -> TableRow:
     return (
         notification.updated_at.strftime("%c"),
         notification.subject.subject_type,

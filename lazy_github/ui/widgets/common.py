@@ -10,7 +10,10 @@ from textual.widgets.data_table import RowDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
 
-TABLE_POPULATION_FUNCTION = Callable[[int, int], Awaitable[dict[str, tuple[str | int, ...]]]]
+# Some handy type defs
+TablePopulationFunction = Callable[[int, int], Awaitable[dict[str, tuple[str | int, ...]]]]
+TableRow = tuple[str | int, ...]
+TableRowMap = dict[str, tuple[str | int, ...]]
 
 
 class LazyGithubFooter(Footer):
@@ -57,7 +60,13 @@ class SearchableDataTable(Vertical):
     """
 
     def __init__(
-        self, table_id: str, search_input_id: str, sort_key: str, *args, reverse_sort: bool = False, **kwargs
+        self,
+        table_id: str,
+        search_input_id: str,
+        sort_key: str,
+        *args,
+        reverse_sort: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.table = _VimLikeDataTable(id=table_id)
@@ -66,7 +75,11 @@ class SearchableDataTable(Vertical):
         self.search_input.can_focus = False
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
-        self._rows_cache: dict[str, tuple[str | int, ...]] = {}
+        self._rows_cache: TableRowMap = {}
+
+
+    def key_in_table(self, key: str) -> bool:
+        return key in self._rows_cache
 
     def sort_table(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
@@ -86,7 +99,7 @@ class SearchableDataTable(Vertical):
         self._rows_cache = {}
         self.table.clear()
 
-    def add_row(self, cells: tuple[str | int, ...], key: str) -> None:
+    def add_row(self, cells: TableRow, key: str) -> None:
         """Add an individual row with the specified key to the table. The table will be sorted after the key is added"""
         try:
             # Before we add the row, we want to see if the key already exists
@@ -101,17 +114,16 @@ class SearchableDataTable(Vertical):
 
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
 
-    def add_rows(self, rows: dict[str, tuple[str | int, ...]]) -> None:
+    def add_rows(self, rows: TableRowMap) -> None:
         """Add new rows to the currently displayed table and cache"""
-        self._rows_cache.update(rows)
         for key, row in rows.items():
-            self.table.add_row(*row, key=key)
+            self.add_row(row, key=key)
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
         """When a search is submitted, triggers the filter for the entries in the table"""
         search_query = self.search_input.value.strip().lower()
-        filtered_rows: dict[str, tuple[str | int, ...]] = {}
+        filtered_rows: TableRowMap = {}
         for key, row in self._rows_cache.items():
             if search_query in str(row).lower() or not search_query:
                 filtered_rows[key] = row
@@ -129,14 +141,16 @@ class LazilyLoadedDataTable(SearchableDataTable):
         table_id: str,
         search_input_id: str,
         sort_key: str,
-        load_function: TABLE_POPULATION_FUNCTION | None,
+        load_function: TablePopulationFunction | None,
         batch_size: int,
         *args,
         load_more_data_buffer: int = 5,
         reverse_sort: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(table_id, search_input_id, sort_key, *args, reverse_sort=reverse_sort, **kwargs)
+        super().__init__(
+            table_id, search_input_id, sort_key, *args, reverse_sort=reverse_sort, **kwargs
+        )
         self.fetch_lock = Lock()
         self.load_function = load_function
         self.batch_size = batch_size
@@ -147,7 +161,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
         # function.
         self.can_load_more = True
 
-    def change_load_function(self, new_load_function: TABLE_POPULATION_FUNCTION | None) -> None:
+    def change_load_function(self, new_load_function: TablePopulationFunction | None) -> None:
         self.load_function = new_load_function
 
     def clear_rows(self):

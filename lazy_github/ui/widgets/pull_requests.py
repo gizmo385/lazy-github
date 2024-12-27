@@ -6,7 +6,7 @@ from textual.coordinate import Coordinate
 from textual.widgets import Collapsible, DataTable, Label, ListItem, ListView, Markdown, RichLog, Rule, TabPane
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.constants import CHECKMARK, X_MARK
+from lazy_github.lib.constants import CHECKMARK, TABLE_CACHE_FOLDER, X_MARK
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
 from lazy_github.lib.github.checks import combined_check_status_for_ref
@@ -24,14 +24,20 @@ from lazy_github.models.github import (
     CheckStatusState,
     FullPullRequest,
     PartialPullRequest,
+    Repository,
 )
 from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
-from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer
+from lazy_github.ui.widgets.common import (
+    LazilyLoadedDataTable,
+    LazyGithubContainer,
+    TableRow,
+    TableRowMap,
+)
 from lazy_github.ui.widgets.conversations import IssueCommentContainer, ReviewContainer
 
 
-def pull_request_to_cell(pr: PartialPullRequest) -> tuple[str | int, ...]:
+def pull_request_to_cell(pr: PartialPullRequest) -> TableRow:
     return (pr.number, str(pr.state), pr.user.login, pr.title)
 
 
@@ -71,7 +77,7 @@ class PullRequestsContainer(LazyGithubContainer):
             self.post_message(PullRequestSelected(pr))
             lg.info(f"Looked up PR #{pr.number}")
 
-    async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> dict[str, tuple[str | int, ...]]:
+    async def fetch_more_pull_requests(self, batch_size: int, batch_to_fetch: int) -> TableRowMap:
         if not LazyGithubContext.current_repo:
             return {}
 
@@ -112,9 +118,8 @@ class PullRequestsContainer(LazyGithubContainer):
         self.searchable_table.clear_rows()
         self.pull_requests = {}
 
-        for pr in message.pull_requests:
-            self.pull_requests[pr.number] = pr
-            self.searchable_table.add_row(pull_request_to_cell(pr), key=str(pr.number))
+        self.pull_requests = {pr.number: pr for pr in message.pull_requests}
+        self.searchable_table.add_rows({str(pr.number): pull_request_to_cell(pr) for pr in message.pull_requests})
 
         self.searchable_table.change_load_function(self.fetch_more_pull_requests)
         self.searchable_table.can_load_more = True
