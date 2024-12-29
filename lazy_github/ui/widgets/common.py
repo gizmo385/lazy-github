@@ -9,6 +9,7 @@ from textual.events import Blur
 from textual.widgets import DataTable, Footer, Input
 from textual.widgets.data_table import RowDoesNotExist
 
+from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.cache import load_models_from_cache, save_models_to_cache
 from lazy_github.lib.context import LazyGithubContext
@@ -115,6 +116,8 @@ class SearchableDataTable(Vertical, Generic[T]):
         self.clear_rows()
         if not self.cache_name:
             return
+
+        lg.debug(f"Reading values of type '{expect_type.__name__}' from '{self.cache_name}' cache")
 
         cached_models = load_models_from_cache(
             LazyGithubContext.current_repo if self.repo_based_cache else None,
