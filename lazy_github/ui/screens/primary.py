@@ -35,13 +35,12 @@ from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubFooter
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
-from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer, issue_to_cell
+from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
     PrDiffTabPane,
     PrOverviewTabPane,
     PullRequestsContainer,
-    pull_request_to_cell,
 )
 from lazy_github.ui.widgets.repositories import ReposContainer
 from lazy_github.ui.widgets.workflows import WorkflowsContainer
@@ -164,8 +163,7 @@ class SelectionsPane(Container):
             return
 
         if new_issue := await self.app.push_screen_wait(NewIssueModal()):
-            self.issues.searchable_table.add_row(issue_to_cell(new_issue), key=str(new_issue.number))
-            self.issues.issues[new_issue.number] = new_issue
+            self.issues.searchable_table.add_item(new_issue)
 
     async def action_open_pull_request(self) -> None:
         self.trigger_pr_creation_flow()
@@ -177,8 +175,7 @@ class SelectionsPane(Container):
             return
 
         if new_pr := await self.app.push_screen_wait(NewPullRequestModal()):
-            self.pull_requests.searchable_table.add_row(pull_request_to_cell(new_pr), key=str(new_pr.number))
-            self.pull_requests.pull_requests[new_pr.number] = new_pr
+            self.pull_requests.searchable_table.add_item(new_pr)
 
     @property
     def repositories(self) -> ReposContainer:
@@ -219,6 +216,9 @@ class SelectionsPane(Container):
     async def load_repository(self, repo: Repository) -> None:
         """Loads more information about the specified repository, such as the PRs, issues, and workflows"""
         if self.pull_requests.display or self.issues.display:
+            # Load things from the local file cache
+            self.pull_requests.load_cached_pull_requests_for_current_repo()
+            self.issues.load_cached_issues_for_current_repo()
             self.fetch_issues_and_pull_requests(repo)
         if self.workflows.display:
             self.workflows.load_repo(repo)

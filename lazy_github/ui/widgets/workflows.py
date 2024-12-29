@@ -11,7 +11,7 @@ from lazy_github.lib.github.workflows import list_workflow_runs, list_workflows
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository, Workflow, WorkflowRun
 from lazy_github.ui.screens.trigger_workflow import TriggerWorkflowModal
-from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow, TableRowMap
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow
 
 
 def workflow_to_cell(workflow: Workflow) -> TableRow:
@@ -34,11 +34,14 @@ class AvailableWorkflowsContainers(Container):
             sort_key="name",
             load_function=None,
             batch_size=30,
+            item_to_row=workflow_to_cell,
+            item_to_key=lambda w: w.path,
+            cache_name="workflows",
             reverse_sort=True,
         )
 
     @property
-    def searchable_table(self) -> LazilyLoadedDataTable:
+    def searchable_table(self) -> LazilyLoadedDataTable[Workflow]:
         return self.query_one("#searchable_workflows_table", LazilyLoadedDataTable)
 
     @property
@@ -54,19 +57,16 @@ class AvailableWorkflowsContainers(Container):
 
         self.path_column_id = self.table.get_column_index("path")
 
-    async def fetch_more_workflows(self, repo: Repository, batch_size: int, batch_to_fetch: int) -> TableRowMap:
-        next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
-        new_workflows = [w for w in next_page if not isinstance(w, Workflow)]
-        self.workflows.update({w.path: w for w in new_workflows})
+    def load_cached_workflows(self) -> None:
+        self.searchable_table.initialize_from_cache(Workflow)
 
-        return {w.path: workflow_to_cell(w) for w in new_workflows}
+    async def fetch_more_workflows(self, repo: Repository, batch_size: int, batch_to_fetch: int) -> list[Workflow]:
+        next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
+        return [w for w in next_page if isinstance(w, Workflow)]
 
     async def load_repo(self, repo: Repository) -> None:
         workflows = await list_workflows(repo)
-        self.workflows = {}
-        for workflow in workflows:
-            self.workflows[workflow.path] = workflow
-            self.searchable_table.add_row(workflow_to_cell(workflow), key=workflow.path)
+        self.searchable_table.add_items(workflows)
 
         self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True
@@ -74,7 +74,7 @@ class AvailableWorkflowsContainers(Container):
 
     def get_selected_workflow(self) -> Workflow:
         workflow_path_coord = Coordinate(self.table.cursor_row, self.path_column_id)
-        return self.workflows[self.table.get_cell_at(workflow_path_coord)]
+        return self.searchable_table.items[self.table.get_cell_at(workflow_path_coord)]
 
     @work
     async def action_trigger_workflow(self) -> None:
@@ -95,11 +95,13 @@ class WorkflowRunsContainer(Container):
             sort_key="time",
             load_function=None,
             batch_size=30,
+            item_to_row=workflow_run_to_cell,
+            item_to_key=lambda wr: str(wr.run_number),
             reverse_sort=True,
         )
 
     @property
-    def searchable_table(self) -> LazilyLoadedDataTable:
+    def searchable_table(self) -> LazilyLoadedDataTable[WorkflowRun]:
         return self.query_one("#searchable_workflow_runs_table", LazilyLoadedDataTable)
 
     @property
@@ -113,21 +115,16 @@ class WorkflowRunsContainer(Container):
         self.table.add_column("Job Name", key="job_name")
         self.table.add_column("Run Name", key="run_name")
 
-    async def fetch_more_workflow_runs(self, repo: Repository, batch_size: int, batch_to_fetch: int) -> TableRowMap:
+    async def fetch_more_workflow_runs(
+        self, repo: Repository, batch_size: int, batch_to_fetch: int
+    ) -> list[WorkflowRun]:
         next_page = await list_workflow_runs(repo, page=batch_to_fetch, per_page=batch_size)
-        new_runs = [w for w in next_page if not isinstance(w, WorkflowRun)]
-        self.workflow_runs.update({w.run_number: w for w in new_runs})
-
-        return {str(w.run_number): workflow_run_to_cell(w) for w in new_runs}
+        return [w for w in next_page if isinstance(w, WorkflowRun)]
 
     async def load_repo(self, repo: Repository) -> None:
         workflow_runs = await list_workflow_runs(repo)
-        self.workflow_runs = {}
 
-        for run in workflow_runs:
-            self.workflow_runs[run.run_number] = run
-            self.searchable_table.add_row(workflow_run_to_cell(run), key=str(run.run_number))
-
+        self.searchable_table.add_items(workflow_runs)
         self.searchable_table.change_load_function(partial(self.fetch_more_workflow_runs, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1

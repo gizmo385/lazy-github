@@ -1,5 +1,4 @@
 import asyncio
-from typing import Dict, Iterable
 
 from textual import on, work
 from textual.app import ComposeResult
@@ -8,6 +7,7 @@ from textual.widgets import DataTable
 
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.cache import TABLE_CACHE_FOLDER
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
@@ -15,10 +15,12 @@ from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
-from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable
+from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable, TableRow
+
+_REPO_CACHE_PATH = TABLE_CACHE_FOLDER / "repos.json"
 
 
-def _repo_to_row(repo: Repository) -> tuple[str, ...]:
+def repo_to_row(repo: Repository) -> TableRow:
     favorited = favorite_string(repo.full_name in LazyGithubContext.config.repositories.favorites)
     private = private_string(repo.private)
     return (favorited, repo.owner.login, repo.name, private)
@@ -32,23 +34,28 @@ class ReposContainer(LazyGithubContainer):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.repos: Dict[str, Repository] = {}
         self.favorite_column_index = -1
         self.owner_column_index = 1
         self.name_column_index = 1
         self.private_column_index = 1
 
-    def compose(self) -> ComposeResult:
-        self.border_title = "[1] Repositories"
-        yield SearchableDataTable(
+        self._table = SearchableDataTable(
             id="searchable_repos_table",
             table_id="repos_table",
             search_input_id="repo_search",
             sort_key="favorite",
+            item_to_key=lambda r: r.full_name,
+            item_to_row=repo_to_row,
+            cache_name="repos",
+            repo_based_cache=False,
         )
 
+    def compose(self) -> ComposeResult:
+        self.border_title = "[1] Repositories"
+        yield self._table
+
     @property
-    def searchable_table(self) -> SearchableDataTable:
+    def searchable_table(self) -> SearchableDataTable[Repository]:
         return self.query_one("#searchable_repos_table", SearchableDataTable)
 
     @property
@@ -75,36 +82,36 @@ class ReposContainer(LazyGithubContainer):
         owner = self.table.get_cell_at(Coordinate(current_row, self.owner_column_index))
         repo_name = self.table.get_cell_at(Coordinate(current_row, self.name_column_index))
         full_name = f"{owner}/{repo_name}"
-        return self.repos[full_name]
-
-    async def add_repo_to_table(self, repo: Repository) -> None:
-        self.repos[repo.full_name] = repo
-        self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
+        return self.searchable_table.items[full_name]
 
     @work
     async def action_lookup_repository(self) -> None:
         if repository := await self.app.push_screen_wait(LookupRepositoryModal()):
-            await self.add_repo_to_table(repository)
+            self.searchable_table.add_item(repository)
             self.post_message(RepoSelected(repository))
 
-    @work
-    async def set_repositories(self, repos: Iterable[Repository]) -> None:
-        self.repos = {}
-        self.searchable_table.clear_rows()
-        for repo in repos:
-            self.repos[repo.full_name] = repo
-            self.searchable_table.add_row(_repo_to_row(repo), key=repo.full_name)
+    async def load_repo_cache(self) -> None:
+        self.searchable_table.initialize_from_cache(Repository)
 
-        # If the current user's directory is a git repo and they don't already have a git repo selected, try and mark
-        # that repo as the current repo
+    def set_repositories(self, repos: list[Repository]) -> None:
+        self.searchable_table.clear_rows()
+        self.searchable_table.add_items(repos)
+
+    def check_current_directory_repo(self) -> None:
+        """
+        If the current user's directory is a git repo and they don't already have a git repo selected, try and mark that
+        repo as the current repo.
+        """
         if LazyGithubContext.current_directory_repo and not LazyGithubContext.current_repo:
-            if repo := self.repos.get(LazyGithubContext.current_directory_repo):
+            if repo := self.searchable_table.items.get(LazyGithubContext.current_directory_repo):
                 self.post_message(RepoSelected(repo))
 
     @work
     async def load_repos(self) -> None:
         # Loading the repos associated with the current account
         repos: list[Repository] = []
+        self.searchable_table.initialize_from_cache(Repository)
+        self.check_current_directory_repo()
         try:
             repos = await repos_api.list_all()
         except GithubApiRequestFailed:
@@ -117,6 +124,7 @@ class ReposContainer(LazyGithubContainer):
         )
         repos.extend(filter(None, additional_repos))
         self.set_repositories(repos)
+        self.check_current_directory_repo()
 
     async def action_toggle_favorite_repo(self):
         repo = await self.get_selected_repo()
