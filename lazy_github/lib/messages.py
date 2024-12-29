@@ -110,3 +110,9 @@ class NotificationSelected(Message):
     def __init__(self, notification: Notification) -> None:
         super().__init__()
         self.notification = notification
+
+
+class IssueUpdated(Message):
+    def __init__(self, issue: Issue) -> None:
+        super().__init__()
+        self.issue = issue

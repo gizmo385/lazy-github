@@ -95,12 +95,17 @@ class IssuesContainer(LazyGithubContainer):
         number = self.table.get_cell_at(pr_number_coord)
         return self.searchable_table.items[str(number)]
 
-    async def action_edit_issue(self) -> None:
+    @work
+    async def trigger_edit_issue_flow(self) -> None:
         try:
             issue = await self.get_selected_issue()
-            self.app.push_screen(EditIssueModal(issue))
+            if updated_issue := await self.app.push_screen_wait(EditIssueModal(issue)):
+                self.searchable_table.add_item(updated_issue)
         except CellDoesNotExist:
             self.notify("No issue currently selected", severity="error")
+
+    async def action_edit_issue(self) -> None:
+        self.trigger_edit_issue_flow()
 
     @on(DataTable.RowSelected, "#issues_table")
     async def issue_selected(self) -> None:

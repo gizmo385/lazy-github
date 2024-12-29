@@ -6,6 +6,7 @@ from textual.widgets import Button, Input, Label, Rule, Select, TextArea
 
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.github import issues
+from lazy_github.lib.messages import IssueUpdated
 from lazy_github.models.github import Issue, IssueState
 from lazy_github.ui.widgets.common import LazyGithubFooter
 
@@ -61,9 +62,11 @@ class EditIssueContainer(Container):
         updated_body = self.query_one("#updated_issue_body", TextArea).text
         updated_state = self.query_one("#updated_issue_state", Select).value
         self.notify(f"Updating issue #{self.issue.number}...", timeout=1)
-        await issues.update_issue(self.issue, title=updated_title, body=updated_body, state=str(updated_state))
+        updated_issue = await issues.update_issue(
+            self.issue, title=updated_title, body=updated_body, state=str(updated_state)
+        )
+        self.post_message(IssueUpdated(updated_issue))
         self.notify(f"Successfully updated issue #{self.issue.number}")
-        self.app.pop_screen()
 
     @on(Button.Pressed, "#save_updated_issue")
     async def handle_submit_button(self, save_button: Button) -> None:
@@ -72,7 +75,7 @@ class EditIssueContainer(Container):
         await self.submit_updated_issue()
 
 
-class EditIssueModal(ModalScreen):
+class EditIssueModal(ModalScreen[Issue | None]):
     BINDINGS = [LazyGithubBindings.CLOSE_DIALOG, LazyGithubBindings.SUBMIT_DIALOG]
     DEFAULT_CSS = """
     EditIssueModal {
@@ -98,6 +101,10 @@ class EditIssueModal(ModalScreen):
 
     async def action_submit(self) -> None:
         await self.query_one(EditIssueContainer).submit_updated_issue()
+
+    @on(IssueUpdated)
+    async def handle_updated_issue(self, message: IssueUpdated) -> None:
+        self.dismiss(message.issue)
 
     def action_close(self) -> None:
         self.app.pop_screen()
