@@ -2,7 +2,6 @@ from functools import cached_property
 
 from textual.message import Message
 
-from lazy_github.lib.github.repositories import RepositorySortKey
 from lazy_github.models.github import (
     Branch,
     FullPullRequest,

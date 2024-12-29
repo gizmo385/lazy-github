@@ -1,6 +1,4 @@
 import asyncio
-import json
-from typing import Dict, Iterable
 
 from textual import on, work
 from textual.app import ComposeResult

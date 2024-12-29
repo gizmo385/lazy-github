@@ -35,13 +35,12 @@ from lazy_github.ui.screens.settings import SettingsModal
 from lazy_github.ui.widgets.command_log import CommandLogSection
 from lazy_github.ui.widgets.common import LazyGithubContainer, LazyGithubFooter
 from lazy_github.ui.widgets.info import LazyGithubInfoTabPane
-from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer, issue_to_cell
+from lazy_github.ui.widgets.issues import IssueConversationTabPane, IssueOverviewTabPane, IssuesContainer
 from lazy_github.ui.widgets.pull_requests import (
     PrConversationTabPane,
     PrDiffTabPane,
     PrOverviewTabPane,
     PullRequestsContainer,
-    pull_request_to_cell,
 )
 from lazy_github.ui.widgets.repositories import ReposContainer
 from lazy_github.ui.widgets.workflows import WorkflowsContainer
