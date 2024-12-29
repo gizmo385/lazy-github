@@ -221,6 +221,7 @@ class SelectionsPane(Container):
             self.issues.load_cached_issues_for_current_repo()
             self.fetch_issues_and_pull_requests(repo)
         if self.workflows.display:
+            self.workflows.initialize_tables_from_cache()
             self.workflows.load_repo(repo)
 
     @on(RepoSelected)

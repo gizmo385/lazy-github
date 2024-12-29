@@ -85,8 +85,6 @@ class AvailableWorkflowsContainers(Container):
 
 
 class WorkflowRunsContainer(Container):
-    workflow_runs: dict[int, WorkflowRun] = {}
-
     def compose(self) -> ComposeResult:
         yield LazilyLoadedDataTable(
             id="searchable_workflow_runs_table",
@@ -97,6 +95,7 @@ class WorkflowRunsContainer(Container):
             batch_size=30,
             item_to_row=workflow_run_to_cell,
             item_to_key=lambda wr: str(wr.run_number),
+            cache_name="workflow_runs",
             reverse_sort=True,
         )
 
@@ -114,6 +113,9 @@ class WorkflowRunsContainer(Container):
         self.table.add_column("Result", key="result")
         self.table.add_column("Job Name", key="job_name")
         self.table.add_column("Run Name", key="run_name")
+
+    def load_cached_workflow_runs(self) -> None:
+        self.searchable_table.initialize_from_cache(WorkflowRun)
 
     async def fetch_more_workflow_runs(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
@@ -139,7 +141,19 @@ class WorkflowsContainer(LazyGithubContainer):
             with TabPane("Workflows", id="workflows_tab"):
                 yield AvailableWorkflowsContainers(id="workflows")
 
+    @property
+    def workflows(self) -> AvailableWorkflowsContainers:
+        return self.query_one("#workflows", AvailableWorkflowsContainers)
+
+    @property
+    def workflow_runs(self) -> WorkflowRunsContainer:
+        return self.query_one("#workflow_runs", WorkflowRunsContainer)
+
+    def initialize_tables_from_cache(self) -> None:
+        self.workflows.load_cached_workflows()
+        self.workflow_runs.load_cached_workflow_runs()
+
     @work
     async def load_repo(self, repo: Repository) -> None:
-        await self.query_one("#workflows", AvailableWorkflowsContainers).load_repo(repo)
-        await self.query_one("#workflow_runs", WorkflowRunsContainer).load_repo(repo)
+        await self.workflows.load_repo(repo)
+        await self.workflow_runs.load_repo(repo)
