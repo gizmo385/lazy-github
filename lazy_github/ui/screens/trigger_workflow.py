@@ -98,7 +98,7 @@ class TriggerWorkflowModal(ModalScreen[bool]):
         yield TriggerWorkflowContainer(self.workflow)
         yield LazyGithubFooter()
 
-    @on(Button.Pressed, "#submit")
+    @on(Button.Pressed, "#trigger")
     async def action_submit(self) -> None:
         assert LazyGithubContext.current_repo is not None, "Unexpectedly missing current repo!"
         branch_input = self.query_one("#branch_to_build", Input)
