@@ -87,13 +87,10 @@ class SearchableDataTable(Vertical, Generic[T]):
         self.item_to_key = item_to_key
         self.cache_name = cache_name
         self.repo_based_cache = repo_based_cache
-        self._items: dict[str, T] = {}
-
-    def key_in_table(self, key: str) -> bool:
-        return key in self._items
+        self.items: dict[str, T] = {}
 
     def item_in_table(self, item: T) -> bool:
-        return self.item_to_key(item) in self._items
+        return self.item_to_key(item) in self.items
 
     def sort_table(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
@@ -108,13 +105,9 @@ class SearchableDataTable(Vertical, Generic[T]):
         self.search_input.display = True
         self.search_input.focus()
 
-    @property
-    def items(self) -> dict[str, T]:
-        return self._items
-
     def clear_rows(self):
         """Removes all rows currently displayed and tracked in this table"""
-        self._items = {}
+        self.items = {}
         self.table.clear()
 
     def initialize_from_cache(self, expect_type: type[T]) -> None:
@@ -138,7 +131,7 @@ class SearchableDataTable(Vertical, Generic[T]):
         save_models_to_cache(
             LazyGithubContext.current_repo if self.repo_based_cache else None,
             self.cache_name,
-            self._items.values(),
+            self.items.values(),
         )
 
     def add_item(self, item: T, write_to_cache: bool = True) -> None:
@@ -146,13 +139,13 @@ class SearchableDataTable(Vertical, Generic[T]):
         item_key = self.item_to_key(item)
         try:
             # Before we add the row, we want to see if the key already exists
-            if item_key in self._items:
+            if item_key in self.items:
                 self.table.remove_row(item_key)
         except RowDoesNotExist:
             # If the row doesn't exist, then something already removed it and we can move on
             pass
 
-        self._items[item_key] = item
+        self.items[item_key] = item
         self.table.add_row(*self.item_to_row(item), key=item_key)
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
 
@@ -172,12 +165,12 @@ class SearchableDataTable(Vertical, Generic[T]):
         """When a search is submitted, triggers the filter for the entries in the table"""
         search_query = self.search_input.value.strip().lower()
         filtered_items: list[T] = []
-        for item in self._items.values():
-            if search_query in str(item.model_dump()).lower() or not search_query:
+        for item in self.items.values():
+            if search_query in str(self.item_to_row(item)).lower() or not search_query:
                 filtered_items.append(item)
 
         self.table.clear()
-        self.add_items(filtered_items)
+        self.add_items(filtered_items, write_to_cache=False)
         self.table.focus()
 
 
@@ -234,7 +227,7 @@ class LazilyLoadedDataTable(SearchableDataTable[T], Generic[T]):
     @work
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
         async with self.fetch_lock:
-            rows_remaining = len(self._items) - row_highlighted.cursor_row
+            rows_remaining = len(self.items) - row_highlighted.cursor_row
             if not (self.can_load_more and self.load_function):
                 return
 
