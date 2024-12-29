@@ -8,15 +8,14 @@ from textual.widgets import DataTable, Label, Markdown, Rule, TabPane
 from textual.widgets.data_table import CellDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.cache import load_repo_based_cache, save_repo_based_cache
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
-from lazy_github.models.github import Issue, IssueState, PartialPullRequest, Repository
+from lazy_github.models.github import Issue, IssueState, PartialPullRequest
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
-from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow, TableRowMap
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow
 from lazy_github.ui.widgets.conversations import IssueCommentContainer
 
 
@@ -41,12 +40,15 @@ class IssuesContainer(LazyGithubContainer):
             sort_key="number",
             load_function=None,
             batch_size=30,
+            item_to_row=issue_to_cell,
+            item_to_key=lambda issue: str(issue.number),
+            cache_name="issues",
             reverse_sort=True,
         )
 
-    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> TableRowMap:
+    async def fetch_more_issues(self, batch_size: int, batch_to_fetch: int) -> list[Issue]:
         if not LazyGithubContext.current_repo:
-            return {}
+            return []
 
         next_page = await list_issues(
             LazyGithubContext.current_repo,
@@ -56,13 +58,10 @@ class IssuesContainer(LazyGithubContainer):
             per_page=batch_size,
         )
 
-        new_issues = [i for i in next_page if not isinstance(i, PartialPullRequest)]
-        self.issues.update({i.number: i for i in new_issues})
-
-        return {str(i.number): issue_to_cell(i) for i in new_issues}
+        return [i for i in next_page if not isinstance(i, PartialPullRequest)]
 
     @property
-    def searchable_table(self) -> LazilyLoadedDataTable:
+    def searchable_table(self) -> LazilyLoadedDataTable[Issue]:
         return self.query_one("#searchable_issues_table", LazilyLoadedDataTable)
 
     @property
@@ -80,29 +79,13 @@ class IssuesContainer(LazyGithubContainer):
         self.number_column_index = self.table.get_column_index("number")
         self.title_column_index = self.table.get_column_index("title")
 
-    def add_issue_to_table(self, issue: Issue, write_to_cache: bool = True) -> None:
-        self.issues[issue.number] = issue
-        self.searchable_table.add_row(issue_to_cell(issue), str(issue.number))
-
-        if write_to_cache:
-            self.save_issue_cache(issue.repo)
-
-    def save_issue_cache(self, repo: Repository) -> None:
-        save_repo_based_cache(repo, "issues", self.issues.values())
-
-    def load_cached_issues_for_repo(self, repo: Repository) -> None:
-        self.searchable_table.clear_rows()
-        for issue in load_repo_based_cache(repo, "issues", Issue):
-            self.add_issue_to_table(issue, write_to_cache=False)
+    def load_cached_issues_for_current_repo(self) -> None:
+        self.searchable_table.initialize_from_cache(Issue)
 
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()
-        self.issues = {}
 
-        for issue in message.issues:
-            self.add_issue_to_table(issue, write_to_cache=False)
-        self.save_issue_cache(message.repo)
-
+        self.searchable_table.add_items(message.issues)
         self.searchable_table.change_load_function(self.fetch_more_issues)
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
@@ -110,7 +93,7 @@ class IssuesContainer(LazyGithubContainer):
     async def get_selected_issue(self) -> Issue:
         pr_number_coord = Coordinate(self.table.cursor_row, self.number_column_index)
         number = self.table.get_cell_at(pr_number_coord)
-        return self.issues[number]
+        return self.searchable_table.items[str(number)]
 
     async def action_edit_issue(self) -> None:
         try:

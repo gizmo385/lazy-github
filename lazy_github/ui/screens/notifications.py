@@ -15,7 +15,7 @@ from lazy_github.models.github import Notification
 from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable, TableRow
 
 
-def _notification_to_row(notification: Notification) -> TableRow:
+def notification_to_row(notification: Notification) -> TableRow:
     return (
         notification.updated_at.strftime("%c"),
         notification.subject.subject_type,
@@ -28,11 +28,12 @@ def _notification_to_row(notification: Notification) -> TableRow:
 class _NotificationsTableTabPane(TabPane):
     def __init__(self, prefix: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.notifications: dict[int, Notification] = {}
         self.searchable_table: SearchableDataTable = SearchableDataTable(
             table_id=f"{prefix}_notifications_table",
             search_input_id=f"{prefix}_notifications_table_search_input",
             sort_key="updated_at",
+            item_to_key=lambda n: str(n.id),
+            item_to_row=notification_to_row,
         )
 
     def compose(self) -> ComposeResult:
@@ -41,14 +42,10 @@ class _NotificationsTableTabPane(TabPane):
     def remove_notification(self, notification: Notification) -> None:
         self.searchable_table.table.remove_row(row_key=str(notification.id))
 
-    def add_notification(self, notification: Notification) -> None:
-        self.notifications[notification.id] = notification
-        self.searchable_table.add_row(_notification_to_row(notification), key=str(notification.id))
-
     def get_selected_notification(self) -> Notification:
         current_row = self.searchable_table.table.cursor_row
         id = self.searchable_table.table.get_cell_at(Coordinate(current_row, self.id_column))
-        return self.notifications[int(id)]
+        return self.searchable_table.items[str(id)]
 
     @on(DataTable.RowSelected)
     def notification_selected(self) -> None:
@@ -82,7 +79,7 @@ class UnreadNotificationTabPane(_NotificationsTableTabPane):
         current_row = self.searchable_table.table.cursor_row
         id_coord = Coordinate(current_row, self.id_column)
         id = self.searchable_table.table.get_cell_at(id_coord)
-        notification_to_mark = self.notifications[int(id)]
+        notification_to_mark = self.searchable_table.items[str(id)]
 
         self.post_message(NotificationMarkedAsRead(notification_to_mark))
 
@@ -113,7 +110,7 @@ class NotificationsContainer(Container):
         await mark_notification_as_read(message.notification)
         try:
             self.unread_tab.remove_notification(message.notification)
-            self.read_tab.add_notification(message.notification)
+            self.read_tab.searchable_table.add_item(message.notification)
         except RowDoesNotExist:
             pass
 
@@ -133,9 +130,9 @@ class NotificationsContainer(Container):
         for notification in notifications:
             if notification.unread:
                 unread_count += 1
-                self.unread_tab.add_notification(notification)
+                self.unread_tab.searchable_table.add_item(notification)
             else:
-                self.read_tab.add_notification(notification)
+                self.read_tab.searchable_table.add_item(notification)
 
         self.unread_tab.searchable_table.loading = False
         self.read_tab.searchable_table.loading = False

@@ -1,6 +1,7 @@
 from asyncio import Lock
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Generic, TypeVar
 
+from pydantic import BaseModel
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
@@ -9,9 +10,12 @@ from textual.widgets import DataTable, Footer, Input
 from textual.widgets.data_table import RowDoesNotExist
 
 from lazy_github.lib.bindings import LazyGithubBindings
+from lazy_github.lib.cache import load_models_from_cache, save_models_to_cache
+from lazy_github.lib.context import LazyGithubContext
 
 # Some handy type defs
-TablePopulationFunction = Callable[[int, int], Awaitable[dict[str, tuple[str | int, ...]]]]
+T = TypeVar("T", bound=BaseModel)
+TablePopulationFunction = Callable[[int, int], Awaitable[list[T]]]
 TableRow = tuple[str | int, ...]
 TableRowMap = dict[str, tuple[str | int, ...]]
 
@@ -50,7 +54,7 @@ class ToggleableSearchInput(Input):
         return super()._on_blur(event)
 
 
-class SearchableDataTable(Vertical):
+class SearchableDataTable(Vertical, Generic[T]):
     BINDINGS = [LazyGithubBindings.SEARCH_TABLE]
 
     DEFAULT_CSS = """
@@ -64,8 +68,12 @@ class SearchableDataTable(Vertical):
         table_id: str,
         search_input_id: str,
         sort_key: str,
+        item_to_row: Callable[[T], TableRow],
+        item_to_key: Callable[[T], str],
         *args,
         reverse_sort: bool = False,
+        cache_name: str | None = None,
+        repo_based_cache: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -75,11 +83,17 @@ class SearchableDataTable(Vertical):
         self.search_input.can_focus = False
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
-        self._rows_cache: TableRowMap = {}
-
+        self.item_to_row = item_to_row
+        self.item_to_key = item_to_key
+        self.cache_name = cache_name
+        self.repo_based_cache = repo_based_cache
+        self._items: dict[str, T] = {}
 
     def key_in_table(self, key: str) -> bool:
-        return key in self._rows_cache
+        return key in self._items
+
+    def item_in_table(self, item: T) -> bool:
+        return self.item_to_key(item) in self._items
 
     def sort_table(self):
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
@@ -94,46 +108,80 @@ class SearchableDataTable(Vertical):
         self.search_input.display = True
         self.search_input.focus()
 
+    @property
+    def items(self) -> dict[str, T]:
+        return self._items
+
     def clear_rows(self):
         """Removes all rows currently displayed and tracked in this table"""
-        self._rows_cache = {}
+        self._items = {}
         self.table.clear()
 
-    def add_row(self, cells: TableRow, key: str) -> None:
+    def initialize_from_cache(self, expect_type: type[T]) -> None:
+        """Loads values expected to be of the specified type from the cache for this table"""
+        self.clear_rows()
+        if not self.cache_name:
+            return
+
+        cached_models = load_models_from_cache(
+            LazyGithubContext.current_repo if self.repo_based_cache else None,
+            self.cache_name,
+            expect_type,
+        )
+        self.add_items(cached_models, write_to_cache=False)
+
+    def save_to_cache(self):
+        """Saves the models in the table to the specified cache location, if one is set"""
+        if not self.cache_name:
+            return
+
+        save_models_to_cache(
+            LazyGithubContext.current_repo if self.repo_based_cache else None,
+            self.cache_name,
+            self._items.values(),
+        )
+
+    def add_item(self, item: T, write_to_cache: bool = True) -> None:
         """Add an individual row with the specified key to the table. The table will be sorted after the key is added"""
+        item_key = self.item_to_key(item)
         try:
             # Before we add the row, we want to see if the key already exists
-            if key in self._rows_cache:
-                self.table.remove_row(key)
+            if item_key in self._items:
+                self.table.remove_row(item_key)
         except RowDoesNotExist:
             # If the row doesn't exist, then something already removed it and we can move on
             pass
 
-        self._rows_cache[key] = cells
-        self.table.add_row(*cells, key=key)
-
+        self._items[item_key] = item
+        self.table.add_row(*self.item_to_row(item), key=item_key)
         self.table.sort(self.sort_key, reverse=self.reverse_sort)
 
-    def add_rows(self, rows: TableRowMap) -> None:
+        if write_to_cache and self.cache_name:
+            self.save_to_cache()
+
+    def add_items(self, new_items: list[T], write_to_cache: bool = True) -> None:
         """Add new rows to the currently displayed table and cache"""
-        for key, row in rows.items():
-            self.add_row(row, key=key)
+        for item in new_items:
+            self.add_item(item, write_to_cache=False)
+
+        if write_to_cache:
+            self.save_to_cache()
 
     @on(Input.Submitted)
     async def handle_submitted_search(self) -> None:
         """When a search is submitted, triggers the filter for the entries in the table"""
         search_query = self.search_input.value.strip().lower()
-        filtered_rows: TableRowMap = {}
-        for key, row in self._rows_cache.items():
-            if search_query in str(row).lower() or not search_query:
-                filtered_rows[key] = row
+        filtered_items: list[T] = []
+        for item in self._items.values():
+            if search_query in str(item.model_dump()).lower() or not search_query:
+                filtered_items.append(item)
 
         self.table.clear()
-        self.add_rows(filtered_rows)
+        self.add_items(filtered_items)
         self.table.focus()
 
 
-class LazilyLoadedDataTable(SearchableDataTable):
+class LazilyLoadedDataTable(SearchableDataTable[T], Generic[T]):
     """A searchable data table that is lazily loaded when you have viewed the currently loaded data"""
 
     def __init__(
@@ -143,13 +191,26 @@ class LazilyLoadedDataTable(SearchableDataTable):
         sort_key: str,
         load_function: TablePopulationFunction | None,
         batch_size: int,
+        item_to_row: Callable[[T], TableRow],
+        item_to_key: Callable[[T], str],
         *args,
         load_more_data_buffer: int = 5,
         reverse_sort: bool = False,
+        cache_name: str | None = None,
+        repo_based_cache: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(
-            table_id, search_input_id, sort_key, *args, reverse_sort=reverse_sort, **kwargs
+            table_id,
+            search_input_id,
+            sort_key,
+            item_to_row,
+            item_to_key,
+            *args,
+            reverse_sort=reverse_sort,
+            cache_name=cache_name,
+            repo_based_cache=repo_based_cache,
+            **kwargs,
         )
         self.fetch_lock = Lock()
         self.load_function = load_function
@@ -173,7 +234,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
     @work
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
         async with self.fetch_lock:
-            rows_remaining = len(self._rows_cache) - row_highlighted.cursor_row
+            rows_remaining = len(self._items) - row_highlighted.cursor_row
             if not (self.can_load_more and self.load_function):
                 return
 
@@ -185,7 +246,7 @@ class LazilyLoadedDataTable(SearchableDataTable):
             if len(additional_data) == 0:
                 self.can_load_more = False
 
-            self.add_rows(additional_data)
+            self.add_items(additional_data)
 
     @on(DataTable.RowHighlighted)
     async def check_highlighted_row_boundary(self, row_highlighted: DataTable.RowHighlighted) -> None:
