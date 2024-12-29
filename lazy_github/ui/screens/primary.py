@@ -24,7 +24,6 @@ from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import (
     IssuesAndPullRequestsFetched,
     IssueSelected,
-    IssueUpdated,
     PullRequestSelected,
     RepoSelected,
 )
