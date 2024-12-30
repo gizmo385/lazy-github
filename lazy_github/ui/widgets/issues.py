@@ -12,7 +12,7 @@ from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.issues import get_comments, list_issues
 from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import IssuesAndPullRequestsFetched, IssueSelected, NewCommentCreated
-from lazy_github.models.github import Issue, IssueState, PartialPullRequest
+from lazy_github.models.github import Issue, IssueState, PartialPullRequest, Repository
 from lazy_github.ui.screens.edit_issue import EditIssueModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
 from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubContainer, TableRow
@@ -79,8 +79,8 @@ class IssuesContainer(LazyGithubContainer):
         self.number_column_index = self.table.get_column_index("number")
         self.title_column_index = self.table.get_column_index("title")
 
-    def load_cached_issues_for_current_repo(self) -> None:
-        self.searchable_table.initialize_from_cache(Issue)
+    def load_cached_issues_for_repo(self, repo: Repository) -> None:
+        self.searchable_table.initialize_from_cache(repo, Issue)
 
     async def on_issues_and_pull_requests_fetched(self, message: IssuesAndPullRequestsFetched) -> None:
         message.stop()

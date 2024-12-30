@@ -217,16 +217,15 @@ class SelectionsPane(Container):
         """Loads more information about the specified repository, such as the PRs, issues, and workflows"""
         if self.pull_requests.display or self.issues.display:
             # Load things from the local file cache
-            self.pull_requests.load_cached_pull_requests_for_current_repo()
-            self.issues.load_cached_issues_for_current_repo()
+            self.pull_requests.load_cached_pull_requests_for_repo(repo)
+            self.issues.load_cached_issues_for_repo(repo)
+            # Fetch the live data
             self.fetch_issues_and_pull_requests(repo)
         if self.workflows.display:
-            self.workflows.initialize_tables_from_cache()
+            # Load things from the local file cache
+            self.workflows.initialize_tables_from_cache(repo)
+            # Fetch the live data
             self.workflows.load_repo(repo)
-
-    @on(RepoSelected)
-    async def handle_repo_selection(self, message: RepoSelected) -> None:
-        await self.load_repository(message.repo)
 
 
 class SelectionDetailsPane(Container):
@@ -386,8 +385,8 @@ class LazyGithubMainScreen(Screen):
             return
 
         # The thing we'll do most immediately is swap over to the repo associated with the notification
-        await self.main_view_pane.load_repository(notification.repository)
         self.set_currently_loaded_repo(notification.repository)
+        await self.main_view_pane.load_repository(notification.repository)
 
         # Try to determine the source of the notification more specifically than just the repo. If we can, then we'll
         # load that more-specific subject (such as the pull request), otherwise we will settle for the already loaded
@@ -450,5 +449,7 @@ class LazyGithubMainScreen(Screen):
         self.query_one("#currently_selected_repo", CurrentlySelectedRepo).current_repo_name = repo.full_name
 
     @on(RepoSelected)
-    def handle_repo_selection(self, message: RepoSelected) -> None:
+    async def handle_repo_selection(self, message: RepoSelected) -> None:
         self.set_currently_loaded_repo(message.repo)
+        assert LazyGithubContext.current_repo == message.repo
+        await self.main_view_pane.selections.load_repository(message.repo)

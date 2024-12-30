@@ -57,8 +57,8 @@ class AvailableWorkflowsContainers(Container):
 
         self.path_column_id = self.table.get_column_index("path")
 
-    def load_cached_workflows(self) -> None:
-        self.searchable_table.initialize_from_cache(Workflow)
+    def load_cached_workflows(self, repo: Repository) -> None:
+        self.searchable_table.initialize_from_cache(repo, Workflow)
 
     async def fetch_more_workflows(self, repo: Repository, batch_size: int, batch_to_fetch: int) -> list[Workflow]:
         next_page = await list_workflows(repo, page=batch_to_fetch, per_page=batch_size)
@@ -66,8 +66,8 @@ class AvailableWorkflowsContainers(Container):
 
     async def load_repo(self, repo: Repository) -> None:
         workflows = await list_workflows(repo)
-        self.searchable_table.add_items(workflows)
 
+        self.searchable_table.add_items(workflows)
         self.searchable_table.change_load_function(partial(self.fetch_more_workflows, repo))
         self.searchable_table.can_load_more = True
         self.searchable_table.current_batch = 1
@@ -114,8 +114,8 @@ class WorkflowRunsContainer(Container):
         self.table.add_column("Job Name", key="job_name")
         self.table.add_column("Run Name", key="run_name")
 
-    def load_cached_workflow_runs(self) -> None:
-        self.searchable_table.initialize_from_cache(WorkflowRun)
+    def load_cached_workflow_runs(self, repo: Repository) -> None:
+        self.searchable_table.initialize_from_cache(repo, WorkflowRun)
 
     async def fetch_more_workflow_runs(
         self, repo: Repository, batch_size: int, batch_to_fetch: int
@@ -149,9 +149,9 @@ class WorkflowsContainer(LazyGithubContainer):
     def workflow_runs(self) -> WorkflowRunsContainer:
         return self.query_one("#workflow_runs", WorkflowRunsContainer)
 
-    def initialize_tables_from_cache(self) -> None:
-        self.workflows.load_cached_workflows()
-        self.workflow_runs.load_cached_workflow_runs()
+    def initialize_tables_from_cache(self, repo: Repository) -> None:
+        self.workflows.load_cached_workflows(repo)
+        self.workflow_runs.load_cached_workflow_runs(repo)
 
     @work
     async def load_repo(self, repo: Repository) -> None:

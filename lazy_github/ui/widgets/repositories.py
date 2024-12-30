@@ -90,9 +90,6 @@ class ReposContainer(LazyGithubContainer):
             self.searchable_table.add_item(repository)
             self.post_message(RepoSelected(repository))
 
-    async def load_repo_cache(self) -> None:
-        self.searchable_table.initialize_from_cache(Repository)
-
     def set_repositories(self, repos: list[Repository]) -> None:
         self.searchable_table.clear_rows()
         self.searchable_table.add_items(repos)
@@ -110,7 +107,7 @@ class ReposContainer(LazyGithubContainer):
     async def load_repos(self) -> None:
         # Loading the repos associated with the current account
         repos: list[Repository] = []
-        self.searchable_table.initialize_from_cache(Repository)
+        self.searchable_table.initialize_from_cache(None, Repository)
         self.check_current_directory_repo()
         try:
             repos = await repos_api.list_all()

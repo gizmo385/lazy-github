@@ -24,6 +24,7 @@ from lazy_github.models.github import (
     CheckStatusState,
     FullPullRequest,
     PartialPullRequest,
+    Repository,
 )
 from lazy_github.ui.screens.lookup_pull_request import LookupPullRequestModal
 from lazy_github.ui.screens.new_comment import NewCommentModal
@@ -91,8 +92,8 @@ class PullRequestsContainer(LazyGithubContainer):
 
         return [i for i in next_page if isinstance(i, PartialPullRequest)]
 
-    def load_cached_pull_requests_for_current_repo(self) -> None:
-        self.searchable_table.initialize_from_cache(PartialPullRequest)
+    def load_cached_pull_requests_for_repo(self, repo: Repository) -> None:
+        self.searchable_table.initialize_from_cache(repo, PartialPullRequest)
 
     @property
     def searchable_table(self) -> LazilyLoadedDataTable[PartialPullRequest]:
