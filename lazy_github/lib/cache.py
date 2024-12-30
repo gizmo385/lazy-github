@@ -3,11 +3,10 @@ from typing import Iterable, TypeVar
 
 from pydantic import BaseModel
 
-from lazy_github.lib.constants import CONFIG_FOLDER
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository
 
-TABLE_CACHE_FOLDER = CONFIG_FOLDER / "table-cache"
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -18,7 +17,7 @@ def load_models_from_cache(repo: Repository | None, cache_name: str, expect_type
         filename = f"{repo.full_name.replace('/', '_')}_{cache_name}.json"
     else:
         filename = f"{cache_name}.json"
-    cache_path = TABLE_CACHE_FOLDER / filename
+    cache_path = LazyGithubContext.config.cache.cache_directory / filename
     lg.debug(f"Loading cached data from: {cache_path}")
 
     if cache_path.is_file():
@@ -34,7 +33,7 @@ def save_models_to_cache(repo: Repository | None, cache_name: str, objects: Iter
         filename = f"{repo.full_name.replace('/', '_')}_{cache_name}.json"
     else:
         filename = f"{cache_name}.json"
-    cache_path = TABLE_CACHE_FOLDER / filename
+    cache_path = LazyGithubContext.config.cache.cache_directory / filename
     lg.debug(f"Saving cached data to: {cache_path}")
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
