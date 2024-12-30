@@ -5,7 +5,13 @@ from httpx import HTTPStatusError, Response
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse
+from lazy_github.lib.github.backends.protocol import (
+    GithubApiBackend,
+    GithubApiRequestFailed,
+    GithubApiResponse,
+    Headers,
+    QueryParams,
+)
 from lazy_github.models.github import User
 
 
@@ -45,8 +51,8 @@ class HishelGithubApiBackend(GithubApiBackend):
     async def get(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
-        params: dict[str, str] | None = None,
+        headers: Headers | None = None,
+        params: QueryParams | None = None,
     ) -> HishelApiResponse:
         response = await self.api_client.get(url, headers=headers, params=params, follow_redirects=True)
         return HishelApiResponse(response)
@@ -54,7 +60,7 @@ class HishelGithubApiBackend(GithubApiBackend):
     async def post(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> HishelApiResponse:
         response = await self.api_client.post(url, headers=headers, json=json)
@@ -63,7 +69,7 @@ class HishelGithubApiBackend(GithubApiBackend):
     async def patch(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> HishelApiResponse:
         response = await self.api_client.patch(url, headers=headers, json=json)
@@ -72,15 +78,13 @@ class HishelGithubApiBackend(GithubApiBackend):
     async def put(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> HishelApiResponse:
         response = await self.api_client.put(url, headers=headers, json=json)
         return HishelApiResponse(response)
 
-    def github_headers(
-        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
-    ) -> dict[str, str]:
+    def github_headers(self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None) -> Headers:
         max_age = cache_duration or self.config.cache.default_ttl
         return {
             "Accept": accept,

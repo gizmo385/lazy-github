@@ -8,7 +8,13 @@ from typing import Any
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import CONFIG_FOLDER, JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.github.backends.protocol import GithubApiBackend, GithubApiRequestFailed, GithubApiResponse
+from lazy_github.lib.github.backends.protocol import (
+    GithubApiBackend,
+    GithubApiRequestFailed,
+    GithubApiResponse,
+    Headers,
+    QueryParams,
+)
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import User
 
@@ -104,8 +110,8 @@ def _create_request_body_tempfile(body: bytes) -> tempfile._TemporaryFileWrapper
 def _build_command(
     base_url: str,
     method: str = "GET",
-    headers: dict[str, str] | None = None,
-    query_params: dict[str, str] | None = None,
+    headers: Headers | None = None,
+    query_params: QueryParams | None = None,
     body: dict[str, str] | None = None,
 ) -> list[str]:
     command = ["api", "-i", "-X", method]
@@ -134,8 +140,8 @@ class GithubCliBackend(GithubApiBackend):
     async def get(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
-        params: dict[str, str] | None = None,
+        headers: Headers | None = None,
+        params: QueryParams | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, query_params=params)
         return await run_gh_cli_command(command)
@@ -143,7 +149,7 @@ class GithubCliBackend(GithubApiBackend):
     async def post(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="POST")
@@ -152,7 +158,7 @@ class GithubCliBackend(GithubApiBackend):
     async def patch(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="PATCH")
@@ -161,7 +167,7 @@ class GithubCliBackend(GithubApiBackend):
     async def put(
         self,
         url: str,
-        headers: dict[str, str] | None = None,
+        headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
         command = _build_command(url, headers=headers, body=json, method="PUT")
@@ -171,9 +177,7 @@ class GithubCliBackend(GithubApiBackend):
         response = await self.get("/user")
         return User(**response.json())
 
-    def github_headers(
-        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
-    ) -> dict[str, str]:
+    def github_headers(self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None) -> Headers:
         """Helper function to build a request with specific headers"""
         max_age = cache_duration or self.config.cache.default_ttl
         return {"Accept": accept, "Cache-Control": f"max-age={max_age}"}

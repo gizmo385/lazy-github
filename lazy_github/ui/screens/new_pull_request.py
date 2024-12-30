@@ -71,7 +71,7 @@ class BranchSelection(Horizontal):
             and LazyGithubContext.current_repo
             and LazyGithubContext.current_directory_repo == LazyGithubContext.current_repo.full_name
         ):
-            self.query_one("#head_ref", Input).value = LazyGithubContext.current_directory_branch
+            self.query_one("#head_ref", Input).value = LazyGithubContext.current_directory_branch or ""
 
     async def on_mount(self) -> None:
         self.fetch_branches()

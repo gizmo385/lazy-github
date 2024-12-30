@@ -1,7 +1,6 @@
 from textual.binding import Binding
 
 from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.decorators import classproperty
 
 
 class LazyGithubBindings:
@@ -82,12 +81,12 @@ class LazyGithubBindings:
         "6", "focus_section('LazyGithubCommandLog')", "Focus command log", show=False, id="main.command_log.focus"
     )
 
-    @classproperty
+    @classmethod
     def all(cls) -> list[Binding]:
         """Returns all bindings which can be rebound"""
         return [v for v in cls.__dict__.values() if isinstance(v, Binding) if v.id]
 
-    @classproperty
+    @classmethod
     def all_by_id(cls) -> dict[str, Binding]:
         """Returns a dictionary of all bindings which can be rebound, with the key being their ID"""
         return {v.id: v for v in cls.__dict__.values() if isinstance(v, Binding) and v.id}

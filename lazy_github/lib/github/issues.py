@@ -1,4 +1,4 @@
-from typing import TypedDict, Unpack
+from typing import TypedDict, Unpack, cast
 
 from lazy_github.lib.constants import IssueOwnerFilter, IssueStateFilter
 from lazy_github.lib.context import LazyGithubContext, github_headers
@@ -54,7 +54,11 @@ async def create_comment(issue: Issue, comment_body: str) -> IssueComment:
 async def update_issue(issue_to_update: Issue, **updated_fields: Unpack[UpdateIssuePayload]) -> Issue:
     repo = issue_to_update.repo
     url = f"/repos/{repo.owner.login}/{repo.name}/issues/{issue_to_update.number}"
-    response = await LazyGithubContext.client.patch(url, json=updated_fields, headers=github_headers())
+    response = await LazyGithubContext.client.patch(
+        url,
+        json=cast(dict[str, str], updated_fields),
+        headers=github_headers(),
+    )
     response.raise_for_status()
     return Issue(**response.json(), repo=repo)
 

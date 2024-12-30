@@ -3,7 +3,6 @@ from typing import Optional
 
 from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
-from lazy_github.lib.decorators import classproperty
 from lazy_github.lib.git_cli import current_local_branch_name, current_local_repo_full_name
 from lazy_github.lib.github.backends.protocol import BackendType
 from lazy_github.lib.github.client import GithubClient
@@ -11,7 +10,7 @@ from lazy_github.lib.logging import LazyGithubLogFormatter, lg
 from lazy_github.models.github import Repository
 
 
-class LazyGithubContext:
+class _LazyGithubContext:
     """Globally accessible wrapper class that centralizes access to the configuration and the Github API client"""
 
     # Attributes exposed via properties
@@ -38,18 +37,18 @@ class LazyGithubContext:
         except Exception:
             lg.exception("Failed to setup file logger for LazyGithub")
 
-    @classproperty
+    @property
     def config(cls) -> Config:
         if cls._config is None:
             cls._config = Config.load_config()
             cls._setup_logging_handler(cls._config)
         return cls._config
 
-    @classproperty
+    @property
     def client_type(cls) -> BackendType:
         return cls.config.api.client_type
 
-    @classproperty
+    @property
     def client(cls) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
         if not isinstance(cls._client, GithubClient):
@@ -64,19 +63,22 @@ class LazyGithubContext:
                     raise TypeError(f"Invalid client type in config: {cls.client_type}")
         return cls._client
 
-    @classproperty
+    @property
     def current_directory_repo(cls) -> str | None:
         """The owner/name of the repo associated with the current working directory (if one exists)"""
         if not cls._current_directory_repo:
             cls._current_directory_repo = current_local_repo_full_name()
         return cls._current_directory_repo
 
-    @classproperty
+    @property
     def current_directory_branch(cls) -> str | None:
         """The owner/name of the repo associated with the current working directory (if one exists)"""
         if not cls._current_directory_branch:
             cls._current_directory_branch = current_local_branch_name()
         return cls._current_directory_branch
+
+
+LazyGithubContext = _LazyGithubContext()
 
 
 def github_headers(accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: Optional[int] = None) -> dict[str, str]:

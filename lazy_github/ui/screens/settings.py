@@ -190,16 +190,17 @@ class BindingsSettingsSection(SettingsSection):
 
     def compose(self) -> ComposeResult:
         with Collapsible(collapsed=False, title="[bold]Keybinding Overrides[/bold]"):
-            yield Static(LazyGithubContext.config.bindings.__doc__)
-            sorted_binding_keys = sorted(LazyGithubBindings.all_by_id.keys())
+            if LazyGithubContext.config.bindings.__doc__:
+                yield Static(LazyGithubContext.config.bindings.__doc__)
+            bindings_by_id = LazyGithubBindings.all_by_id()
+            sorted_binding_keys = sorted(bindings_by_id.keys())
             for key in sorted_binding_keys:
-                yield KeySelectionInput(LazyGithubBindings.all_by_id[key])
+                yield KeySelectionInput(bindings_by_id[key])
 
 
 class SettingsContainer(Container):
     DEFAULT_CSS = """
     SettingsContainer {
-        dock: top;
         height: 80%;
         align: center middle;
     }
@@ -284,7 +285,7 @@ class SettingsContainer(Container):
             # We want to handle the binding settings update differently
             keybinding_adjustments = self.query(KeySelectionInput)
             for adjustment in keybinding_adjustments:
-                if adjustment.value != adjustment.binding.key:
+                if adjustment.value != adjustment.binding.key and adjustment.binding.id:
                     LazyGithubContext.config.bindings.overrides[adjustment.binding.id] = adjustment.value
                 elif adjustment.binding.id in LazyGithubContext.config.bindings.overrides:
                     del LazyGithubContext.config.bindings.overrides[adjustment.binding.id]
@@ -310,6 +311,8 @@ class SettingsModal(ModalScreen):
     DEFAULT_CSS = """
     SettingsModal {
         height: 80%;
+        align: center middle;
+        content-align: center middle;
     }
 
     SettingsContainer {

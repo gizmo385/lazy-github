@@ -4,7 +4,7 @@ from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.cli import GithubCliBackend
 from lazy_github.lib.github.backends.hishel import HishelGithubApiBackend
-from lazy_github.lib.github.backends.protocol import GithubApiBackend
+from lazy_github.lib.github.backends.protocol import GithubApiBackend, Headers, QueryParams
 from lazy_github.models.github import User
 
 
@@ -30,22 +30,20 @@ class GithubClient(GithubApiBackend):
             self._user = await self.get_user()
         return self._user
 
-    def github_headers(
-        self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None
-    ) -> dict[str, str]:
+    def github_headers(self, accept: str = JSON_CONTENT_ACCEPT_TYPE, cache_duration: int | None = None) -> Headers:
         """Helper function to build a request with specific headers"""
         return self.backend.github_headers(accept=accept, cache_duration=cache_duration)
 
-    async def get(self, url: str, headers: dict[str, str] | None = None, params: dict[str, str] | None = None) -> Any:
+    async def get(self, url: str, headers: Headers | None = None, params: QueryParams | None = None) -> Any:
         return await self.backend.get(url, headers, params)
 
-    async def post(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+    async def post(self, url: str, headers: Headers | None = None, json: dict[str, str] | None = None) -> Any:
         return await self.backend.post(url, headers, json)
 
-    async def patch(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+    async def patch(self, url: str, headers: Headers | None = None, json: dict[str, str] | None = None) -> Any:
         return await self.backend.patch(url, headers, json)
 
-    async def put(self, url: str, headers: dict[str, str] | None = None, json: dict[str, str] | None = None) -> Any:
+    async def put(self, url: str, headers: Headers | None = None, json: dict[str, str] | None = None) -> Any:
         return await self.backend.put(url, headers, json)
 
     async def get_user(self) -> User:
