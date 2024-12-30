@@ -9,10 +9,10 @@ from textual.events import Blur
 from textual.widgets import DataTable, Footer, Input
 from textual.widgets.data_table import RowDoesNotExist
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.cache import load_models_from_cache, save_models_to_cache
 from lazy_github.lib.context import LazyGithubContext
+from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository
 
 # Some handy type defs

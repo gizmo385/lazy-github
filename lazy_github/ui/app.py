@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
@@ -6,12 +7,12 @@ from textual.screen import Screen
 from textual.theme import Theme
 from textual.widgets import Button, Markdown, RadioButton, RadioSet
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import auth
 from lazy_github.lib.github.auth import GithubAuthenticationRequired
 from lazy_github.lib.github.backends.protocol import BackendType
+from lazy_github.lib.logging import lg
 from lazy_github.lib.messages import SettingsModalDismissed
 from lazy_github.ui.screens.auth import AuthenticationModal
 from lazy_github.ui.screens.primary import LazyGithubMainScreen

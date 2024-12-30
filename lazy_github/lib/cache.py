@@ -3,8 +3,8 @@ from typing import Iterable, TypeVar
 
 from pydantic import BaseModel
 
-from lazy_github.lib.logging import lg
 from lazy_github.lib.constants import CONFIG_FOLDER
+from lazy_github.lib.logging import lg
 from lazy_github.models.github import Repository
 
 TABLE_CACHE_FOLDER = CONFIG_FOLDER / "table-cache"
