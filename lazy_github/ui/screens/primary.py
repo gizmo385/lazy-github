@@ -101,13 +101,7 @@ class LazyGithubStatusSummary(Container):
 class SelectionDetailsContainer(LazyGithubContainer):
     DEFAULT_CSS = """
     SelectionDetailsContainer {
-        max-height: 100%;
-        dock: right;
-    }
-    SelectionDetailsContainer:focus-within {
-        max-height: 100%;
-        min-height: 80%;
-        dock: right;
+        height: 1fr;
     }
     """
 
