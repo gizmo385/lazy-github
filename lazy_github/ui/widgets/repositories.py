@@ -7,7 +7,6 @@ from textual.widgets import DataTable
 
 import lazy_github.lib.github.repositories as repos_api
 from lazy_github.lib.bindings import LazyGithubBindings
-from lazy_github.lib.cache import TABLE_CACHE_FOLDER
 from lazy_github.lib.constants import IS_FAVORITED, favorite_string, private_string
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import GithubApiRequestFailed
@@ -16,8 +15,6 @@ from lazy_github.lib.messages import RepoSelected
 from lazy_github.models.github import Repository
 from lazy_github.ui.screens.lookup_repository import LookupRepositoryModal
 from lazy_github.ui.widgets.common import LazyGithubContainer, SearchableDataTable, TableRow
-
-_REPO_CACHE_PATH = TABLE_CACHE_FOLDER / "repos.json"
 
 
 def repo_to_row(repo: Repository) -> TableRow:
