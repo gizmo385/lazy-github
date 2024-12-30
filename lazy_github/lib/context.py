@@ -1,4 +1,4 @@
-import logging
+from logging.handlers import RotatingFileHandler
 from typing import Optional
 
 from lazy_github.lib.config import Config
@@ -28,7 +28,11 @@ class LazyGithubContext:
         """Setup the file logger for LazyGithub"""
         try:
             config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
-            lg_file_handler = logging.FileHandler(filename=config.core.logfile_path)
+            lg_file_handler = RotatingFileHandler(
+                filename=config.core.logfile_path,
+                maxBytes=config.core.logfile_max_bytes,
+                backupCount=config.core.logfile_count,
+            )
             lg_file_handler.setFormatter(LazyGithubLogFormatter())
             lg.addHandler(lg_file_handler)
         except Exception:

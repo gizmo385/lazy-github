@@ -105,9 +105,22 @@ class CacheSettings(BaseModel):
 
 class CoreConfig(BaseModel):
     first_start: bool = True
+    """Records if this is the first time LazyGithub has been started."""
+
     logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
+    """Controls where the application logs should be stored."""
+
+    logfile_max_bytes: int = 5000000
+    """Controls large the application log can grow before being rotated."""
+
+    logfile_count: int = 5
+    """Controls how many rotated application logs to keep."""
+
     auth_cache_duration: int = int(timedelta(days=1).total_seconds())
+    """Controls how long the application will assume that the authentication is valid after successfully checking"""
+
     auth_last_checked: datetime | None = None
+    """Records when the authentication validity was last checked by LazyGithub"""
 
 
 class ApiConfig(BaseModel):
