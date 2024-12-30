@@ -66,8 +66,8 @@ class LazyGithub(App):
 
     async def authenticate_with_github(self):
         current_time = datetime.now()
-        auth_last_checked = LazyGithubContext.config.core.auth_last_checked
-        auth_cache_duration = LazyGithubContext.config.core.auth_cache_duration
+        auth_last_checked = LazyGithubContext.config.cache.auth_last_checked
+        auth_cache_duration = LazyGithubContext.config.cache.auth_cache_duration
 
         if auth_last_checked and (current_time - auth_last_checked).total_seconds() < auth_cache_duration:
             lg.debug("Triggering auth with github")
@@ -77,7 +77,7 @@ class LazyGithub(App):
                 # We pull the user here to validate auth
                 await auth.assert_is_logged_in()
                 with LazyGithubContext.config.to_edit() as config:
-                    config.core.auth_last_checked = current_time
+                    config.cache.auth_last_checked = current_time
 
                 self.push_screen(LazyGithubMainScreen(id="main-screen"))
             except GithubAuthenticationRequired:
