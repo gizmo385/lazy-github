@@ -226,6 +226,7 @@ class LazilyLoadedDataTable(SearchableDataTable[T], Generic[T]):
         super().clear_rows()
         self.current_batch = 0
         self.can_load_more = True
+        self.load_function = None
 
     @work
     async def load_more_data(self, row_highlighted: DataTable.RowHighlighted) -> None:
