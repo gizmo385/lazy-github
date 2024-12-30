@@ -1,6 +1,6 @@
 import json
 from contextlib import contextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Generator, Literal, Optional
@@ -106,6 +106,8 @@ class CacheSettings(BaseModel):
 class CoreConfig(BaseModel):
     first_start: bool = True
     logfile_path: Path = CONFIG_FOLDER / "lazy_github.log"
+    auth_cache_duration: int = int(timedelta(days=1).total_seconds())
+    auth_last_checked: datetime | None = None
 
 
 class ApiConfig(BaseModel):

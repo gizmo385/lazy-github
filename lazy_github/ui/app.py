@@ -1,10 +1,12 @@
-from textual import log, on
+from datetime import datetime
+from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.theme import Theme
 from textual.widgets import Button, Markdown, RadioButton, RadioSet
 
+from lazy_github.lib.logging import lg
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github import auth
@@ -62,13 +64,24 @@ class LazyGithub(App):
     has_shown_maximize_toast: bool = False
 
     async def authenticate_with_github(self):
-        try:
-            # We pull the user here to validate auth
-            await auth.assert_is_logged_in()
+        current_time = datetime.now()
+        auth_last_checked = LazyGithubContext.config.core.auth_last_checked
+        auth_cache_duration = LazyGithubContext.config.core.auth_cache_duration
+
+        if auth_last_checked and (current_time - auth_last_checked).total_seconds() < auth_cache_duration:
+            lg.debug("Triggering auth with github")
             self.push_screen(LazyGithubMainScreen(id="main-screen"))
-        except GithubAuthenticationRequired:
-            log("Triggering auth with github")
-            self.push_screen(AuthenticationModal(id="auth-modal"))
+        else:
+            try:
+                # We pull the user here to validate auth
+                await auth.assert_is_logged_in()
+                with LazyGithubContext.config.to_edit() as config:
+                    config.core.auth_last_checked = current_time
+
+                self.push_screen(LazyGithubMainScreen(id="main-screen"))
+            except GithubAuthenticationRequired:
+                lg.debug("Triggering auth with github")
+                self.push_screen(AuthenticationModal(id="auth-modal"))
 
     async def handle_first_start_screen_dismiss(self, selected_backend_type: BackendType | None) -> None:
         if selected_backend_type:
