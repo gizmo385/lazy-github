@@ -69,19 +69,32 @@ class LazyGithub(App):
         auth_last_checked = LazyGithubContext.config.cache.auth_last_checked
         auth_cache_duration = LazyGithubContext.config.cache.auth_cache_duration
 
-        if auth_last_checked and (current_time - auth_last_checked).total_seconds() < auth_cache_duration:
-            lg.debug("Triggering auth with github")
+        cached_auth_is_valid = (
+            # If we haven't checked the auth recently, then we need to
+            auth_last_checked is not None
+            # If the last checked time is in the future, it's invalid
+            and auth_last_checked < current_time
+            # If the auth has been checked within our auth cache duration then we can skip it
+            and (current_time - auth_last_checked).total_seconds() < auth_cache_duration
+        )
+
+        if cached_auth_is_valid:
+            lg.debug("Skipping auth check due to cache")
+            self.push_screen(LazyGithubMainScreen(id="main-screen"))
+        elif LazyGithubContext.offline_mode:
+            lg.debug("Skipping auth check due to offline mode")
             self.push_screen(LazyGithubMainScreen(id="main-screen"))
         else:
             try:
                 # We pull the user here to validate auth
+                lg.debug("Checking that user is logged in")
                 await auth.assert_is_logged_in()
                 with LazyGithubContext.config.to_edit() as config:
                     config.cache.auth_last_checked = current_time
 
                 self.push_screen(LazyGithubMainScreen(id="main-screen"))
             except GithubAuthenticationRequired:
-                lg.debug("Triggering auth with github")
+                lg.debug("Login required - triggering auth modal")
                 self.push_screen(AuthenticationModal(id="auth-modal"))
 
     async def handle_first_start_screen_dismiss(self, selected_backend_type: BackendType | None) -> None:

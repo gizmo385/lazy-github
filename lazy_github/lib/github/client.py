@@ -4,7 +4,6 @@ from lazy_github.lib.config import Config
 from lazy_github.lib.constants import JSON_CONTENT_ACCEPT_TYPE
 from lazy_github.lib.github.backends.cli import GithubCliBackend
 from lazy_github.lib.github.backends.hishel import HishelGithubApiBackend
-from lazy_github.lib.github.backends.offline import OfflineBackend
 from lazy_github.lib.github.backends.protocol import GithubApiBackend, Headers, QueryParams
 from lazy_github.models.github import User
 
@@ -23,11 +22,6 @@ class GithubClient(GithubApiBackend):
     @classmethod
     def hishel(cls, config: Config, access_token: str) -> "GithubClient":
         backend = HishelGithubApiBackend(config, access_token)
-        return GithubClient(config, backend)
-
-    @classmethod
-    def offline(cls, config: Config) -> "GithubClient":
-        backend = OfflineBackend()
         return GithubClient(config, backend)
 
     async def user(self) -> User:

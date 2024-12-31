@@ -1,13 +1,30 @@
 import shutil
+import socket
+import time
 
 import click
 import rich
 
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
+from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import BackendType
+from lazy_github.lib.logging import lg
 from lazy_github.ui.app import app
 
 _CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+_TEST_HOSTNAME = "one.one.one.one"
+
+
+def _internet_available() -> bool:
+    available = True
+    check_start = time.time_ns()
+    try:
+        socket.gethostbyname(_TEST_HOSTNAME)
+    except OSError:
+        available = False
+    check_end = time.time_ns()
+    lg.debug(f"Checking for internet available took {check_end - check_start}ns")
+    return available
 
 
 @click.group(invoke_without_command=True, context_settings=_CLI_CONTEXT_SETTINGS)
@@ -19,17 +36,20 @@ def cli(ctx: click.Context) -> None:
 
 
 @cli.command
+@click.option("--offline", is_flag=True, default=False, help="Run in offline mode, disabling network requests")
 @click.option(
     "--auth-backend",
     help="Specifies which authentication backend to use",
     envvar="AUTH_BACKEND",
     type=click.Choice(list(BackendType)),
 )
-def run(auth_backend: BackendType | None):
+def run(offline: bool, auth_backend: BackendType | None):
     """Run LazyGithub"""
     if auth_backend:
         with Config.to_edit() as config:
             config.api.client_type = auth_backend
+    if offline or not _internet_available():
+        LazyGithubContext.offline_mode = offline
     app.run()
 
 
