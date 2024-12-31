@@ -1,6 +1,6 @@
 import shutil
 import socket
-import time
+from contextlib import suppress
 
 import click
 import rich
@@ -8,7 +8,7 @@ import rich
 from lazy_github.lib.config import _CONFIG_FILE_LOCATION, Config
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.backends.protocol import BackendType
-from lazy_github.lib.logging import lg
+from lazy_github.lib.github.client import OfflineModeEnabledError
 from lazy_github.ui.app import app
 
 _CLI_CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -16,15 +16,11 @@ _TEST_HOSTNAME = "one.one.one.one"
 
 
 def _internet_available() -> bool:
-    available = True
-    check_start = time.time_ns()
     try:
         socket.gethostbyname(_TEST_HOSTNAME)
+        return True
     except OSError:
-        available = False
-    check_end = time.time_ns()
-    lg.debug(f"Checking for internet available took {check_end - check_start}ns")
-    return available
+        return False
 
 
 @click.group(invoke_without_command=True, context_settings=_CLI_CONTEXT_SETTINGS)
@@ -50,6 +46,7 @@ def run(offline: bool, auth_backend: BackendType | None):
             config.api.client_type = auth_backend
     if offline or not _internet_available():
         LazyGithubContext.offline_mode = offline
+
     app.run()
 
 

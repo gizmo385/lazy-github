@@ -23,8 +23,7 @@ class _LazyGithubContext:
     # Directly assigned attributes
     current_repo: Repository | None = None
 
-    @classmethod
-    def _setup_logging_handler(cls, config: Config) -> None:
+    def _setup_logging_handler(self, config: Config) -> None:
         """Setup the file logger for LazyGithub"""
         try:
             config.core.logfile_path.parent.mkdir(parents=True, exist_ok=True)
@@ -39,42 +38,42 @@ class _LazyGithubContext:
             lg.exception("Failed to setup file logger for LazyGithub")
 
     @property
-    def config(cls) -> Config:
-        if cls._config is None:
-            cls._config = Config.load_config()
-            cls._setup_logging_handler(cls._config)
-        return cls._config
+    def config(self) -> Config:
+        if self._config is None:
+            self._config = Config.load_config()
+            self._setup_logging_handler(self._config)
+        return self._config
 
     @property
-    def client_type(cls) -> BackendType:
-        return cls.config.api.client_type
+    def client_type(self) -> BackendType:
+        return self.config.api.client_type
 
     @property
-    def client(cls) -> GithubClient:
+    def client(self) -> GithubClient:
         # Ideally this is would just be a none check but that doesn't properly type check for some reason
-        if not isinstance(cls._client, GithubClient):
-            match cls.client_type:
+        if not isinstance(self._client, GithubClient):
+            match self.client_type:
                 case BackendType.GITHUB_CLI:
-                    cls._client = GithubClient.cli(cls.config)
+                    self._client = GithubClient.cli(self.config, self.offline_mode)
                 case BackendType.RAW_HTTP:
                     from lazy_github.lib.github.auth import get_api_token
 
-                    cls._client = GithubClient.hishel(cls.config, get_api_token())
-        return cls._client
+                    self._client = GithubClient.hishel(self.config, get_api_token(), self.offline_mode)
+        return self._client
 
     @property
-    def current_directory_repo(cls) -> str | None:
+    def current_directory_repo(self) -> str | None:
         """The owner/name of the repo associated with the current working directory (if one exists)"""
-        if not cls._current_directory_repo:
-            cls._current_directory_repo = current_local_repo_full_name()
-        return cls._current_directory_repo
+        if not self._current_directory_repo:
+            self._current_directory_repo = current_local_repo_full_name()
+        return self._current_directory_repo
 
     @property
-    def current_directory_branch(cls) -> str | None:
+    def current_directory_branch(self) -> str | None:
         """The owner/name of the repo associated with the current working directory (if one exists)"""
-        if not cls._current_directory_branch:
-            cls._current_directory_branch = current_local_branch_name()
-        return cls._current_directory_branch
+        if not self._current_directory_branch:
+            self._current_directory_branch = current_local_branch_name()
+        return self._current_directory_branch
 
 
 LazyGithubContext = _LazyGithubContext()
