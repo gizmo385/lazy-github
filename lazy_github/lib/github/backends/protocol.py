@@ -11,6 +11,7 @@ Headers = dict[str, str]
 class BackendType(StrEnum):
     RAW_HTTP = "RAW_HTTP"
     GITHUB_CLI = "GITHUB_CLI"
+    OFFLINE = "OFFLINE"
 
 
 class GithubApiRequestFailed(Exception):

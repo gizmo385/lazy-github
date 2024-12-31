@@ -110,14 +110,15 @@ class ReposContainer(LazyGithubContainer):
             repos = await repos_api.list_all()
         except GithubApiRequestFailed:
             lg.exception("Error fetching repositories from Github API")
+        else:
+            # Loading any additionally tracked repos
+            additional_repos_to_fetch = LazyGithubContext.config.repositories.additional_repos_to_track
+            additional_repos = await asyncio.gather(
+                *[repos_api.get_repository_by_name(full_repo_name) for full_repo_name in additional_repos_to_fetch]
+            )
+            repos.extend(filter(None, additional_repos))
+            self.set_repositories(repos)
 
-        # Loading any additionally tracked repos
-        additional_repos_to_fetch = LazyGithubContext.config.repositories.additional_repos_to_track
-        additional_repos = await asyncio.gather(
-            *[repos_api.get_repository_by_name(full_repo_name) for full_repo_name in additional_repos_to_fetch]
-        )
-        repos.extend(filter(None, additional_repos))
-        self.set_repositories(repos)
         self.check_current_directory_repo()
 
     async def action_toggle_favorite_repo(self):

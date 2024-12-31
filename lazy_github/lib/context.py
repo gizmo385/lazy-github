@@ -59,8 +59,8 @@ class _LazyGithubContext:
                     from lazy_github.lib.github.auth import get_api_token
 
                     cls._client = GithubClient.hishel(cls.config, get_api_token())
-                case _:
-                    raise TypeError(f"Invalid client type in config: {cls.client_type}")
+                case BackendType.OFFLINE:
+                    cls._client = GithubClient.offline(cls.config)
         return cls._client
 
     @property
