@@ -6,14 +6,14 @@
 
 python311Packages.buildPythonApplication rec {
   pname = "lazy-github";
-  version = "0.3.2";
+  version = "0.3.7";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "gizmo385";
     repo = "lazy-github";
     rev = "refs/tags/v${version}";
-    hash = "sha256-L5s2q3n18fCvIXjrI6a4LYuvMGVmsdXzx4sDGKk+OTs=";
+    hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
   };
 
   build-system = [
