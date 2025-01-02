@@ -139,7 +139,7 @@ class NewPullRequestContainer(VerticalScroll):
         yield Label("[bold]Pull Request Title[/bold]")
         yield Input(id="pr_title", placeholder="Title", validators=[validation.Length(minimum=1)])
         yield Label("[bold]Pull Request Description[/bold]")
-        yield TextArea.code_editor(id="pr_description")
+        yield TextArea.code_editor(id="pr_description", soft_wrap=True)
         yield NewPullRequestButtons()
 
     @on(Button.Pressed, "#cancel_new_pr")
