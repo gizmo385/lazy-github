@@ -2,21 +2,23 @@ import json
 import re
 
 from lazy_github.lib.context import LazyGithubContext, github_headers
-from lazy_github.lib.github.backends.cli import run_gh_cli_command
+from lazy_github.lib.github.backends.cli import build_command, run_gh_cli_command
 from lazy_github.lib.github.pull_requests import get_full_pull_request
 from lazy_github.lib.logging import lg
 from lazy_github.models.github import FullPullRequest, Notification, NotificationSubject
 
-NOTIFICATIONS_PAGE_COUNT = 30
+NOTIFICATIONS_PAGE_COUNT = 50
 
 _PULL_REQUEST_URL_REGEX = re.compile(r"[^:]+:[\/]+[^\/]+\/repos\/([^\/]+)\/([^\/]+)\/pulls\/(\d+)")
 
 
-async def fetch_notifications(all: bool) -> list[Notification]:
+async def fetch_notifications(all: bool, per_page: int = NOTIFICATIONS_PAGE_COUNT, page: int = 1) -> list[Notification]:
     """Fetches notifications on GitHub. If all=True, then previously read notifications will also be returned"""
     notifications: list[Notification] = []
+    query_params = {"all": str(all).lower(), "page": page, "per_page": per_page}
     try:
-        result = await run_gh_cli_command(["api", f"/notifications?all={str(all).lower()}"])
+        notification_command = build_command("/notifications", query_params=query_params)
+        result = await run_gh_cli_command(notification_command)
         if result.stdout:
             parsed = json.loads(result.stdout)
             notifications = [Notification(**n) for n in parsed]

@@ -10,13 +10,14 @@ from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
 from lazy_github.lib.context import LazyGithubContext
 from lazy_github.lib.github.notifications import (
+    NOTIFICATIONS_PAGE_COUNT,
     fetch_notifications,
     mark_all_notifications_as_read,
     mark_notification_as_read,
 )
 from lazy_github.lib.messages import AllNotificationsMarkedAsRead, NotificationMarkedAsRead, NotificationSelected
 from lazy_github.models.github import Notification
-from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable, TableRow
+from lazy_github.ui.widgets.common import LazilyLoadedDataTable, LazyGithubFooter, TableRow
 
 
 def notification_to_row(notification: Notification) -> TableRow:
@@ -32,13 +33,17 @@ def notification_to_row(notification: Notification) -> TableRow:
 class _NotificationsTableTabPane(TabPane):
     def __init__(self, prefix: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.searchable_table: SearchableDataTable[Notification] = SearchableDataTable(
+        self.searchable_table: LazilyLoadedDataTable[Notification] = LazilyLoadedDataTable(
             table_id=f"{prefix}_notifications_table",
             search_input_id=f"{prefix}_notifications_table_search_input",
             sort_key="updated_at",
             item_to_key=lambda n: str(n.id),
             item_to_row=notification_to_row,
             reverse_sort=True,
+            cache_name="notifications",
+            repo_based_cache=False,
+            load_function=None,
+            batch_size=NOTIFICATIONS_PAGE_COUNT,
         )
 
     def compose(self) -> ComposeResult:
@@ -106,6 +111,8 @@ class NotificationsContainer(Container):
         super().__init__(*args, **kwargs)
         self.unread_tab = UnreadNotificationTabPane()
         self.read_tab = ReadNotificationTabPane()
+        self.unread_tab.searchable_table.change_load_function(self.load_more_notifications)
+        self.read_tab.searchable_table.change_load_function(self.load_more_notifications)
 
     def compose(self) -> ComposeResult:
         yield Markdown("# Notifications")
@@ -141,6 +148,9 @@ class NotificationsContainer(Container):
     def action_view_unread(self) -> None:
         self.query_one(TabbedContent).active = "unread"
         self.unread_tab.searchable_table.table.focus()
+
+    async def load_more_notifications(self, batch_size: int, batch_to_fetch: int) -> list[Notification]:
+        return await fetch_notifications(True, batch_size, batch_to_fetch)
 
     @work
     async def load_notifications(self) -> None:
