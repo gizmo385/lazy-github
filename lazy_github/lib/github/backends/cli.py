@@ -107,7 +107,7 @@ def _create_request_body_tempfile(body: bytes) -> tempfile._TemporaryFileWrapper
     return temp
 
 
-def _build_command(
+def build_command(
     base_url: str,
     method: str = "GET",
     headers: Headers | None = None,
@@ -143,7 +143,7 @@ class GithubCliBackend(GithubApiBackend):
         headers: Headers | None = None,
         params: QueryParams | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, query_params=params)
+        command = build_command(url, headers=headers, query_params=params)
         return await run_gh_cli_command(command)
 
     async def post(
@@ -152,7 +152,7 @@ class GithubCliBackend(GithubApiBackend):
         headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, body=json, method="POST")
+        command = build_command(url, headers=headers, body=json, method="POST")
         return await run_gh_cli_command(command)
 
     async def patch(
@@ -161,7 +161,7 @@ class GithubCliBackend(GithubApiBackend):
         headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, body=json, method="PATCH")
+        command = build_command(url, headers=headers, body=json, method="PATCH")
         return await run_gh_cli_command(command)
 
     async def put(
@@ -170,7 +170,7 @@ class GithubCliBackend(GithubApiBackend):
         headers: Headers | None = None,
         json: dict[str, str] | None = None,
     ) -> Any:
-        command = _build_command(url, headers=headers, body=json, method="PUT")
+        command = build_command(url, headers=headers, body=json, method="PUT")
         return await run_gh_cli_command(command)
 
     async def get_user(self) -> User:
