@@ -9,8 +9,12 @@ from textual.widgets.data_table import RowDoesNotExist
 from lazy_github.lib.bindings import LazyGithubBindings
 from lazy_github.lib.constants import BULLET_POINT, CHECKMARK
 from lazy_github.lib.context import LazyGithubContext
-from lazy_github.lib.github.notifications import fetch_notifications, mark_notification_as_read
-from lazy_github.lib.messages import NotificationMarkedAsRead, NotificationSelected
+from lazy_github.lib.github.notifications import (
+    fetch_notifications,
+    mark_all_notifications_as_read,
+    mark_notification_as_read,
+)
+from lazy_github.lib.messages import AllNotificationsMarkedAsRead, NotificationMarkedAsRead, NotificationSelected
 from lazy_github.models.github import Notification
 from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable, TableRow
 
@@ -70,7 +74,7 @@ class ReadNotificationTabPane(_NotificationsTableTabPane):
 
 
 class UnreadNotificationTabPane(_NotificationsTableTabPane):
-    BINDINGS = [LazyGithubBindings.MARK_NOTIFICATION_READ]
+    BINDINGS = [LazyGithubBindings.MARK_NOTIFICATION_READ, LazyGithubBindings.MARK_ALL_NOTIFICATIONS_AS_READ]
 
     def __init__(self) -> None:
         super().__init__(id="unread", prefix="unread", title=f"[red]{BULLET_POINT}Unread[/red]")
@@ -82,6 +86,9 @@ class UnreadNotificationTabPane(_NotificationsTableTabPane):
         notification_to_mark = self.searchable_table.items[str(id)]
 
         self.post_message(NotificationMarkedAsRead(notification_to_mark))
+
+    async def action_mark_all_read(self) -> None:
+        self.post_message(AllNotificationsMarkedAsRead())
 
 
 class NotificationsContainer(Container):
@@ -104,6 +111,18 @@ class NotificationsContainer(Container):
         with TabbedContent():
             yield self.unread_tab
             yield self.read_tab
+
+    @on(AllNotificationsMarkedAsRead)
+    async def all_notifications_marked_as_read(self, message: NotificationMarkedAsRead) -> None:
+        await mark_all_notifications_as_read()
+        self.notify("Marked all notifications as read")
+        try:
+            for notification in self.unread_tab.searchable_table.items.values():
+                self.read_tab.searchable_table.add_item(notification)
+            self.unread_tab.searchable_table.clear_rows()
+            self.action_view_read()
+        except RowDoesNotExist:
+            pass
 
     @on(NotificationMarkedAsRead)
     async def notification_marked_read(self, message: NotificationMarkedAsRead) -> None:

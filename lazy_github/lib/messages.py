@@ -106,6 +106,10 @@ class NotificationMarkedAsRead(Message):
         self.notification = notification
 
 
+class AllNotificationsMarkedAsRead(Message):
+    pass
+
+
 class NotificationSelected(Message):
     def __init__(self, notification: Notification) -> None:
         super().__init__()

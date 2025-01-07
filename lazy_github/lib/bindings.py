@@ -54,6 +54,9 @@ class LazyGithubBindings:
         id="notifications.open",
         show=LazyGithubContext.config.notifications.enabled,
     )
+    MARK_ALL_NOTIFICATIONS_AS_READ = Binding(
+        "ctrl+r", "mark_all_read", "Mark all as read", id="notifications.mark_all_as_read"
+    )
     MARK_NOTIFICATION_READ = Binding("R", "mark_read", "Mark as Read", id="notifications.mark_read")
     VIEW_READ_NOTIFICATIONS = Binding("r", "view_read", "View Read Notifications", id="notifications.view_read")
     VIEW_UNREAD_NOTIFICATIONS = Binding("u", "view_unread", "View Unread Notifications", id="notifications.view_unread")
