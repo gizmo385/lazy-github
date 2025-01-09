@@ -111,8 +111,8 @@ class NotificationsContainer(Container):
         super().__init__(*args, **kwargs)
         self.unread_tab = UnreadNotificationTabPane()
         self.read_tab = ReadNotificationTabPane()
-        self.unread_tab.searchable_table.change_load_function(self.load_more_notifications)
-        self.read_tab.searchable_table.change_load_function(self.load_more_notifications)
+        self.unread_tab.searchable_table.change_load_function(self.load_more_unread_notifications)
+        self.read_tab.searchable_table.change_load_function(self.load_more_read_notifications)
 
     def compose(self) -> ComposeResult:
         yield Markdown("# Notifications")
@@ -150,8 +150,12 @@ class NotificationsContainer(Container):
         self.query_one(TabbedContent).active = "unread"
         self.unread_tab.searchable_table.table.focus()
 
-    async def load_more_notifications(self, batch_size: int, batch_to_fetch: int) -> list[Notification]:
-        return await fetch_notifications(True, batch_size, batch_to_fetch)
+    async def load_more_unread_notifications(self, batch_size: int, batch_to_fetch: int) -> list[Notification]:
+        return await fetch_notifications(False, batch_size, batch_to_fetch)
+
+    async def load_more_read_notifications(self, batch_size: int, batch_to_fetch: int) -> list[Notification]:
+        notifs = await fetch_notifications(True, batch_size, batch_to_fetch)
+        return [n for n in notifs if not n.unread]
 
     @work
     async def load_notifications(self) -> None:
