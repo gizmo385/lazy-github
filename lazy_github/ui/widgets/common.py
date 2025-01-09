@@ -1,4 +1,5 @@
 from asyncio import Lock
+from datetime import datetime
 from typing import Awaitable, Callable, Generic, TypeVar
 
 from pydantic import BaseModel
@@ -18,8 +19,9 @@ from lazy_github.models.github import Repository
 # Some handy type defs
 T = TypeVar("T", bound=BaseModel)
 TablePopulationFunction = Callable[[int, int], Awaitable[list[T]]]
-TableRow = tuple[str | int, ...]
-TableRowMap = dict[str, tuple[str | int, ...]]
+TableCellType = str | int | datetime
+TableRow = tuple[TableCellType, ...]
+TableRowMap = dict[str, tuple[TableCellType, ...]]
 
 
 class LazyGithubFooter(Footer):
@@ -27,7 +29,7 @@ class LazyGithubFooter(Footer):
         super().__init__(show_command_palette=False)
 
 
-class _VimLikeDataTable(DataTable[str | int]):
+class _VimLikeDataTable(DataTable[TableCellType]):
     "An data table for LazyGithub that provides some more vim-like bindings"
 
     BINDINGS = [

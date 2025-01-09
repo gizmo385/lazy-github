@@ -21,7 +21,7 @@ from lazy_github.ui.widgets.common import LazyGithubFooter, SearchableDataTable,
 
 def notification_to_row(notification: Notification) -> TableRow:
     return (
-        notification.updated_at.strftime("%c"),
+        notification.updated_at.replace(tzinfo=None),
         notification.subject.subject_type,
         notification.subject.title.strip(),
         notification.reason.replace("_", " ").title(),
@@ -32,12 +32,13 @@ def notification_to_row(notification: Notification) -> TableRow:
 class _NotificationsTableTabPane(TabPane):
     def __init__(self, prefix: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.searchable_table: SearchableDataTable = SearchableDataTable(
+        self.searchable_table: SearchableDataTable[Notification] = SearchableDataTable(
             table_id=f"{prefix}_notifications_table",
             search_input_id=f"{prefix}_notifications_table_search_input",
             sort_key="updated_at",
             item_to_key=lambda n: str(n.id),
             item_to_row=notification_to_row,
+            reverse_sort=True,
         )
 
     def compose(self) -> ComposeResult:

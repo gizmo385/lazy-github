@@ -53,5 +53,5 @@ async def extract_notification_subject(subject: NotificationSubject) -> FullPull
 
 async def mark_all_notifications_as_read() -> None:
     """Marks all of the current user's notifications as read"""
-    result = await LazyGithubContext.client.put("/notifications", headers=github_headers(), json={"read": True})
+    result = await LazyGithubContext.client.put("/notifications", headers=github_headers(), json={"read": "true"})
     result.raise_for_status()
