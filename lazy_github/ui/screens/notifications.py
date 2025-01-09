@@ -1,6 +1,6 @@
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, ScrollableContainer
 from textual.coordinate import Coordinate
 from textual.screen import ModalScreen
 from textual.widgets import DataTable, Markdown, TabbedContent, TabPane
@@ -116,12 +116,13 @@ class NotificationsContainer(Container):
 
     def compose(self) -> ComposeResult:
         yield Markdown("# Notifications")
-        with TabbedContent():
-            yield self.unread_tab
-            yield self.read_tab
+        with ScrollableContainer():
+            with TabbedContent():
+                yield self.unread_tab
+                yield self.read_tab
 
     @on(AllNotificationsMarkedAsRead)
-    async def all_notifications_marked_as_read(self, message: NotificationMarkedAsRead) -> None:
+    async def all_notifications_marked_as_read(self, _: NotificationMarkedAsRead) -> None:
         await mark_all_notifications_as_read()
         self.notify("Marked all notifications as read")
         try:
@@ -187,7 +188,6 @@ class NotificationsModal(ModalScreen[Notification | None]):
     NotificationsContainer {
         min-width: 100;
         max-width: 80%;
-        max-height: 50;
         border: thick $background 80%;
         background: $surface-lighten-3;
     }
