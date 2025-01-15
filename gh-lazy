@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-exec ./start.sh
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR"
+exec "${SCRIPT_DIR}/start.sh"
